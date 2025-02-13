@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CRM - Clientes{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .avatar {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: 500;
+        }
+        .badge {
+            font-size: 0.85em;
+            padding: 0.5em 0.75em;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="card border-0 shadow-lg">
+        <!-- Encabezado -->
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <div>
+                <h4 class="mb-0">Gestión de Clientes</h4>
+                <small class="text-muted">{{ page_obj.paginator.count }} clientes registrados</small>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clienteModal">
+                <i class="bi bi-plus-lg me-2"></i>Nuevo Cliente
+            </button>
+        </div>
+        
+        <!-- Filtros Avanzados -->
+        <div class="card-body border-bottom">
+            <form method="get" class="row g-3">
+                <div class="col-12 col-md-4">
+                    <input type="search" name="q" class="form-control" 
+                           placeholder="Buscar por nombre, cédula o email..." 
+                           value="{{ request.GET.q }}">
+                </div>
+                <div class="col-6 col-md-3">
+                    <select name="estado" class="form-select">
+                        <option value="">Todos los estados</option>
+                        {% for value, label in estados %}
+                        <option value="{{ value }}" {% if request.GET.estado == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <input type="date" name="fecha_creacion_desde" class="form-control" 
+                           value="{{ request.GET.fecha_creacion_desde }}" 
+                           placeholder="Desde"
+                           max="{{ default_date }}">
+                </div>
+                <div class="col-6 col-md-2">
+                    <input type="date" name="fecha_creacion_hasta" class="form-control" 
+                           value="{{ request.GET.fecha_creacion_hasta }}" 
+                           placeholder="Hasta"
+                           max="{{ default_date }}">
+                </div>
+                <div class="col-6 col-md-2 d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Tabla de Clientes -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 25%">Nombre</th>
+                        <th style="width: 20%">Contacto</th>
+                        <th style="width: 15%">Cédula</th>
+                        <th style="width: 15%">Estado</th>
+                        <th style="width: 15%">Fecha Creación</th>
+                        <th style="width: 10%" class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in clientes %}
+                    <tr class="position-relative">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar bg-primary text-white me-3">
+                                    {{ cliente.nombre_apellido|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ cliente.nombre_apellido }}</div>
+                                    <small class="text-muted">{{ cliente.nacionalidad.name }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>{{ cliente.email }}</div>
+                            <small class="text-muted">{{ cliente.telefono }}</small>
+                        </td>
+                        <td>
+                            {{ cliente.cedula_pasaporte }}
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ cliente.get_estado_color }}">
+                                {{ cliente.get_estado_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {{ cliente.fecha_creacion|date:"d/m/Y H:i" }}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group">
+                                <a href="{% url 'cliente_detail' cliente.id %}" 
+                                   class="btn btn-sm btn-outline-secondary" 
+                                   title="Ver Detalles"
+                                   data-bs-toggle="tooltip">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'cliente_edit' cliente.id %}" 
+                                   class="btn btn-sm btn-outline-primary" 
+                                   title="Editar"
+                                   data-bs-toggle="tooltip">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="#" 
+                                   class="btn btn-sm btn-outline-danger delete-client" 
+                                   title="Eliminar"
+                                   data-bs-toggle="tooltip"
+                                   data-href="{% url 'cliente_delete' cliente.id %}">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <i class="bi bi-people display-6 text-muted mb-3"></i>
+                            <p class="text-muted">No se encontraron clientes</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% include 'partials/_pagination.html' %}
+    </div>
+</div>
+
+{% include "partials/cliente_form_modal.html" %}
+
+<!-- Modal de Confirmación para Eliminación -->
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" 
+     aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title">Confirmar eliminación</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+       </div>
+       <div class="modal-body">
+         ¿Está seguro de eliminar este cliente permanentemente?
+       </div>
+       <div class="modal-footer">
+         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+         <a href="#" class="btn btn-danger" id="confirmDeleteButton">Eliminar</a>
+       </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(tooltipTrigger => new bootstrap.Tooltip(tooltipTrigger));
+
+        // Manejo de eliminación
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+        document.querySelectorAll('.delete-client').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('confirmDeleteButton').href = this.dataset.href;
+                deleteModal.show();
+            });
+        });
+
+        // Validación de fechas en filtros
+        const today = new Date().toISOString().split('T')[0];
+        document.querySelectorAll('input[type="date"]').forEach(input => {
+            if(!input.value) input.value = today;
+            input.max = today;
+        });
+    });
+</script>
+{% endblock %}

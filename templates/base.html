@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}CristecnoViajes SRL{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'custom.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar Global -->
+            <nav class="col-md-2 d-none d-md-block bg-dark sidebar">
+                <div class="sidebar-sticky pt-3">
+                    <h5 class="px-3 mb-3 text-white-50">Menú Principal</h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path|slice:":4" == '/crm' %}active{% endif %}" href="/crm/">
+                                <span data-feather="users"></span> CRM
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/reservas/">
+                                <span data-feather="calendar"></span> Reservas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/pagos/">
+                                <span data-feather="credit-card"></span> Pagos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/reportes/">
+                                <span data-feather="bar-chart"></span> Reportes
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content Global -->
+            <main role="main" class="col-md-10 ms-sm-auto px-4">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5 JS Bundle (incluye Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <script>
+        feather.replace();
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
