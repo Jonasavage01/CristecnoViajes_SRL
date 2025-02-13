@@ -226,7 +226,6 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
 
                 <div class="modal-footer border-top border-secondary px-4 pb-4 pt-3">
@@ -245,8 +244,22 @@
 <!-- Scripts al final del documento -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script type="module">
-    import { showErrorAlert, showSuccessAlert } from '{% static "partials/alerts.js" %}';
+    import { showErrorAlert, showSuccessAlert } from '{% static "crm/alerts.js" %}';
     window.showErrorAlert = showErrorAlert;
     window.showSuccessAlert = showSuccessAlert;
 </script>
-<script src="{% static 'partials/formValidation.js' %}"></script>
+<script src="{% static 'crm/formValidation.js' %}"></script>
+
+<!-- Scripts adicionales para enfoque y limpieza de errores al abrir/cerrar el modal -->
+<script>
+document.getElementById('clienteModal').addEventListener('shown.bs.modal', function () {
+    const firstInput = this.querySelector('input:not([type="hidden"]), select');
+    firstInput?.focus();
+});
+
+document.getElementById('clienteModal').addEventListener('hide.bs.modal', function () {
+    this.querySelectorAll('.is-invalid').forEach(field => {
+        field.classList.remove('is-invalid');
+    });
+});
+</script>

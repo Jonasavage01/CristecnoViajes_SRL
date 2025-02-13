@@ -4,7 +4,6 @@
 {% block title %}CRM - Clientes{% endblock %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         .avatar {
             width: 40px;
@@ -186,25 +185,49 @@
 {% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // ... código existente para tooltips ...
         // Tooltips
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         tooltipTriggerList.map(tooltipTrigger => new bootstrap.Tooltip(tooltipTrigger));
 
-        // Manejo de eliminación
+        // Manejo de eliminación con AJAX
         const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+        let deleteUrl = '';
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // Al hacer clic en cualquier botón de eliminar
         document.querySelectorAll('.delete-client').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                document.getElementById('confirmDeleteButton').href = this.dataset.href;
+                deleteUrl = this.dataset.href;
                 deleteModal.show();
             });
         });
 
-        // Validación de fechas en filtros
-        const today = new Date().toISOString().split('T')[0];
-        document.querySelectorAll('input[type="date"]').forEach(input => {
-            if(!input.value) input.value = today;
-            input.max = today;
+        // Confirmar eliminación
+        document.getElementById('confirmDeleteButton').addEventListener('click', function(e) {
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload(); // Recargar para ver cambios
+                } else {
+                    Swal.fire('Error', 'No se pudo eliminar el cliente', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Error de conexión', 'error');
+            })
+            .finally(() => {
+                deleteModal.hide();
+            });
         });
     });
 </script>

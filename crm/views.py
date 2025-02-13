@@ -1,3 +1,5 @@
+import logging
+
 from django.views.generic import ListView, DetailView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib import messages
@@ -6,15 +8,12 @@ from django.shortcuts import redirect
 from django.db import IntegrityError
 from django.utils import timezone
 from django.http import JsonResponse
-from django.views.generic import ListView
-from django.db import IntegrityError
-from django.utils import timezone
-from .models import Cliente
-from .forms import ClienteForm
-
 
 from .models import Cliente
 from .forms import ClienteForm
+
+logger = logging.getLogger(__name__)
+
 
 class ClienteDetailView(DetailView):
     model = Cliente
@@ -26,6 +25,7 @@ class ClienteDetailView(DetailView):
         context['now'] = timezone.now()
         return context
 
+
 class ClienteUpdateView(UpdateView):
     model = Cliente
     form_class = ClienteForm
@@ -36,6 +36,7 @@ class ClienteUpdateView(UpdateView):
         messages.success(self.request, 'Cliente actualizado exitosamente!')
         return super().form_valid(form)
 
+
 class ClienteDeleteView(DeleteView):
     model = Cliente
     template_name = "crm/cliente_confirm_delete.html"
@@ -43,7 +44,15 @@ class ClienteDeleteView(DeleteView):
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Cliente eliminado correctamente')
+        
+        # Manejo para AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            self.object = self.get_object()
+            self.object.delete()
+            return JsonResponse({'success': True, 'message': 'Cliente eliminado correctamente'})
+        
         return super().delete(request, *args, **kwargs)
+
 
 class CRMView(ListView):
     model = Cliente
@@ -59,81 +68,91 @@ class CRMView(ListView):
         context['default_date'] = timezone.now().strftime('%Y-%m-%d')
         return context
 
-    def post(self, request, *args, **kwargs):
-        form = ClienteForm(request.POST, request.FILES)
-        if form.is_valid():
-            try:
-                cliente = form.save()
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Cliente creado exitosamente!',
-                    'cliente_id': cliente.id
-                })
-            except IntegrityError as e:
-                error_message = self._handle_integrity_error(e)
-                return JsonResponse({
-                    'success': False,
-                    'errors': [error_message]
-                }, status=400)
-            except Exception as e:
-                return JsonResponse({
-                    'success': False,
-                    'errors': [f'Error inesperado: {str(e)}']
-                }, status=500)
-        else:
-            errors = self._compile_form_errors(form)
-            return JsonResponse({
-                'success': False,
-                'errors': errors
-            }, status=400)
-
-    def _handle_integrity_error(self, error):
-        error_str = str(error).lower()
-        if 'cedula_pasaporte' in error_str:
-            return 'La cédula/pasaporte ya está registrada'
-        if 'email' in error_str:
-            return 'El correo electrónico ya existe'
-        return 'Error de integridad en la base de datos'
-
     def _compile_form_errors(self, form):
         errors = []
         for field, field_errors in form.errors.items():
             label = form.fields[field].label
             error_msg = f"{label}: {field_errors[0]}"
-            
             # Manejo especial para errores de archivo
             if field == 'documento' and 'El archivo es demasiado grande' in field_errors[0]:
                 error_msg = "El documento excede el tamaño máximo permitido (5MB)"
-            
             errors.append(error_msg)
         return errors
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['form'] = ClienteForm()
-        context['estados'] = Cliente.ESTADO_CHOICES
-        context['default_date'] = timezone.now().strftime('%Y-%m-%d')
-        return context
+    def _render_form_with_errors(self, form):
+        self.object_list = self.get_queryset()
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def _parse_integrity_error(self, error):
+        error_str = str(error).lower()
+        if 'unique constraint' in error_str:
+            if 'cedula_pasaporte' in error_str:
+                return 'La cédula/pasaporte ya está registrada'
+            if 'email' in error_str:
+                return 'El correo electrónico ya existe'
+        return 'Error de duplicidad en los datos'
+
+    def _handle_success_response(self, is_ajax, cliente_id):
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'message': 'Cliente creado exitosamente!',
+                'cliente_id': cliente_id
+            })
+        messages.success(self.request, 'Cliente creado exitosamente!')
+        return redirect('crm_home')
+
+    def _handle_form_errors(self, form, is_ajax):
+        errors = self._compile_form_errors(form)
+        if is_ajax:
+            return JsonResponse({
+                'success': False,
+                'errors': errors,
+                'form_errors': form.errors  # Para debug
+            }, status=400)
+        messages.error(self.request, 'Por favor corrija los errores en el formulario')
+        return self._render_form_with_errors(form)
+
+    def _handle_integrity_error(self, error, is_ajax):
+        error_message = self._parse_integrity_error(error)
+        if is_ajax:
+            return JsonResponse({
+                'success': False,
+                'errors': [error_message],
+                'error_type': 'integrity_error'
+            }, status=409)
+        messages.error(self.request, error_message)
+        return redirect('crm_home')
+
+    def _handle_generic_error(self, error, is_ajax):
+        error_message = f'Error del servidor: {str(error)}'
+        if is_ajax:
+            return JsonResponse({
+                'success': False,
+                'errors': [error_message],
+                'error_type': 'server_error'
+            }, status=500)
+        messages.error(self.request, error_message)
+        return redirect('crm_home')
 
     def post(self, request, *args, **kwargs):
         form = ClienteForm(request.POST, request.FILES)
-        if form.is_valid():
-            try:
-                form.save()
-                messages.success(request, 'Cliente creado exitosamente!')
-                return redirect('crm_home')
-            except IntegrityError as e:
-                error_message = 'Error: '
-                if 'cedula_pasaporte' in str(e):
-                    error_message += 'La cédula/pasaporte ya existe'
-                elif 'email' in str(e):
-                    error_message += 'El correo electrónico ya está registrado'
-                else:
-                    error_message += 'Error al guardar el cliente'
-                messages.error(request, error_message)
-        else:
-            messages.error(request, 'Por favor corrija los errores en el formulario')
-        
-        context = self.get_context_data(**kwargs)
-        context['form'] = form
-        return self.render_to_response(context)
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        try:
+            if form.is_valid():
+                cliente = form.save()
+                logger.info(f'Cliente creado: {cliente.id}')
+                return self._handle_success_response(is_ajax, cliente.id)
+            
+            logger.warning('Errores de validación en el formulario')
+            return self._handle_form_errors(form, is_ajax)
+            
+        except IntegrityError as e:
+            logger.error(f'Error de integridad: {str(e)}')
+            return self._handle_integrity_error(e, is_ajax)
+            
+        except Exception as e:
+            logger.critical(f'Error inesperado: {str(e)}', exc_info=True)
+            return self._handle_generic_error(e, is_ajax)

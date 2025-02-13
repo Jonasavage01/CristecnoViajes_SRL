@@ -1,8 +1,12 @@
+import re
+import datetime
+
 from django import forms
 from django.core.exceptions import ValidationError
-import datetime
-from .models import Cliente
 from django_countries.widgets import CountrySelectWidget
+
+from .models import Cliente
+
 
 class ClienteForm(forms.ModelForm):
     class Meta:
@@ -51,8 +55,21 @@ class ClienteForm(forms.ModelForm):
                 raise ValidationError(f"Tamaño máximo permitido: {limit_mb}MB")
         return documento
 
-def clean_telefono(self):
-    telefono = self.cleaned_data.get('telefono')
-    if not re.match(r'^\+?[\d\s()-]{7,15}$', telefono):
-        raise ValidationError("Formato de teléfono inválido")
-    return telefono
+    def clean_telefono(self):
+        telefono = self.cleaned_data.get('telefono')
+        if telefono and not re.match(r'^\+?[\d\s()-]{7,15}$', telefono):
+            raise ValidationError("Formato de teléfono inválido")
+        return telefono
+
+    def clean(self):
+        cleaned_data = super().clean()
+        self._validate_unique_email_and_cedula()
+        return cleaned_data
+
+    def _validate_unique_email_and_cedula(self):
+        cedula = self.cleaned_data.get('cedula_pasaporte')
+        email = self.cleaned_data.get('email')
+        if cedula and Cliente.objects.filter(cedula_pasaporte=cedula).exists():
+            self.add_error('cedula_pasaporte', 'Esta cédula/pasaporte ya está registrada')
+        if email and Cliente.objects.filter(email=email).exists():
+            self.add_error('email', 'Este correo electrónico ya está registrado')

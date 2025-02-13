@@ -17,7 +17,7 @@ class Cliente(models.Model):
     nacionalidad = CountryField(
         'Nacionalidad',
         blank=False,  # Obligatorio
-        default='VE'  # Opcional: valor por defecto (ej. Venezuela)
+        default='DO'  # Opcional: valor por defecto (ej. Venezuela)
     )
     lugar_trabajo = models.CharField('Lugar de Trabajo', max_length=100, blank=True)
     cargo = models.CharField('Cargo', max_length=100, blank=True)
