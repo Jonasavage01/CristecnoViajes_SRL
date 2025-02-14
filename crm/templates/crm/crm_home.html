@@ -120,10 +120,12 @@
                         </td>
                         <td class="text-end">
                             <div class="btn-group">
-                                <a href="{% url 'cliente_edit' cliente.id %}" 
-                                   class="btn btn-sm btn-outline-primary" 
+                                <a href="#" 
+                                   class="btn btn-sm btn-outline-primary edit-client" 
                                    title="Editar"
-                                   data-bs-toggle="tooltip">
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#clienteEditModal"
+                                   data-url="{% url 'cliente_edit' cliente.id %}">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <a href="#" 
@@ -153,7 +155,8 @@
     </div>
 </div>
 
-{% include "partials/cliente_form_modal.html" %}
+{% include "partials/crm/cliente_form_modal.html" %} <!-- Modal para crear -->
+{% include "partials/crm/cliente_edit_modal.html" %} <!-- Modal para editar -->
 
 <!-- Modal de Confirmación para Eliminación -->
 <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" 

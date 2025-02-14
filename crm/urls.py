@@ -7,4 +7,5 @@ urlpatterns = [
     path('clientes/<int:pk>/', ClienteDetailView.as_view(), name='cliente_detail'),
     path('clientes/<int:pk>/editar/', ClienteUpdateView.as_view(), name='cliente_edit'),
     path('clientes/<int:pk>/eliminar/', ClienteDeleteView.as_view(), name='cliente_delete'),
+    path('clientes/<int:pk>/edit/', ClienteUpdateView.as_view(), name='cliente_edit'),
 ]

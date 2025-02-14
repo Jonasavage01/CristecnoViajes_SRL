@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 
 from .models import Cliente
-from .forms import ClienteForm
+from .forms import ClienteForm, ClienteEditForm
 
 logger = logging.getLogger(__name__)
 
@@ -25,16 +25,39 @@ class ClienteDetailView(DetailView):
         context['now'] = timezone.now()
         return context
 
-
+# views.py
 class ClienteUpdateView(UpdateView):
     model = Cliente
-    form_class = ClienteForm
+    form_class = ClienteEditForm  # Usar el nuevo formulario
     template_name = "crm/cliente_form.html"
-    success_url = reverse_lazy('crm_home')
+    
+    def get_success_url(self):
+        return reverse_lazy('cliente_detail', kwargs={'pk': self.object.pk})
 
     def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Cliente actualizado exitosamente',
+                'redirect_url': self.get_success_url()
+            })
         messages.success(self.request, 'Cliente actualizado exitosamente!')
-        return super().form_valid(form)
+        return response
+
+    def form_invalid(self, form):
+        errors = self._compile_form_errors(form)
+        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'errors': errors,
+                'form_errors': form.errors
+            }, status=400)
+        return super().form_invalid(form)
+    
+    def _compile_form_errors(self, form):
+        # Reutilizar método existente de CRMView
+        return CRMView()._compile_form_errors(form)
 
 class ClienteDeleteView(DeleteView):
     model = Cliente

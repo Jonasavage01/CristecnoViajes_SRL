@@ -73,3 +73,29 @@ class ClienteForm(forms.ModelForm):
             self.add_error('cedula_pasaporte', 'Esta cédula/pasaporte ya está registrada')
         if email and Cliente.objects.filter(email=email).exists():
             self.add_error('email', 'Este correo electrónico ya está registrado')
+
+# forms.py
+class ClienteEditForm(ClienteForm):
+    class Meta(ClienteForm.Meta):
+        # Excluir campos no editables y mantener validaciones
+        exclude = ['documento', 'notas', 'fecha_creacion', 'ultima_actividad']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Hacer cédula/pasaporte de solo lectura en edición
+        self.fields['cedula_pasaporte'].widget.attrs['readonly'] = True
+        self.fields['cedula_pasaporte'].widget.attrs['class'] = 'form-control-plaintext'
+        self.fields['email'].widget.attrs['readonly'] = True
+
+    def _validate_unique_email_and_cedula(self):
+        """Validación ajustada para edición que excluye la instancia actual"""
+        cedula = self.cleaned_data.get('cedula_pasaporte')
+        email = self.cleaned_data.get('email')
+        
+        # Excluir la instancia actual de las validaciones de unicidad
+        queryset = Cliente.objects.exclude(pk=self.instance.pk)
+        
+        if cedula and queryset.filter(cedula_pasaporte=cedula).exists():
+            self.add_error('cedula_pasaporte', 'Esta cédula/pasaporte ya está registrada')
+        if email and queryset.filter(email=email).exists():
+            self.add_error('email', 'Este correo electrónico ya está registrado')
