@@ -1,25 +1,39 @@
-// Polyfill para FormData.entries() en navegadores antiguos
+// formValidation.js - Versión final corregida
+
+/* ============================
+   Polyfills y Utilidades
+============================ */
 if (!FormData.prototype.entries) {
     FormData.prototype.entries = function* () {
         for (let pair of this) yield pair;
     };
 }
 
+const getCSRFToken = () => {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+           document.cookie.match(/csrftoken=([^ ;]+)/)?.[1];
+};
+
 /* ============================
-   Funciones para Alertas
+   Funciones para Alertas (Actualizado para SweetAlert2)
 ============================ */
-function showErrorAlert(message) {
-    // Elimina alerta previa si existe
-    const existingAlert = document.getElementById('formAlert');
-    if (existingAlert) {
-        existingAlert.remove();
-    }
-    const alertDiv = document.createElement('div');
-    alertDiv.id = 'formAlert';
-    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-    alertDiv.role = 'alert';
-    alertDiv.innerHTML = message + '<button type="button" class="close" data-bs-dismiss="alert" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>';
-    document.body.prepend(alertDiv);
+function showAlert(type, message) {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+    });
+    
+    Toast.fire({
+        icon: type,
+        title: message
+    });
 }
 
 function showSuccessAlert(message) {
@@ -36,200 +50,202 @@ function showSuccessAlert(message) {
     document.body.prepend(alertDiv);
 }
 
-/* ============================
-   Funciones de Validación
-============================ */
-function validateField(field) {
-    console.log(`[Debug] Validando campo ${field.name}:`, {
-        value: field.value,
-        required: field.required,
-        valid: field.checkValidity()
-    });
-    const errorElement = field.parentElement.querySelector('.invalid-feedback');
-    
-    // Validación: Campo obligatorio
-    if (field.required && !field.value.trim()) {
-        showFieldError(field, errorElement, 'Este campo es obligatorio');
-        return false;
-    }
-    
-    // Validación específica para cédula/pasaporte
-    if (field.id === 'id_cedula_pasaporte') {
-        const cedulaRegex = /^[VEJPGvejpg][-]?\d{3,8}$/i;
-        if (!cedulaRegex.test(field.value.trim())) {
-            showFieldError(field, errorElement, 'Formato inválido. Ejemplo: V-12345678');
-            return false;
-        }
-    }
-    
-    // Validación de email
-    if (field.type === 'email' && field.value) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(field.value)) {
-            showFieldError(field, errorElement, 'Ingrese un email válido');
-            return false;
-        }
-    }
-    
-    clearFieldError(field, errorElement);
-    return true;
-}
 
-function showFieldError(field, errorElement, message) {
+/* ============================
+   Sistema de Validación Mejorado
+============================ */
+const FieldValidators = {
+    cedula_pasaporte: value => /^[VEJPGvejpg][-]?\d{3,8}$/i.test(value),
+    email: value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+    telefono: value => /^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}$/.test(value),
+    movil: value => /^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}$/.test(value)
+};
+
+const validateField = (field) => {
+    const errorElement = field.closest('.position-relative')?.querySelector('.invalid-feedback');
+    field.classList.remove('is-invalid');
+    if (errorElement) errorElement.style.display = 'none';
+
+    const value = field.value.trim();
+    let isValid = true;
+    
+    if (field.required && !value) {
+        showFieldError(field, errorElement, 'Este campo es obligatorio');
+        isValid = false;
+    }
+    else if (FieldValidators[field.name] && !FieldValidators[field.name](value)) {
+        const messages = {
+            cedula_pasaporte: 'Formato inválido. Ej: V-12345678',
+            email: 'Correo electrónico inválido',
+            telefono: 'Formato inválido. Ej: +58 412 5555555',
+            movil: 'Formato inválido. Ej: +58 412 5555555'
+        };
+        showFieldError(field, errorElement, messages[field.name]);
+        isValid = false;
+    }
+    
+    return isValid;
+};
+
+const showFieldError = (field, errorElement, message) => {
     field.classList.add('is-invalid');
     if (errorElement) {
         errorElement.textContent = message;
         errorElement.style.display = 'block';
     }
-}
-
-function clearFieldError(field, errorElement) {
-    field.classList.remove('is-invalid');
-    if (errorElement) {
-        errorElement.textContent = '';
-        errorElement.style.display = 'none';
-    }
-}
-
-function clearValidationErrors() {
-    document.querySelectorAll('.is-invalid').forEach(field => field.classList.remove('is-invalid'));
-    document.querySelectorAll('.invalid-feedback').forEach(error => error.style.display = 'none');
-}
+};
 
 /* ============================
-   Función de Validación en Tiempo Real
+   Manejo de Formularios
 ============================ */
-function setupRealTimeValidation() {
-    const fields = document.querySelectorAll('.needs-validation input, .needs-validation select, .needs-validation textarea');
-    fields.forEach(field => {
-        field.addEventListener('input', () => validateField(field));
-        field.addEventListener('change', () => validateField(field));
-    });
-}
-
-/* ============================
-   Manejo del Envío del Formulario
-============================ */
-async function handleFormSubmit(e) {
+const handleFormSubmit = async (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    
-    console.log('[Debug] Iniciando envío del formulario...');
-    
     const form = e.target;
     const isEditForm = form.id === 'clienteEditForm';
-    const url = form.action;
     
-    // Validar todos los campos del formulario
+    // Validar todos los campos
     let isValid = true;
-    let errorMessages = [];
-    const fields = form.querySelectorAll('.needs-validation input, .needs-validation select, .needs-validation textarea');
-    console.log('[Debug] Campos a validar:', fields);
-    fields.forEach(field => {
-        console.log(`[Debug] Validando campo: ${field.name}`);
-        if (!validateField(field)) {
-            isValid = false;
-            const label = field.labels && field.labels[0] ? field.labels[0].textContent.replace('*', '').trim() : field.name;
-            if (!errorMessages.includes(label)) {
-                errorMessages.push(label);
-            }
-        }
+    form.querySelectorAll('input, select, textarea').forEach(field => {
+        if (!validateField(field)) isValid = false;
     });
     
-    if (!isValid) {
-        console.error('[Debug] Errores de validación:', errorMessages);
-        const errorList = errorMessages.map(msg => `<li>${msg}</li>`).join('');
-        showErrorAlert(`Errores en los campos:<ul class="text-start">${errorList}</ul>`);
-        return;
-    }
-    
+    if (!isValid) return showAlert('danger', 'Por favor corrija los errores');
+
     try {
         const formData = new FormData(form);
-        if (isEditForm) {
-            formData.append('_method', 'PUT');
-        }
-        console.log('[Debug] Datos del formulario:', Object.fromEntries(formData.entries()));
-        console.log('[Debug] Enviando datos al servidor...');
-        
-        const response = await fetch(url, {
-            method: 'POST', // Siempre POST por compatibilidad con Django
+        if (isEditForm) formData.append('_method', 'PUT');
+
+        const response = await fetch(form.action, {
+            method: 'POST',
             body: formData,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken()
             }
         });
+
+        const result = await response.json();
         
-        console.log('[Debug] Respuesta recibida. Status:', response.status);
-        const responseContentType = response.headers.get('content-type');
-        const isJson = responseContentType && responseContentType.includes('application/json');
-        
-        const result = isJson ? await response.json() : await response.text();
-        console.log('[Debug] Respuesta del servidor:', result);
-        
-        if (!response.ok) {
-            console.error('[Debug] Error en la respuesta:', result);
-            throw new Error(result?.errors?.join('\n') || `Error HTTP: ${response.status}`);
-        }
-        
-        if (result.success) {
-            console.log('[Debug] Éxito del servidor:', result);
-            showSuccessAlert(result.message);
-            // Cerrar el modal correcto
-            const modalId = isEditForm ? 'clienteEditModal' : 'clienteModal';
-            const modalElement = document.getElementById(modalId);
-            if (modalElement) {
-                let modalInstance = bootstrap.Modal.getInstance(modalElement);
-                if (!modalInstance) {
-                    modalInstance = new bootstrap.Modal(modalElement);
-                }
-                modalInstance.hide();
-            }
+        if (response.ok && result.success) {
+            showAlert('success', result.message);
+            bootstrap.Modal.getInstance(form.closest('.modal'))?.hide();
             setTimeout(() => window.location.reload(), 1500);
         } else {
-            console.error('[Debug] Errores del servidor:', result.errors);
-            showErrorAlert(result.errors.join('<br>'));
+            handleFormErrors(form, result);
         }
-        
     } catch (error) {
-        console.error('[Debug] Error en el envío:', error);
-        let errorMessage = 'Error de conexión. Verifique su red e intente nuevamente.';
-        if (error.message.includes('HTTP')) {
-            errorMessage = `Error del servidor: ${error.message}`;
-        } else if (error.message) {
-            errorMessage = error.message;
-        }
-        showErrorAlert(`
-            <div class="text-start">
-                ${errorMessage}<br>
-                <small class="text-muted">Si el problema persiste, contacte al soporte técnico</small>
-            </div>
-        `);
+        showAlert('danger', 'Error de conexión. Intente nuevamente.');
+        console.error('Error:', error);
     }
-}
+};
+
+const handleFormErrors = (form, result) => {
+    if (result.form_errors) {
+        Object.entries(result.form_errors).forEach(([field, errors]) => {
+            const input = form.querySelector(`[name="${field}"]`);
+            const errorElement = input?.closest('.position-relative')?.querySelector('.invalid-feedback');
+            if (input && errorElement) showFieldError(input, errorElement, errors[0]);
+        });
+    }
+    showAlert('danger', result.errors?.join('<br>') || 'Error desconocido');
+};
 
 /* ============================
-   Inicialización al Cargar el DOM
+   Manejo de Eliminación
+============================ */
+const initDeleteHandlers = () => {
+    let deleteTarget = null;
+    const deleteModal = new bootstrap.Modal('#deleteConfirmationModal');
+
+    document.querySelectorAll('.delete-client').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            deleteTarget = {
+                url: e.currentTarget.dataset.href,
+                row: e.target.closest('tr')
+            };
+            deleteModal.show();
+        });
+    });
+
+    document.getElementById('confirmDeleteButton')?.addEventListener('click', async () => {
+        if (!deleteTarget) return;
+
+        try {
+            const response = await fetch(deleteTarget.url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (response.ok) {
+                deleteTarget.row?.remove();
+                showAlert('success', 'Cliente eliminado exitosamente');
+            } else {
+                throw new Error('Error en la eliminación');
+            }
+        } catch (error) {
+            showAlert('danger', 'No se pudo eliminar el cliente');
+            console.error('Error:', error);
+        } finally {
+            deleteModal.hide();
+            deleteTarget = null;
+        }
+    });
+};
+
+/* ============================
+   Validación en Tiempo Real
+============================ */
+const setupRealTimeValidation = () => {
+    // Para formularios estáticos
+    document.querySelectorAll('.needs-validation').forEach(form => {
+        form.querySelectorAll('input, select, textarea').forEach(field => {
+            if (field.readOnly || field.disabled) return;
+            
+            field.addEventListener('input', () => validateField(field));
+            field.addEventListener('blur', () => validateField(field));
+        });
+    });
+
+    // Para formularios dinámicos
+    document.addEventListener('ajaxFormLoaded', (e) => {
+        e.detail.form.querySelectorAll('input, select, textarea').forEach(field => {
+            if (field.readOnly || field.disabled) return;
+            
+            field.addEventListener('input', () => validateField(field));
+            field.addEventListener('blur', () => validateField(field));
+        });
+    });
+};
+
+/* ============================
+   Inicialización General
 ============================ */
 document.addEventListener('DOMContentLoaded', () => {
-    // Validar ambos formularios: clienteForm y clienteEditForm
-    const forms = document.querySelectorAll('#clienteForm, #clienteEditForm');
-    forms.forEach(form => {
+    // Formularios
+    document.querySelectorAll('#clienteForm, #clienteEditForm').forEach(form => {
         form.addEventListener('submit', handleFormSubmit);
     });
-    
-    // Configurar validación en tiempo real para ambos
+
+    // Validación en tiempo real
     setupRealTimeValidation();
-    
-    // Manejar cierre de ambos modales: clienteModal y clienteEditModal
-    ['#clienteModal', '#clienteEditModal'].forEach(modalId => {
-        const modal = document.querySelector(modalId);
-        if (modal) {
-            modal.addEventListener('hidden.bs.modal', () => {
-                forms.forEach(form => {
-                    form.reset();
-                    clearValidationErrors();
-                });
-            });
-        }
+
+    // Eliminación
+    initDeleteHandlers();
+
+    // Tooltips
+    new bootstrap.Tooltip(document.body, {
+        selector: '[data-bs-toggle="tooltip"]'
+    });
+
+    // Limpieza de modales
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('hidden.bs.modal', () => {
+            modal.querySelectorAll('.is-invalid').forEach(f => f.classList.remove('is-invalid'));
+            modal.querySelectorAll('.invalid-feedback').forEach(e => e.style.display = 'none');
+        });
     });
 });

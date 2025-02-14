@@ -25,17 +25,18 @@ class ClienteDetailView(DetailView):
         context['now'] = timezone.now()
         return context
 
-# views.py
 class ClienteUpdateView(UpdateView):
     model = Cliente
-    form_class = ClienteEditForm  # Usar el nuevo formulario
-    template_name = "crm/cliente_form.html"
+    form_class = ClienteEditForm
+    template_name = "partials/crm/cliente_edit_form.html"
     
     def get_success_url(self):
         return reverse_lazy('cliente_detail', kwargs={'pk': self.object.pk})
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        
+        # Manejar respuesta AJAX
         if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': True,
@@ -56,8 +57,13 @@ class ClienteUpdateView(UpdateView):
         return super().form_invalid(form)
     
     def _compile_form_errors(self, form):
-        # Reutilizar método existente de CRMView
-        return CRMView()._compile_form_errors(form)
+        errors = []
+        for field, error_list in form.errors.items():
+            errors.append({
+                'field': field,
+                'messages': error_list
+            })
+        return errors
 
 class ClienteDeleteView(DeleteView):
     model = Cliente

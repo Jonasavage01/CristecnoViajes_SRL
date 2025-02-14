@@ -119,15 +119,15 @@
                             {{ cliente.fecha_creacion|date:"d/m/Y H:i" }}
                         </td>
                         <td class="text-end">
-                            <div class="btn-group">
-                                <a href="#" 
-                                   class="btn btn-sm btn-outline-primary edit-client" 
-                                   title="Editar"
-                                   data-bs-toggle="modal"
-                                   data-bs-target="#clienteEditModal"
-                                   data-url="{% url 'cliente_edit' cliente.id %}">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
+                            <a href="#" 
+   class="btn btn-sm btn-outline-primary edit-client" 
+   title="Editar"
+   data-bs-toggle="modal"
+   data-bs-target="#clienteEditModal"
+   data-url="{% url 'cliente_edit' cliente.id %}"
+   data-pk="{{ cliente.id }}">
+    <i class="bi bi-pencil"></i>
+</a>
                                 <a href="#" 
                                    class="btn btn-sm btn-outline-danger delete-client" 
                                    title="Eliminar"
@@ -156,7 +156,9 @@
 </div>
 
 {% include "partials/crm/cliente_form_modal.html" %} <!-- Modal para crear -->
-{% include "partials/crm/cliente_edit_modal.html" %} <!-- Modal para editar -->
+{% include "partials/crm/cliente_edit_modal.html" %} <!-- Modal de edición -->
+
+
 
 <!-- Modal de Confirmación para Eliminación -->
 <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" 

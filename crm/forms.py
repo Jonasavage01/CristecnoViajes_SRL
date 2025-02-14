@@ -7,7 +7,6 @@ from django_countries.widgets import CountrySelectWidget
 
 from .models import Cliente
 
-
 class ClienteForm(forms.ModelForm):
     class Meta:
         model = Cliente
@@ -36,7 +35,9 @@ class ClienteForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['documento'].widget.attrs.update({'accept': '.pdf,.doc,.docx'})
+        # Verificar si el campo 'documento' existe antes de actualizar sus atributos
+        if 'documento' in self.fields:
+            self.fields['documento'].widget.attrs.update({'accept': '.pdf,.doc,.docx'})
 
     def clean_fecha_nacimiento(self):
         fecha = self.cleaned_data.get('fecha_nacimiento')
@@ -67,6 +68,7 @@ class ClienteForm(forms.ModelForm):
         return cleaned_data
 
     def _validate_unique_email_and_cedula(self):
+        """Validación para asegurar unicidad en creación"""
         cedula = self.cleaned_data.get('cedula_pasaporte')
         email = self.cleaned_data.get('email')
         if cedula and Cliente.objects.filter(cedula_pasaporte=cedula).exists():
@@ -74,28 +76,46 @@ class ClienteForm(forms.ModelForm):
         if email and Cliente.objects.filter(email=email).exists():
             self.add_error('email', 'Este correo electrónico ya está registrado')
 
-# forms.py
+
+
 class ClienteEditForm(ClienteForm):
     class Meta(ClienteForm.Meta):
-        # Excluir campos no editables y mantener validaciones
         exclude = ['documento', 'notas', 'fecha_creacion', 'ultima_actividad']
-        
+        widgets = {
+            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
+        }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Hacer cédula/pasaporte de solo lectura en edición
-        self.fields['cedula_pasaporte'].widget.attrs['readonly'] = True
-        self.fields['cedula_pasaporte'].widget.attrs['class'] = 'form-control-plaintext'
-        self.fields['email'].widget.attrs['readonly'] = True
+        
+        # Campos de solo lectura con estilo personalizado
+        readonly_fields = ['cedula_pasaporte', 'email']
+        for field in readonly_fields:
+            if field in self.fields:
+                self.fields[field].widget.attrs.update({
+                    'readonly': True,
+                    'class': 'form-control-plaintext bg-dark text-white'
+                })
+                
+        # Mejorar etiquetas y ayuda
+        self.fields['telefono'].help_text = 'Formato: +CC (Código de país) Número'
+        self.fields['movil'].help_text = 'Número completo con código de país'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        self._validate_unique_email_and_cedula()
+        return cleaned_data
 
     def _validate_unique_email_and_cedula(self):
-        """Validación ajustada para edición que excluye la instancia actual"""
+        """Validación de unicidad excluyendo la instancia actual"""
         cedula = self.cleaned_data.get('cedula_pasaporte')
         email = self.cleaned_data.get('email')
         
-        # Excluir la instancia actual de las validaciones de unicidad
-        queryset = Cliente.objects.exclude(pk=self.instance.pk)
-        
-        if cedula and queryset.filter(cedula_pasaporte=cedula).exists():
-            self.add_error('cedula_pasaporte', 'Esta cédula/pasaporte ya está registrada')
-        if email and queryset.filter(email=email).exists():
-            self.add_error('email', 'Este correo electrónico ya está registrado')
+        if self.instance.pk:
+            queryset = Cliente.objects.exclude(pk=self.instance.pk)
+            
+            if cedula and queryset.filter(cedula_pasaporte=cedula).exists():
+                self.add_error('cedula_pasaporte', 'Esta cédula/pasaporte ya está registrada')
+                
+            if email and queryset.filter(email=email).exists():
+                self.add_error('email', 'Este correo electrónico ya está registrado')

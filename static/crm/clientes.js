@@ -1,45 +1,66 @@
 document.addEventListener('DOMContentLoaded', () => {
-    /*** Funcionalidad de EDICIÓN ***/
-    // Manejar clic en botones de edición
+    /*** Funcionalidad de EDICIÓN (mejorado) ***/
     document.querySelectorAll('.edit-client').forEach(button => {
-        button.addEventListener('click', e => {
+        button.addEventListener('click', async (e) => {
             e.preventDefault();
-            const url = button.dataset.url;
-            loadEditForm(url);
+            const url = e.currentTarget.dataset.url;
+            
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const html = await response.text();
+                const modal = new bootstrap.Modal('#clienteEditModal');
+                const container = document.querySelector('#clienteEditModal #formContainer');
+                
+                container.innerHTML = html;
+                modal.show();
+                
+                // Reiniciar validaciones
+                document.dispatchEvent(new CustomEvent('ajaxFormLoaded', {
+                    detail: { form: container.querySelector('form') }
+                }));
+                
+            } catch (error) {
+                showAlert('error', `Error cargando formulario: ${error.message}`);
+            }
         });
     });
 
-    // Función para cargar el formulario de edición vía AJAX
     async function loadEditForm(url) {
         try {
             const response = await fetch(url, {
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken()
                 }
             });
-            if (!response.ok) throw new Error('Error cargando formulario');
+    
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
             const html = await response.text();
-            const modalContent = document.querySelector('#clienteEditModal .modal-content');
-            if (!modalContent) throw new Error('No se encontró el contenedor del modal de edición');
+            const modal = new bootstrap.Modal('#clienteEditModal');
+            const container = document.querySelector('#clienteEditModal #formContainer');
             
-            modalContent.innerHTML = html;
+            container.innerHTML = html;
+            modal.show();
             
-            // Reiniciar validaciones (se asume que esta función existe)
-            if (typeof setupRealTimeValidation === 'function') {
-                setupRealTimeValidation();
-            }
+            // Disparar evento para validación
+            document.dispatchEvent(new CustomEvent('ajaxFormLoaded', {
+                detail: { form: container.querySelector('form') }
+            }));
             
-            new bootstrap.Modal(document.getElementById('clienteEditModal')).show();
         } catch (error) {
-            console.error('Error:', error);
-            if (typeof showErrorAlert === 'function') {
-                showErrorAlert('Error cargando formulario de edición');
-            } else {
-                alert('Error cargando formulario de edición');
-            }
+            showAlert('danger', `Error cargando formulario: ${error.message}`);
         }
     }
+    
 
     /*** Funcionalidad de ELIMINACIÓN ***/
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -56,21 +77,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const initDeleteHandlers = () => {
         let deleteTarget = null;
 
-        // Configurar evento en cada botón de eliminación
-        document.querySelectorAll('.delete-client').forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.preventDefault();
-                if (!DELETE_MODAL) return;
-                deleteTarget = {
-                    url: btn.dataset.href,
-                    row: btn.closest('tr')
-                };
-                console.debug('Delete target:', deleteTarget);
-                DELETE_MODAL.show();
-            });
-        });
+       // Inicializar al hacer clic en editar
+document.querySelectorAll('.edit-client').forEach(button => {
+    button.addEventListener('click', e => {
+        e.preventDefault();
+        loadEditForm(e.currentTarget.dataset.url);
+    });
+});
 
-        // Confirmar eliminación al pulsar el botón del modal
         const confirmBtn = document.getElementById('confirmDeleteButton');
         if (confirmBtn && DELETE_MODAL) {
             confirmBtn.addEventListener('click', async () => {
@@ -100,7 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Función para manejar la respuesta del servidor en la eliminación
     const handleResponse = async (response, targetRow) => {
         if (response.redirected) {
             return window.location.assign(response.url);
@@ -114,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error('Respuesta no JSON del servidor');
         }
         const data = await response.json();
-        console.debug('Server response:', data);
         if (data.success) {
             handleSuccess(targetRow);
         } else {
@@ -122,29 +134,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Función para manejar el éxito en la eliminación
     const handleSuccess = (targetRow) => {
         if (targetRow?.parentNode) {
             targetRow.remove();
-            console.debug('Fila eliminada correctamente');
         } else {
-            console.warn('Elemento no encontrado, recargando página...');
             window.location.reload();
         }
     };
 
-    // Función para manejar errores en la eliminación
     const handleError = (error) => {
         console.error('Error en operación:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message || 'No se pudo completar la operación',
-            confirmButtonColor: '#3085d6'
-        });
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'No se pudo completar la operación',
+                confirmButtonColor: '#3085d6'
+            });
+        } else {
+            alert(error.message || 'Error en la operación');
+        }
     };
 
-    // Función de inicialización general
+    // Inicialización general
     const init = () => {
         if (!CSRF_TOKEN) {
             console.error('CSRF token no encontrado');
@@ -155,4 +167,44 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     init();
+});
+
+/*** Validación en tiempo real del formulario ***/
+function setupRealTimeValidation() {
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    forms.forEach(form => {
+        form.addEventListener('input', e => {
+            const input = e.target;
+            if (input.tagName.toLowerCase() === 'input') {
+                validateField(input);
+            }
+        });
+
+        form.addEventListener('submit', e => {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+}
+
+function validateField(input) {
+    const formGroup = input.closest('.form-group') || input.closest('.mb-3');
+    const errorElement = formGroup?.querySelector('.invalid-feedback');
+    
+    if (!input.checkValidity()) {
+        input.classList.add('is-invalid');
+        if (errorElement) errorElement.style.display = 'block';
+    } else {
+        input.classList.remove('is-invalid');
+        if (errorElement) errorElement.style.display = 'none';
+    }
+}
+
+// Inicializar validaciones cuando el DOM está listo
+document.addEventListener('DOMContentLoaded', () => {
+    setupRealTimeValidation();
 });
