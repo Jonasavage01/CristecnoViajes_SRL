@@ -36,22 +36,33 @@ class ClienteUpdateView(UpdateView):
         messages.success(self.request, 'Cliente actualizado exitosamente!')
         return super().form_valid(form)
 
-
 class ClienteDeleteView(DeleteView):
     model = Cliente
     template_name = "crm/cliente_confirm_delete.html"
     success_url = reverse_lazy('crm_home')
 
     def delete(self, request, *args, **kwargs):
-        messages.success(request, 'Cliente eliminado correctamente')
-        
-        # Manejo para AJAX
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            self.object = self.get_object()
+        self.object = self.get_object()
+        try:
             self.object.delete()
-            return JsonResponse({'success': True, 'message': 'Cliente eliminado correctamente'})
+        except Exception as e:
+            logger.error(f'Error eliminando cliente: {str(e)}', exc_info=True)
+            if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False, 
+                    'message': 'Error interno al eliminar el cliente'
+                }, status=500)
+            messages.error(request, 'Error al eliminar el cliente')
+            return redirect(self.get_success_url())
+
+        if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True, 
+                'message': 'Cliente eliminado correctamente'
+            })
         
-        return super().delete(request, *args, **kwargs)
+        messages.success(request, 'Cliente eliminado correctamente')
+        return redirect(self.get_success_url())
 
 
 class CRMView(ListView):
