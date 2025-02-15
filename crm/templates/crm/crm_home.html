@@ -37,44 +37,101 @@
                 <i class="bi bi-plus-lg me-2"></i>Nuevo Cliente
             </button>
         </div>
-        
-        <!-- Filtros Avanzados -->
-        <div class="card-body border-bottom">
-            <form method="get" class="row g-3">
-                <div class="col-12 col-md-4">
-                    <input type="search" name="q" class="form-control" 
-                           placeholder="Buscar por nombre, cédula o email..." 
-                           value="{{ request.GET.q }}">
-                </div>
-                <div class="col-6 col-md-3">
-                    <select name="estado" class="form-select">
-                        <option value="">Todos los estados</option>
-                        {% for value, label in estados %}
-                        <option value="{{ value }}" {% if request.GET.estado == value %}selected{% endif %}>
-                            {{ label }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-6 col-md-3">
-                    <input type="date" name="fecha_creacion_desde" class="form-control" 
-                           value="{{ request.GET.fecha_creacion_desde }}" 
-                           placeholder="Desde"
-                           max="{{ default_date }}">
-                </div>
-                <div class="col-6 col-md-2">
-                    <input type="date" name="fecha_creacion_hasta" class="form-control" 
-                           value="{{ request.GET.fecha_creacion_hasta }}" 
-                           placeholder="Hasta"
-                           max="{{ default_date }}">
-                </div>
-                <div class="col-6 col-md-2 d-grid">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-funnel me-2"></i>Filtrar
-                    </button>
-                </div>
-            </form>
+ <!-- Filtros Avanzados Mejorados -->
+<div class="card-body border-bottom bg-light">
+    <form method="get" class="row g-3 align-items-end" id="filterForm">
+        <!-- Botón Limpiar Filtros y Contador -->
+        {% if has_filters %}
+        <div class="col-auto">
+            <a href="?{% if request.GET.page %}page={{ request.GET.page }}{% endif %}" 
+               class="btn btn-outline-danger" 
+               id="clearFilters"
+               data-bs-toggle="tooltip" 
+               title="Remover todos los filtros">
+                <i class="bi bi-x-lg me-1"></i>Limpiar
+            </a>
         </div>
+        {% endif %}
+
+        <!-- Barra de Búsqueda -->
+        <div class="col-12 col-md-3">
+            <div class="input-group">
+                <span class="input-group-text bg-white">
+                    <i class="bi bi-search text-secondary"></i>
+                </span>
+                <input type="search" 
+                       name="q" 
+                       class="form-control"
+                       placeholder="Nombre, cédula o email..."
+                       value="{{ request.GET.q }}"
+                       aria-label="Buscar clientes">
+            </div>
+        </div>
+
+        <!-- Rango de Fechas -->
+        <div class="col-12 col-md-4">
+            <div class="row g-2">
+                <div class="col-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-calendar text-secondary"></i>
+                        </span>
+                        <input type="date" 
+                               name="fecha_creacion_desde" 
+                               class="form-control"
+                               value="{{ request.GET.fecha_creacion_desde }}"
+                               aria-label="Fecha inicial">
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">-</span>
+                        <input type="date" 
+                               name="fecha_creacion_hasta" 
+                               class="form-control"
+                               value="{{ request.GET.fecha_creacion_hasta }}"
+                               aria-label="Fecha final">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtro por Estado -->
+        <div class="col-12 col-md-3">
+            <select class="form-select" name="estado" aria-label="Filtrar por estado">
+                <option value="">Todos los estados...</option>
+                {% for estado in estados %}
+                <option value="{{ estado.0 }}" 
+                    {% if request.GET.estado == estado.0 %}selected{% endif %}>
+                    {{ estado.1 }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Botón de Acción -->
+        <div class="col-12 col-md-1">
+            <button type="submit" 
+                    class="btn btn-primary w-100" 
+                    name="apply_filters"
+                    id="applyFilters"
+                    data-bs-toggle="tooltip"
+                    title="Aplicar filtros">
+                <i class="bi bi-funnel"></i>
+            </button>
+        </div>
+
+        <!-- Filtro de Producto (placeholder) -->
+        <div class="col-12 col-md-2">
+            <select class="form-select" disabled aria-label="Filtro de productos (próximamente)">
+                <option value="">Productos (próximamente)...</option>
+                <option>Vuelos</option>
+                <option>Hoteles</option>
+                <option>Paquetes</option>
+            </select>
+        </div>
+    </form>
+</div>
         
         <!-- Tabla de Clientes -->
         <div class="table-responsive">
@@ -183,5 +240,6 @@
 
 {% block extra_scripts %}
     <!-- Se carga el archivo JS externo -->
+  
     <script src="{% static 'crm/clientes.js' %}"></script>
 {% endblock %}

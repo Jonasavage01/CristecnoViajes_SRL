@@ -10,10 +10,15 @@ if (!FormData.prototype.entries) {
 }
 
 const getCSRFToken = () => {
-    return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
-           document.cookie.match(/csrftoken=([^ ;]+)/)?.[1];
+    const metaToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    const cookieToken = document.cookie.match(/csrftoken=([^ ;]+)/)?.[1];
+    
+    if (!metaToken && !cookieToken) {
+        console.error('CSRF token no encontrado');
+        showAlert('error', 'Error de seguridad. Recargue la página.');
+    }
+    return metaToken || cookieToken;
 };
-
 /* ============================
    Funciones para Alertas (Actualizado para SweetAlert2)
 ============================ */
@@ -36,6 +41,40 @@ function showAlert(type, message) {
     });
 }
 
+const swalConfig = {
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    customClass: {
+        container: 'custom-swal-container'
+    }
+};
+
+function showAlert(type, message) {
+    Swal.fire({
+        ...swalConfig,
+        icon: type,
+        title: message
+    });
+}
+
+
+const formatPhoneNumber = (value) => {
+    value = value.toUpperCase().replace(/\s/g, '');
+    
+    if (value === 'NA' || value === 'N/A') {
+        return 'N/A';
+    }
+    
+    if (value.startsWith('+')) {
+        return `+${value.slice(1, 15)}`;
+    }
+    
+    return value.length > 3 ? `+${value.slice(0, 15)}` : value;
+};
+
 function showSuccessAlert(message) {
     // Elimina alerta previa si existe
     const existingAlert = document.getElementById('formAlert');
@@ -55,10 +94,22 @@ function showSuccessAlert(message) {
    Sistema de Validación Mejorado
 ============================ */
 const FieldValidators = {
-    cedula_pasaporte: value => /^[VEJPGvejpg][-]?\d{3,8}$/i.test(value),
-    email: value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
-    telefono: value => /^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}$/.test(value),
-    movil: value => /^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}$/.test(value)
+    
+    
+    telefono: value => {
+        value = value.trim().toUpperCase();
+        if (value === 'N/A') return true;
+        return /^\+[1-9]\d{1,14}$/.test(value);
+    },
+    movil: value => {
+        value = value.trim().toUpperCase();
+        if (value === 'N/A') return true;
+        return /^\+[1-9]\d{1,14}$/.test(value);
+    },
+    email: value => {
+        if (value.toUpperCase() === 'N/A') return true;
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    }
 };
 
 const validateField = (field) => {
@@ -95,6 +146,12 @@ const showFieldError = (field, errorElement, message) => {
     }
 };
 
+// Event listeners para formato en tiempo real
+document.querySelectorAll('input[name="telefono"], input[name="movil"]').forEach(input => {
+    input.addEventListener('input', (e) => {
+        e.target.value = formatPhoneNumber(e.target.value);
+    });
+});
 /* ============================
    Manejo de Formularios
 ============================ */
@@ -200,15 +257,15 @@ const initDeleteHandlers = () => {
    Validación en Tiempo Real
 ============================ */
 const setupRealTimeValidation = () => {
-    // Para formularios estáticos
-    document.querySelectorAll('.needs-validation').forEach(form => {
-        form.querySelectorAll('input, select, textarea').forEach(field => {
-            if (field.readOnly || field.disabled) return;
-            
-            field.addEventListener('input', () => validateField(field));
-            field.addEventListener('blur', () => validateField(field));
-        });
-    });
+    const debounce = (func, delay = 300) => {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    };
+
+
 
     // Para formularios dinámicos
     document.addEventListener('ajaxFormLoaded', (e) => {
@@ -249,3 +306,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+

@@ -12,7 +12,12 @@ class Cliente(models.Model):
     ]
 
     nombre_apellido = models.CharField('Nombre y Apellido', max_length=200)
-    cedula_pasaporte = models.CharField('Cédula/Pasaporte', max_length=20, unique=True)
+    cedula_pasaporte = models.CharField(
+        'Cédula/Pasaporte', 
+        max_length=20, 
+        unique=True,
+        help_text='Números para cédula dominicana o número de pasaporte internacional'
+    )
     fecha_nacimiento = models.DateField('Fecha de Nacimiento')
     nacionalidad = CountryField(
         'Nacionalidad',
@@ -23,8 +28,16 @@ class Cliente(models.Model):
     cargo = models.CharField('Cargo', max_length=100, blank=True)
     email = models.EmailField('Correo Electrónico', unique=True)
     direccion_fisica = models.TextField('Dirección Física')
-    telefono = models.CharField('Teléfono', max_length=20)
-    movil = models.CharField('Móvil', max_length=20)
+    telefono = models.CharField(
+        'Teléfono', 
+        max_length=20,
+        help_text='Formato internacional: +18091234567 o "N/A" si no aplica'
+    )
+    movil = models.CharField(
+        'Móvil', 
+        max_length=20,
+        help_text='Formato internacional: +18091234567 o "N/A" si no aplica'
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Creación')
     ultima_actividad = models.DateTimeField(auto_now=True, verbose_name='Última Actividad')
     estado = models.CharField(

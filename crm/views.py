@@ -8,6 +8,8 @@ from django.shortcuts import redirect
 from django.db import IntegrityError
 from django.utils import timezone
 from django.http import JsonResponse
+from django.core.exceptions import ValidationError
+from .filters import ClienteFilter
 
 from .models import Cliente
 from .forms import ClienteForm, ClienteEditForm
@@ -93,7 +95,6 @@ class ClienteDeleteView(DeleteView):
         messages.success(request, 'Cliente eliminado correctamente')
         return redirect(self.get_success_url())
 
-
 class CRMView(ListView):
     model = Cliente
     template_name = "crm/crm_home.html"
@@ -101,19 +102,59 @@ class CRMView(ListView):
     paginate_by = 15
     ordering = ['-fecha_creacion']
 
+    def get_queryset(self):
+        try:
+            queryset = super().get_queryset()
+            cliente_filter = ClienteFilter(self.request.GET, queryset)
+            return cliente_filter.apply_filters()
+        except ValidationError as e:
+            messages.error(self.request, str(e))
+            return self.model.objects.none()
+
+    def get(self, request, *args, **kwargs):
+        try:
+            # Validación de filtros vacíos solo cuando se aplica el formulario
+            if 'apply_filters' in request.GET:
+                cliente_filter = ClienteFilter(request.GET, self.get_queryset())
+                if not cliente_filter.has_active_filters:
+                    messages.warning(request, "Por favor ingresa al menos un criterio de filtrado")
+                    return redirect('crm_home')
+
+            # Manejo de requests AJAX
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                self.template_name = 'partials/crm/clientes_table.html'
+            
+            return super().get(request, *args, **kwargs)
+
+        except ValidationError as e:
+            messages.error(request, str(e))
+            self.object_list = self.model.objects.none()
+            context = self.get_context_data()
+            return self.render_to_response(context)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = ClienteForm()
-        context['estados'] = Cliente.ESTADO_CHOICES
-        context['default_date'] = timezone.now().strftime('%Y-%m-%d')
+        context.update({
+            'form': ClienteForm(),
+            'estados': Cliente.ESTADO_CHOICES,
+            'default_date': timezone.now().strftime('%Y-%m-%d'),
+            'get_params': self._clean_get_params(),
+            'has_filters': ClienteFilter(self.request.GET, self.get_queryset()).has_active_filters
+        })
         return context
 
+    def _clean_get_params(self):
+        """Limpia los parámetros GET para paginación"""
+        params = self.request.GET.copy()
+        params.pop('page', None)
+        return params.urlencode()
+
+    # Métodos de manejo de POST (se mantienen iguales)
     def _compile_form_errors(self, form):
         errors = []
         for field, field_errors in form.errors.items():
             label = form.fields[field].label
             error_msg = f"{label}: {field_errors[0]}"
-            # Manejo especial para errores de archivo
             if field == 'documento' and 'El archivo es demasiado grande' in field_errors[0]:
                 error_msg = "El documento excede el tamaño máximo permitido (5MB)"
             errors.append(error_msg)
@@ -150,7 +191,7 @@ class CRMView(ListView):
             return JsonResponse({
                 'success': False,
                 'errors': errors,
-                'form_errors': form.errors  # Para debug
+                'form_errors': form.errors
             }, status=400)
         messages.error(self.request, 'Por favor corrija los errores en el formulario')
         return self._render_form_with_errors(form)

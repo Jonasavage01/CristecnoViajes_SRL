@@ -121,55 +121,80 @@
                         </div>
                     </div>
 
-                    <!-- Información de Contacto -->
-                    <div class="mb-5">
-                        <div class="d-flex align-items-center mb-4 gap-3">
-                            <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-                                <i class="bi bi-telephone-forward fs-5 text-white"></i>
-                            </div>
-                            <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Contacto</h5>
-                        </div>
-                        <div class="row g-4">
-                            <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.email.id_for_label }}" class="form-label">
-                                        {{ form.email.label }}{% if form.email.field.required %}<span class="text-danger">*</span>{% endif %}
-                                    </label>
-                                    {{ form.email }}
-                                    {% if form.email.errors %}
-                                        <div class="invalid-feedback">{{ form.email.errors|first }}</div>
-                                    {% else %}
-                                        <div class="invalid-feedback" style="display: none;"></div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.telefono.id_for_label }}" class="form-label">
-                                        {{ form.telefono.label }}{% if form.telefono.field.required %}<span class="text-danger">*</span>{% endif %}
-                                    </label>
-                                    {{ form.telefono }}
-                                    {% if form.telefono.errors %}
-                                        <div class="invalid-feedback">{{ form.telefono.errors|first }}</div>
-                                    {% else %}
-                                        <div class="invalid-feedback" style="display: none;"></div>
-                                    {% endif %}
-                                    <small class="form-text text-muted mt-1">{{ form.telefono.help_text }}</small>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.movil.id_for_label }}" class="form-label">
-                                        {{ form.movil.label }}{% if form.movil.field.required %}<span class="text-danger">*</span>{% endif %}
-                                    </label>
-                                    {{ form.movil }}
-                                    {% if form.movil.errors %}
-                                        <div class="invalid-feedback">{{ form.movil.errors|first }}</div>
-                                    {% else %}
-                                        <div class="invalid-feedback" style="display: none;"></div>
-                                    {% endif %}
-                                </div>
-                            </div>
+                <!-- Información de Contacto -->
+<div class="mb-5">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <div class="bg-info rounded-circle p-2 d-flex align-items-center">
+            <i class="bi bi-telephone-forward fs-5 text-white"></i>
+        </div>
+        <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Contacto</h5>
+    </div>
+    <div class="row g-4">
+        <!-- Email con soporte para N/A -->
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.email.id_for_label }}" class="form-label">
+                    {{ form.email.label }}<span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                    {{ form.email }}
+                    <button type="button" class="btn btn-outline-info" 
+                            onclick="document.getElementById('{{ form.email.id_for_label }}').value = 'N/A'">
+                        <i class="bi bi-x-circle"></i> N/A
+                    </button>
+                </div>
+                {% if form.email.errors %}
+                    <div class="invalid-feedback">{{ form.email.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+                <small class="form-text text-muted mt-1">Ejemplo: nombre@dominio.com o N/A</small>
+            </div>
+        </div>
+
+        <!-- Teléfono con formateo automático -->
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                    {{ form.telefono.label }}<span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                    {{ form.telefono }}
+                    <button type="button" class="btn btn-outline-info" 
+                            onclick="document.getElementById('{{ form.telefono.id_for_label }}').value = 'N/A'">
+                        <i class="bi bi-x-circle"></i> N/A
+                    </button>
+                </div>
+                {% if form.telefono.errors %}
+                    <div class="invalid-feedback">{{ form.telefono.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+                <small class="form-text text-muted mt-1">{{ form.telefono.help_text }}</small>
+            </div>
+        </div>
+
+        <!-- Móvil con validación en tiempo real -->
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.movil.id_for_label }}" class="form-label">
+                    {{ form.movil.label }}<span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                    {{ form.movil }}
+                    <button type="button" class="btn btn-outline-info" 
+                            onclick="document.getElementById('{{ form.movil.id_for_label }}').value = 'N/A'">
+                        <i class="bi bi-x-circle"></i> N/A
+                    </button>
+                </div>
+                {% if form.movil.errors %}
+                    <div class="invalid-feedback">{{ form.movil.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+                <small class="form-text text-muted mt-1">{{ form.movil.help_text }}</small>
+            </div>
+        </div>
                             <div class="col-12">
                                 <div class="mb-4 position-relative">
                                     <label for="{{ form.direccion_fisica.id_for_label }}" class="form-label">
