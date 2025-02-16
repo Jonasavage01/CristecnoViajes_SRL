@@ -15,7 +15,7 @@
         
         <!-- Línea decorativa superior -->
         <div class="position-absolute top-0 start-0 end-0" style="height: 3px; background: linear-gradient(90deg, #4a9fff, #2d70cc);"></div>
-        
+
         <!-- Estado del Lead -->
         <div class="mb-5">
             <div class="d-flex align-items-center mb-4 gap-3">
@@ -101,20 +101,6 @@
                         {% endif %}
                     </div>
                 </div>
-
-                <!-- Email (solo lectura) -->
-                <div class="col-12 col-md-6">
-                    <div class="mb-4 position-relative">
-                        <label for="{{ form.email.id_for_label }}" class="form-label">
-                            {{ form.email.label }}<span class="text-danger">*</span>
-                        </label>
-                        {{ form.email }}
-                        <small class="form-text text-warning mt-1 d-block">Este campo no puede ser modificado</small>
-                        {% if form.email.errors %}
-                            <div class="invalid-feedback">{{ form.email.errors|first }}</div>
-                        {% endif %}
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -162,29 +148,65 @@
                 <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Contacto</h5>
             </div>
             <div class="row g-4">
+                <!-- Email (solo lectura) -->
+                <div class="col-12 col-md-6">
+                    <div class="mb-4 position-relative">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            {{ form.email.label }}<span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            {{ form.email }}
+                            <button type="button" class="btn btn-outline-info" disabled>
+                                <i class="bi bi-x-circle"></i> N/A
+                            </button>
+                        </div>
+                        <small class="form-text text-warning mt-1 d-block">Este campo no puede ser modificado</small>
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback">{{ form.email.errors|first }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Teléfono -->
                 <div class="col-12 col-md-6">
                     <div class="mb-4 position-relative">
                         <label for="{{ form.telefono.id_for_label }}" class="form-label">
                             {{ form.telefono.label }}<span class="text-danger">*</span>
                         </label>
-                        {{ form.telefono }}
+                        <div class="input-group">
+                            {{ form.telefono }}
+                            <button type="button" class="btn btn-outline-info" 
+                                    onclick="document.getElementById('{{ form.telefono.id_for_label }}').value = 'N/A'">
+                                <i class="bi bi-x-circle"></i> N/A
+                            </button>
+                        </div>
                         {% if form.telefono.errors %}
                             <div class="invalid-feedback">{{ form.telefono.errors|first }}</div>
                         {% endif %}
                         <small class="form-text text-muted mt-1">{{ form.telefono.help_text }}</small>
                     </div>
                 </div>
+
+                <!-- Móvil -->
                 <div class="col-12 col-md-6">
                     <div class="mb-4 position-relative">
                         <label for="{{ form.movil.id_for_label }}" class="form-label">
                             {{ form.movil.label }}
                         </label>
-                        {{ form.movil }}
+                        <div class="input-group">
+                            {{ form.movil }}
+                            <button type="button" class="btn btn-outline-info" 
+                                    onclick="document.getElementById('{{ form.movil.id_for_label }}').value = 'N/A'">
+                                <i class="bi bi-x-circle"></i> N/A
+                            </button>
+                        </div>
                         {% if form.movil.errors %}
                             <div class="invalid-feedback">{{ form.movil.errors|first }}</div>
                         {% endif %}
                     </div>
                 </div>
+
+                <!-- Dirección -->
                 <div class="col-12">
                     <div class="mb-4 position-relative">
                         <label for="{{ form.direccion_fisica.id_for_label }}" class="form-label">
@@ -198,7 +220,43 @@
                 </div>
             </div>
         </div>
-        
+
+        <!-- Información Adicional -->
+        <div class="mb-4">
+            <div class="d-flex align-items-center mb-4 gap-3">
+                <div class="bg-info rounded-circle p-2 d-flex align-items-center">
+                    <i class="bi bi-info-square fs-5 text-white"></i>
+                </div>
+                <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Información Adicional</h5>
+            </div>
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="mb-4 position-relative">
+                        <label for="{{ form.documento.id_for_label }}" class="form-label">
+                            <i class="bi bi-cloud-upload me-2"></i>{{ form.documento.label }}
+                        </label>
+                        {{ form.documento }}
+                        {% if form.documento.errors %}
+                            <div class="invalid-feedback">{{ form.documento.errors|first }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted mt-1">{{ form.documento.help_text }}</small>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="mb-4 position-relative">
+                        <label for="{{ form.notas.id_for_label }}" class="form-label">
+                            {{ form.notas.label }}
+                        </label>
+                        {{ form.notas }}
+                        {% if form.notas.errors %}
+                            <div class="invalid-feedback">{{ form.notas.errors|first }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted mt-1">Observaciones relevantes sobre el cliente</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="modal-footer border-top border-secondary px-4 pb-4 pt-3">
             <button type="button" class="btn btn-lg btn-outline-light" data-bs-dismiss="modal">
                 <i class="bi bi-x-lg me-2"></i>Cancelar
@@ -210,10 +268,23 @@
     </form>
 </div>
 
-<!-- Scripts optimizados -->
+<!-- Scripts -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Función para limpiar errores
+    // Validación en tiempo real
+    const setupRealTimeValidation = () => {
+        document.querySelectorAll('input, select, textarea').forEach(field => {
+            field.addEventListener('input', () => {
+                if (field.checkValidity()) {
+                    field.classList.remove('is-invalid');
+                } else {
+                    field.classList.add('is-invalid');
+                }
+            });
+        });
+    };
+
+    // Limpiar errores al cerrar
     const clearErrors = () => {
         document.querySelectorAll('.is-invalid').forEach(field => {
             field.classList.remove('is-invalid');
@@ -228,9 +299,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('clienteEditModal');
     modal.addEventListener('hide.bs.modal', clearErrors);
     
-    // Inicializar validación en tiempo real
-    if (typeof setupRealTimeValidation === 'function') {
-        setupRealTimeValidation();
-    }
+    // Inicializar validación
+    setupRealTimeValidation();
+
+    // Formatear teléfono
+    document.getElementById('{{ form.telefono.id_for_label }}').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '')
+            .replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+    });
+
+    // Formatear móvil
+    document.getElementById('{{ form.movil.id_for_label }}').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '')
+            .replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+    });
 });
 </script>

@@ -1,6 +1,6 @@
 {% load static %}
 <!-- CSS de SweetAlert2 -->
-<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
 
 <!-- Modal para Nuevo Cliente -->
 <div class="modal fade" id="clienteModal" tabindex="-1" aria-labelledby="clienteModalLabel" aria-hidden="true">
@@ -267,13 +267,13 @@
 </div>
 
 <!-- Scripts al final del documento -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script type="module">
     import { showErrorAlert, showSuccessAlert } from '{% static "crm/alerts.js" %}';
     window.showErrorAlert = showErrorAlert;
     window.showSuccessAlert = showSuccessAlert;
 </script>
-<script src="{% static 'crm/formValidation.js' %}"></script>
+
 
 <!-- Scripts adicionales para enfoque y limpieza de errores al abrir/cerrar el modal -->
 <script>

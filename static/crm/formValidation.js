@@ -1,5 +1,3 @@
-// formValidation.js - Versión final corregida
-
 /* ============================
    Polyfills y Utilidades
 ============================ */
@@ -9,38 +7,21 @@ if (!FormData.prototype.entries) {
     };
 }
 
-const getCSRFToken = () => {
+function getCSRFToken() { // <- Modificar esta línea
     const metaToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
     const cookieToken = document.cookie.match(/csrftoken=([^ ;]+)/)?.[1];
     
     if (!metaToken && !cookieToken) {
         console.error('CSRF token no encontrado');
         showAlert('error', 'Error de seguridad. Recargue la página.');
+        return null;
     }
     return metaToken || cookieToken;
 };
-/* ============================
-   Funciones para Alertas (Actualizado para SweetAlert2)
-============================ */
-function showAlert(type, message) {
-    const Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        didOpen: (toast) => {
-            toast.addEventListener('mouseenter', Swal.stopTimer)
-            toast.addEventListener('mouseleave', Swal.resumeTimer)
-        }
-    });
-    
-    Toast.fire({
-        icon: type,
-        title: message
-    });
-}
 
+/* ============================
+   Funciones para Alertas
+============================ */
 const swalConfig = {
     toast: true,
     position: 'top-end',
@@ -60,7 +41,6 @@ function showAlert(type, message) {
     });
 }
 
-
 const formatPhoneNumber = (value) => {
     value = value.toUpperCase().replace(/\s/g, '');
     
@@ -75,27 +55,15 @@ const formatPhoneNumber = (value) => {
     return value.length > 3 ? `+${value.slice(0, 15)}` : value;
 };
 
-function showSuccessAlert(message) {
-    // Elimina alerta previa si existe
-    const existingAlert = document.getElementById('formAlert');
-    if (existingAlert) {
-        existingAlert.remove();
-    }
-    const alertDiv = document.createElement('div');
-    alertDiv.id = 'formAlert';
-    alertDiv.className = 'alert alert-success alert-dismissible fade show';
-    alertDiv.role = 'alert';
-    alertDiv.innerHTML = message + '<button type="button" class="close" data-bs-dismiss="alert" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>';
-    document.body.prepend(alertDiv);
-}
-
-
 /* ============================
-   Sistema de Validación Mejorado
+   Sistema de Validación
 ============================ */
 const FieldValidators = {
-    
-    
+    cedula_pasaporte: value => {
+        if (!value) return false;
+        const cleanedValue = value.trim().toUpperCase().replace(/-/g, '');
+        return /^[A-Z0-9]{6,20}$/.test(cleanedValue);
+    },
     telefono: value => {
         value = value.trim().toUpperCase();
         if (value === 'N/A') return true;
@@ -126,7 +94,7 @@ const validateField = (field) => {
     }
     else if (FieldValidators[field.name] && !FieldValidators[field.name](value)) {
         const messages = {
-            cedula_pasaporte: 'Formato inválido. Ej: V-12345678',
+            cedula_pasaporte: 'Formato inválido. Ej: 40212345678 o PA1234567',
             email: 'Correo electrónico inválido',
             telefono: 'Formato inválido. Ej: +58 412 5555555',
             movil: 'Formato inválido. Ej: +58 412 5555555'
@@ -146,12 +114,6 @@ const showFieldError = (field, errorElement, message) => {
     }
 };
 
-// Event listeners para formato en tiempo real
-document.querySelectorAll('input[name="telefono"], input[name="movil"]').forEach(input => {
-    input.addEventListener('input', (e) => {
-        e.target.value = formatPhoneNumber(e.target.value);
-    });
-});
 /* ============================
    Manejo de Formularios
 ============================ */
@@ -160,17 +122,24 @@ const handleFormSubmit = async (e) => {
     const form = e.target;
     const isEditForm = form.id === 'clienteEditForm';
     
-    // Validar todos los campos
     let isValid = true;
     form.querySelectorAll('input, select, textarea').forEach(field => {
         if (!validateField(field)) isValid = false;
     });
     
-    if (!isValid) return showAlert('danger', 'Por favor corrija los errores');
+    if (!isValid) return showAlert('error', 'Por favor corrija los errores');
 
     try {
         const formData = new FormData(form);
-        if (isEditForm) formData.append('_method', 'PUT');
+        if (isEditForm) formData.set('_method', 'PUT');
+
+        // Asegurar campos requeridos
+        const requiredFields = form.querySelectorAll('[required]');
+        requiredFields.forEach(field => {
+            if (!formData.get(field.name)) {
+                formData.set(field.name, 'N/A');
+            }
+        });
 
         const response = await fetch(form.action, {
             method: 'POST',
@@ -191,7 +160,7 @@ const handleFormSubmit = async (e) => {
             handleFormErrors(form, result);
         }
     } catch (error) {
-        showAlert('danger', 'Error de conexión. Intente nuevamente.');
+        showAlert('error', 'Error de conexión. Intente nuevamente.');
         console.error('Error:', error);
     }
 };
@@ -204,59 +173,26 @@ const handleFormErrors = (form, result) => {
             if (input && errorElement) showFieldError(input, errorElement, errors[0]);
         });
     }
-    showAlert('danger', result.errors?.join('<br>') || 'Error desconocido');
+    showAlert('error', result.errors?.join('<br>') || 'Error desconocido');
 };
 
 /* ============================
-   Manejo de Eliminación
+   Inicialización General
 ============================ */
-const initDeleteHandlers = () => {
-    let deleteTarget = null;
-    const deleteModal = new bootstrap.Modal('#deleteConfirmationModal');
-
-    document.querySelectorAll('.delete-client').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            deleteTarget = {
-                url: e.currentTarget.dataset.href,
-                row: e.target.closest('tr')
-            };
-            deleteModal.show();
+const initFormValidation = () => {
+    // Event listeners para inputs de teléfono
+    document.querySelectorAll('input[name="telefono"], input[name="movil"]').forEach(input => {
+        input.addEventListener('input', (e) => {
+            e.target.value = formatPhoneNumber(e.target.value);
         });
     });
 
-    document.getElementById('confirmDeleteButton')?.addEventListener('click', async () => {
-        if (!deleteTarget) return;
-
-        try {
-            const response = await fetch(deleteTarget.url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            if (response.ok) {
-                deleteTarget.row?.remove();
-                showAlert('success', 'Cliente eliminado exitosamente');
-            } else {
-                throw new Error('Error en la eliminación');
-            }
-        } catch (error) {
-            showAlert('danger', 'No se pudo eliminar el cliente');
-            console.error('Error:', error);
-        } finally {
-            deleteModal.hide();
-            deleteTarget = null;
-        }
+    // Manejo de formularios
+    document.querySelectorAll('#clienteForm, #clienteEditForm').forEach(form => {
+        form.addEventListener('submit', handleFormSubmit);
     });
-};
 
-/* ============================
-   Validación en Tiempo Real
-============================ */
-const setupRealTimeValidation = () => {
+    // Validación en tiempo real
     const debounce = (func, delay = 300) => {
         let timeout;
         return (...args) => {
@@ -265,33 +201,14 @@ const setupRealTimeValidation = () => {
         };
     };
 
-
-
-    // Para formularios dinámicos
     document.addEventListener('ajaxFormLoaded', (e) => {
         e.detail.form.querySelectorAll('input, select, textarea').forEach(field => {
             if (field.readOnly || field.disabled) return;
             
-            field.addEventListener('input', () => validateField(field));
+            field.addEventListener('input', debounce(() => validateField(field)));
             field.addEventListener('blur', () => validateField(field));
         });
     });
-};
-
-/* ============================
-   Inicialización General
-============================ */
-document.addEventListener('DOMContentLoaded', () => {
-    // Formularios
-    document.querySelectorAll('#clienteForm, #clienteEditForm').forEach(form => {
-        form.addEventListener('submit', handleFormSubmit);
-    });
-
-    // Validación en tiempo real
-    setupRealTimeValidation();
-
-    // Eliminación
-    initDeleteHandlers();
 
     // Tooltips
     new bootstrap.Tooltip(document.body, {
@@ -305,5 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.querySelectorAll('.invalid-feedback').forEach(e => e.style.display = 'none');
         });
     });
-});
+};
 
+document.addEventListener('DOMContentLoaded', initFormValidation);
