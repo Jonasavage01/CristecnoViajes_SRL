@@ -1,48 +1,51 @@
 document.addEventListener('DOMContentLoaded', () => {
     /*** Funcionalidad de EDICIÓN ***/
    
-document.querySelectorAll('.modal').forEach(modal => {
-    modal.addEventListener('hidden.bs.modal', () => {
-        // Eliminar backdrop manualmente si persiste
-        const backdrops = document.getElementsByClassName('modal-backdrop');
-        while(backdrops.length > 0) {
-            backdrops[0].parentNode.removeChild(backdrops[0]);
-        }
-        // Restaurar scroll del body
-        document.body.style.overflow = 'visible';
-        document.body.style.paddingRight = '0';
-    });
-});
-
-// clientes.js (modificar la función loadEditForm)
-const loadEditForm = async (url) => {
-    try {
-        const response = await fetch(url, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': getCSRFToken()
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('hidden.bs.modal', () => {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
             }
+            document.body.classList.remove('modal-open');
+            document.body.style.paddingRight = '';
         });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
-        const html = await response.text();
-        const modalElement = document.getElementById('clienteEditModal');
-        const modal = new bootstrap.Modal(modalElement);
-        const container = modalElement.querySelector('#formContainer');
-        
-        container.innerHTML = html;
-        modal.show();
-        
-        // Disparar evento para inicialización
-        document.dispatchEvent(new CustomEvent('ajaxFormLoaded', {
-            detail: { form: container.querySelector('form') }
-        }));
-        
-    } catch (error) {
-        showAlert('error', `Error cargando formulario: ${error.message}`);
-    }
-};
+    });
+    
+    // Actualizar la función loadEditForm
+    const loadEditForm = async (url) => {
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            });
+    
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const form = doc.querySelector('form');
+            
+            // Verificar acción del formulario
+            if (!form.action.includes('/edit/')) {
+                throw new Error('URL de edición incorrecta');
+            }
+    
+            const modalElement = document.getElementById('clienteEditModal');
+            const container = modalElement.querySelector('#formContainer');
+            container.innerHTML = html;
+            
+            // Forzar actualización de la instancia de Bootstrap
+            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+            modal.show();
+    
+        } catch (error) {
+            showAlert('error', `Error: ${error.message}`);
+        }
+    };
 
 document.querySelectorAll('.edit-client').forEach(button => {
     button.addEventListener('click', (e) => {

@@ -148,30 +148,30 @@
                 </thead>
                 <tbody>
                     {% for cliente in clientes %}
-                    <tr class="position-relative">
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar bg-primary text-white me-3">
-                                    {{ cliente.nombre_apellido|slice:":1"|upper }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold">{{ cliente.nombre_apellido }}</div>
-                                    <small class="text-muted">{{ cliente.nacionalidad.name }}</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div>{{ cliente.email }}</div>
-                            <small class="text-muted">{{ cliente.telefono }}</small>
-                        </td>
-                        <td>
-                            {{ cliente.cedula_pasaporte }}
-                        </td>
-                        <td>
-                            <span class="badge bg-{{ cliente.get_estado_color }}">
-                                {{ cliente.get_estado_display }}
-                            </span>
-                        </td>
+<tr class="position-relative" data-client-id="{{ cliente.id }}">
+    <td>
+        <div class="d-flex align-items-center">
+            <div class="avatar bg-primary text-white me-3">
+                {{ cliente.nombre_apellido|slice:":1"|upper }}
+            </div>
+            <div>
+                <div class="fw-bold client-name">{{ cliente.nombre_apellido }}</div>
+                <small class="text-muted">{{ cliente.nacionalidad.name }}</small>
+            </div>
+        </div>
+    </td>
+    <td>
+        <div class="client-email">{{ cliente.email }}</div>
+        <small class="text-muted client-phone">{{ cliente.telefono }}</small>
+    </td>
+    <td class="client-cedula">
+        {{ cliente.cedula_pasaporte }}
+    </td>
+    <td>
+        <span class="badge bg-{{ cliente.get_estado_color }} client-status">
+            {{ cliente.get_estado_display }}
+        </span>
+    </td>
                         <td>
                             {{ cliente.fecha_creacion|date:"d/m/Y H:i" }}
                         </td>

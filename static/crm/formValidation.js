@@ -122,6 +122,7 @@ const handleFormSubmit = async (e) => {
     e.preventDefault();
     const form = e.target;
     
+    // Validar todos los campos
     let isValid = true;
     form.querySelectorAll('input, select, textarea').forEach(field => {
         if (!validateField(field)) isValid = false;
@@ -131,7 +132,10 @@ const handleFormSubmit = async (e) => {
 
     try {
         const formData = new FormData(form);
-        if (form.id === 'clienteEditForm') formData.set('_method', 'PUT');
+        const isEditForm = form.id === 'clienteEditForm';
+        
+        // Configurar método HTTP para Django
+        if (isEditForm) formData.append('_method', 'PUT');
 
         const response = await fetch(form.action, {
             method: 'POST',
@@ -147,14 +151,31 @@ const handleFormSubmit = async (e) => {
         if (response.ok && result.success) {
             showAlert('success', result.message);
             const modal = bootstrap.Modal.getInstance(form.closest('.modal'));
+            
             if (modal) {
                 modal.hide();
-                // Recargar después de cerrar el modal
-                modal._element.addEventListener('hidden.bs.modal', () => {
+                
+                // Actualización dinámica de la tabla
+                if (isEditForm && result.cliente_data) {
+                    const row = document.querySelector(`tr[data-client-id="${result.cliente_data.id}"]`);
+                    if (row) {
+                        // Actualizar cada campo específico
+                        row.querySelector('.client-name').textContent = result.cliente_data.nombre;
+                        row.querySelector('.client-status').textContent = result.cliente_data.estado;
+                        row.querySelector('.client-status').className = `badge bg-${result.cliente_data.estado_color}`;
+                        row.querySelector('.client-phone').textContent = result.cliente_data.telefono;
+                        row.querySelector('.client-email').textContent = result.cliente_data.email;
+                        row.querySelector('.client-cedula').textContent = result.cliente_data.cedula;
+                        
+                        // Actualizar tooltips si es necesario
+                        const tooltip = bootstrap.Tooltip.getInstance(row);
+                        if (tooltip) tooltip.dispose();
+                    }
+                } else {
+                    // Recargar solo para nuevos registros
                     window.location.reload();
-                }, {once: true});
+                }
             }
-        
         } else {
             handleFormErrors(form, result);
         }
@@ -165,16 +186,32 @@ const handleFormSubmit = async (e) => {
 };
 
 const handleFormErrors = (form, result) => {
+    // Limpiar errores previos
+    form.querySelectorAll('.is-invalid').forEach(field => field.classList.remove('is-invalid'));
+    form.querySelectorAll('.invalid-feedback').forEach(el => el.style.display = 'none');
+
+    // Mostrar nuevos errores
     if (result.form_errors) {
         Object.entries(result.form_errors).forEach(([field, errors]) => {
             const input = form.querySelector(`[name="${field}"]`);
             const errorElement = input?.closest('.position-relative')?.querySelector('.invalid-feedback');
-            if (input && errorElement) showFieldError(input, errorElement, errors[0]);
+            if (input && errorElement) {
+                input.classList.add('is-invalid');
+                errorElement.textContent = errors.map(e => e.message).join(', ');
+                errorElement.style.display = 'block';
+            }
         });
     }
-    showAlert('error', result.errors?.join('<br>') || 'Error desconocido');
+    
+    // Mostrar errores generales
+    if (result.errors) {
+        showAlert('error', result.errors.join('<br>'));
+    } else if (result.message) {
+        showAlert('error', result.message);
+    } else {
+        showAlert('error', 'Error desconocido');
+    }
 };
-
 /* ============================
    Inicialización de Módulos
 ============================ */
@@ -201,8 +238,10 @@ const initModalValidation = (modalElement) => {
 };
 
 const initFormEvents = () => {
-    document.querySelectorAll('#clienteForm, #clienteEditForm').forEach(form => {
-        form.addEventListener('submit', handleFormSubmit);
+    document.addEventListener('submit', (e) => {
+        if (e.target.matches('#clienteForm, #clienteEditForm')) {
+            handleFormSubmit(e);
+        }
     });
 };
 

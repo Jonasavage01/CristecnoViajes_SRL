@@ -9,7 +9,11 @@
 </div>
 
 <div class="modal-body p-4">
-    <form id="clienteEditForm" method="post" enctype="multipart/form-data" novalidate>
+    <form id="clienteEditForm" 
+    method="post" 
+    enctype="multipart/form-data" 
+    novalidate
+    action="{% url 'cliente_edit' object.pk %}"> <!-- Añadir action -->
         {% csrf_token %}
         <input type="hidden" name="_method" value="PUT">
         

@@ -4,6 +4,13 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django_countries.widgets import CountrySelectWidget
 from .models import Cliente
+import logging
+from django import forms
+from django.db.models import Q
+from django.core.exceptions import ValidationError
+
+logger = logging.getLogger(__name__)
+
 
 class ClienteForm(forms.ModelForm):
     NA_CHOICE = 'N/A'
@@ -129,7 +136,6 @@ class ClienteForm(forms.ModelForm):
                 raise ValidationError("Tamaño máximo permitido: 5MB")
         return documento
 
-
 class ClienteEditForm(ClienteForm):
     class Meta(ClienteForm.Meta):
         exclude = ['documento', 'notas', 'fecha_creacion', 'ultima_actividad']
@@ -139,27 +145,79 @@ class ClienteEditForm(ClienteForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Actualizar placeholders y estilos
+        logger.debug(f"Inicializando formulario de edición - Instancia PK: {self.instance.pk if self.instance else 'Nueva'}")
+        
+        # Configurar campos de teléfono
         phone_fields = ['telefono', 'movil']
         for field in phone_fields:
-            self.fields[field].widget.attrs['placeholder'] = 'Ej: +18091234567 o N/A'
+            self.fields[field].widget.attrs.update({
+                'placeholder': 'Ej: +18091234567 o N/A',
+                'class': 'form-control phone-input'
+            })
             self.fields[field].help_text = 'Formato internacional o "N/A" si no aplica'
-        # Establecer campos de solo lectura
+
+        # Campos de solo lectura con valores iniciales
         readonly_fields = ['cedula_pasaporte', 'email']
         for field in readonly_fields:
             if field in self.fields:
+                current_value = getattr(self.instance, field, '')
                 self.fields[field].widget.attrs.update({
                     'readonly': True,
-                    'class': 'form-control-plaintext bg-light'
+                    'class': 'form-control-plaintext bg-light',
+                    'data-original-value': current_value
                 })
+                logger.debug(f"Campo {field} configurado como readonly - Valor: {current_value}")
 
     def _validate_unique_email_and_cedula(self):
+        """Validación mejorada con depuración y manejo de N/A"""
+        logger.debug("Iniciando validación de unicidad...")
+        
+        if not self.instance.pk:
+            logger.error("Validación fallida: No hay instancia asociada")
+            raise ValidationError("Operación inválida: Cliente no existe")
+
         cedula = self.cleaned_data.get('cedula_pasaporte')
         email = self.cleaned_data.get('email')
-    
-    # Solo para creación
-        if not self.instance.pk:
-            if cedula and Cliente.objects.filter(cedula_pasaporte__iexact=cedula).exists():
+
+        logger.debug(f"Datos a validar - Cédula: {cedula} | Email: {email}")
+        logger.debug(f"Instancia actual - PK: {self.instance.pk}")
+
+        # Validación de cédula
+        if cedula:
+            qs = Cliente.objects.filter(
+                Q(cedula_pasaporte__iexact=cedula) & 
+                ~Q(pk=self.instance.pk)
+            )  # Corregido: paréntesis de cierre
+            if qs.exists():
+                logger.warning(f"Cédula duplicada detectada: {cedula}")
                 self.add_error('cedula_pasaporte', 'Esta identificación ya está registrada')
-        if email and Cliente.objects.filter(email__iexact=email).exists():
-            self.add_error('email', 'Este correo ya está registrado')
+
+        # Validación de email (excepto para N/A)
+        if email and email.upper() != 'N/A':
+            qs = Cliente.objects.filter(
+                Q(email__iexact=email) & 
+                ~Q(pk=self.instance.pk)
+            )  # Corregido: paréntesis de cierre
+            if qs.exists():
+                logger.warning(f"Email duplicado detectado: {email}")
+                self.add_error('email', 'Este correo ya está registrado')
+
+        logger.debug("Validación de unicidad completada")
+
+    def clean(self):
+        """Método clean principal con depuración"""
+        logger.debug("Ejecutando clean() del formulario de edición")
+        cleaned_data = super().clean()
+        
+        try:
+            self._validate_unique_email_and_cedula()
+        except ValidationError as e:
+            logger.error(f"Error en validación única: {str(e)}")
+            raise
+
+        # Depuración de datos limpios
+        logger.debug("Datos limpios del formulario:")
+        for key, value in cleaned_data.items():
+            logger.debug(f"{key}: {value}")
+
+        return cleaned_data

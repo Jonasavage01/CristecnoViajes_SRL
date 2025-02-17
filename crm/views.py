@@ -26,7 +26,6 @@ class ClienteDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context['now'] = timezone.now()
         return context
-
 class ClienteUpdateView(UpdateView):
     model = Cliente
     form_class = ClienteEditForm
@@ -35,10 +34,30 @@ class ClienteUpdateView(UpdateView):
     def get_success_url(self):
         return reverse_lazy('cliente_detail', kwargs={'pk': self.object.pk})
 
+    def get_context_data(self, **kwargs):
+        """Añadir contexto adicional para depuración"""
+        context = super().get_context_data(**kwargs)
+        context['debug_instance_pk'] = self.object.pk if self.object else 'None'
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """Override para asegurar la instancia antes de procesar el formulario"""
+        logger.debug(f"Editando cliente - Método POST - Usuario: {request.user}")
+        self.object = self.get_object()
+        logger.debug(f"Instancia obtenida - PK: {self.object.pk}")
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form):
-        self.object = form.save()
+        """Manejar respuesta exitosa con depuración"""
+        logger.debug("Iniciando form_valid...")
         
+        # Guardar cambios
+        self.object = form.save()
+        logger.info(f"Cliente {self.object.pk} actualizado por {self.request.user}")
+
+        # Respuesta AJAX
         if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            logger.debug("Respondiendo a solicitud AJAX")
             return JsonResponse({
                 'success': True,
                 'message': 'Cliente actualizado exitosamente',
@@ -46,26 +65,46 @@ class ClienteUpdateView(UpdateView):
                     'id': self.object.id,
                     'nombre': self.object.nombre_apellido,
                     'estado': self.object.get_estado_display(),
+                    'estado_color': self.object.get_estado_color(),
                     'telefono': self.object.telefono,
-                    'email': self.object.email
+                    'email': self.object.email,
+                    'cedula': self.object.cedula_pasaporte,
+                    'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M")
                 }
             })
-            
+        
+        # Respuesta normal
         messages.success(self.request, 'Cliente actualizado exitosamente!')
         return redirect(self.get_success_url())
 
     def form_invalid(self, form):
-        logger.error("Errores de validación: %s", form.errors.as_json())
+        """Manejar errores de validación con logging detallado"""
+        logger.error("Errores de validación en el formulario de edición")
+        logger.debug("Datos del formulario inválidos: %s", form.data)
+        logger.debug("Errores detallados: %s", form.errors.as_json())
+        
+        # Depuración de la instancia
+        if hasattr(form, 'instance'):
+            logger.debug(f"Instancia en formulario inválido - PK: {form.instance.pk if form.instance else 'None'}")
+        else:
+            logger.warning("Formulario no tiene instancia asociada")
+
+        # Respuesta AJAX
         if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
                 'errors': form.errors.get_json_data(),
-                'form_errors': form.errors.get_json_data()
+                'form_errors': form.errors.get_json_data(),
+                'debug': {
+                    'instance_pk': self.object.pk if self.object else 'None',
+                    'form_instance_pk': form.instance.pk if form.instance else 'None'
+                }
             }, status=400)
             
         return super().form_invalid(form)
-    
+
     def _compile_form_errors(self, form):
+        """Método auxiliar para formatear errores (usado en plantillas)"""
         errors = []
         for field, error_list in form.errors.items():
             errors.append({
