@@ -62,19 +62,18 @@
                     </div>
                 </div>
 
-                <!-- Cédula/Pasaporte (solo lectura) -->
-                <div class="col-12 col-md-6">
-                    <div class="mb-4 position-relative">
-                        <label for="{{ form.cedula_pasaporte.id_for_label }}" class="form-label">
-                            {{ form.cedula_pasaporte.label }}<span class="text-danger">*</span>
-                        </label>
-                        {{ form.cedula_pasaporte }}
-                        <small class="form-text text-warning mt-1 d-block">Este campo no puede ser modificado</small>
-                        {% if form.cedula_pasaporte.errors %}
-                            <div class="invalid-feedback">{{ form.cedula_pasaporte.errors|first }}</div>
-                        {% endif %}
-                    </div>
-                </div>
+               <!-- Para Cédula/Pasaporte -->
+<div class="col-12 col-md-6">
+    <div class="mb-4 position-relative">
+        <label for="{{ form.cedula_pasaporte.id_for_label }}" class="form-label">
+            {{ form.cedula_pasaporte.label }}<span class="text-danger">*</span>
+        </label>
+        {{ form.cedula_pasaporte }}
+        {% if form.cedula_pasaporte.errors %}
+            <div class="invalid-feedback">{{ form.cedula_pasaporte.errors|first }}</div>
+        {% endif %}
+    </div>
+</div>
 
                 <!-- Fecha de Nacimiento -->
                 <div class="col-12 col-md-6">
@@ -148,24 +147,24 @@
                 <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Contacto</h5>
             </div>
             <div class="row g-4">
-                <!-- Email (solo lectura) -->
-                <div class="col-12 col-md-6">
-                    <div class="mb-4 position-relative">
-                        <label for="{{ form.email.id_for_label }}" class="form-label">
-                            {{ form.email.label }}<span class="text-danger">*</span>
-                        </label>
-                        <div class="input-group">
-                            {{ form.email }}
-                            <button type="button" class="btn btn-outline-info" disabled>
-                                <i class="bi bi-x-circle"></i> N/A
-                            </button>
-                        </div>
-                        <small class="form-text text-warning mt-1 d-block">Este campo no puede ser modificado</small>
-                        {% if form.email.errors %}
-                            <div class="invalid-feedback">{{ form.email.errors|first }}</div>
-                        {% endif %}
-                    </div>
-                </div>
+              <!-- Para Email -->
+<div class="col-12 col-md-6">
+    <div class="mb-4 position-relative">
+        <label for="{{ form.email.id_for_label }}" class="form-label">
+            {{ form.email.label }}<span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+            {{ form.email }}
+            <button type="button" class="btn btn-outline-info" 
+                    onclick="document.getElementById('{{ form.email.id_for_label }}').value = 'N/A'">
+                <i class="bi bi-x-circle"></i> N/A
+            </button>
+        </div>
+        {% if form.email.errors %}
+            <div class="invalid-feedback">{{ form.email.errors|first }}</div>
+        {% endif %}
+    </div>
+</div>
 
                 <!-- Teléfono -->
                 <div class="col-12 col-md-6">
@@ -268,50 +267,3 @@
     </form>
 </div>
 
-<!-- Scripts -->
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Validación en tiempo real
-    const setupRealTimeValidation = () => {
-        document.querySelectorAll('input, select, textarea').forEach(field => {
-            field.addEventListener('input', () => {
-                if (field.checkValidity()) {
-                    field.classList.remove('is-invalid');
-                } else {
-                    field.classList.add('is-invalid');
-                }
-            });
-        });
-    };
-
-    // Limpiar errores al cerrar
-    const clearErrors = () => {
-        document.querySelectorAll('.is-invalid').forEach(field => {
-            field.classList.remove('is-invalid');
-        });
-    };
-
-    // Enfocar primer campo editable
-    const firstInput = document.querySelector('#clienteEditForm input:not([readonly]):not([type="hidden"]), select');
-    firstInput?.focus();
-
-    // Manejar cierre del modal
-    const modal = document.getElementById('clienteEditModal');
-    modal.addEventListener('hide.bs.modal', clearErrors);
-    
-    // Inicializar validación
-    setupRealTimeValidation();
-
-    // Formatear teléfono
-    document.getElementById('{{ form.telefono.id_for_label }}').addEventListener('input', function(e) {
-        this.value = this.value.replace(/[^0-9]/g, '')
-            .replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
-    });
-
-    // Formatear móvil
-    document.getElementById('{{ form.movil.id_for_label }}').addEventListener('input', function(e) {
-        this.value = this.value.replace(/[^0-9]/g, '')
-            .replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
-    });
-});
-</script>

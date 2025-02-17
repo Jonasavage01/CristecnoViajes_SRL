@@ -33,8 +33,8 @@ class ClienteForm(forms.ModelForm):
         }
         help_texts = {
             'cedula_pasaporte': 'Permite números y letras para pasaportes internacionales',
-            'telefono': 'Formato internacional o "N/A" si no aplica',
-            'movil': 'Formato internacional o "N/A" si no aplica',
+            'telefono': 'Números con + opcional para internacional. Ej: 18091234567 ó +18091234567',
+            'movil': 'Números con + opcional para internacional. Ej: 18091234567 ó +18091234567',
             'email': 'Ejemplo: nombre@dominio.com',
             'documento': 'Formatos aceptados: PDF, DOC, DOCX (Máx. 5MB)',
         }
@@ -44,8 +44,14 @@ class ClienteForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'documento' in self.fields:
-            self.fields['documento'].widget.attrs.update({'accept': '.pdf,.doc,.docx'})
+        # Elimina la configuración de readonly
+        if 'email' in self.fields:
+            self.fields['email'].widget.attrs.pop('readonly', None)
+            self.fields['email'].widget.attrs.update({'class': 'form-control'})
+        
+        if 'cedula_pasaporte' in self.fields:
+            self.fields['cedula_pasaporte'].widget.attrs.pop('readonly', None)
+            self.fields['cedula_pasaporte'].widget.attrs.update({'class': 'form-control'})
 
     def clean_cedula_pasaporte(self):
         data = self.cleaned_data['cedula_pasaporte'].upper().strip()
@@ -64,12 +70,12 @@ class ClienteForm(forms.ModelForm):
         value = value.strip().upper()
         if value == self.NA_CHOICE:
             return self.NA_CHOICE
-        # Validación de formato internacional E.164
-        pattern = r'^\+[1-9]\d{1,14}$'
+    # Nueva regex que permite + opcional pero no lo requiere
+        pattern = r'^(\+?[1-9]\d{1,14}|N/A)$'  # <- Cambio clave aquí
         if not re.match(pattern, value):
             raise ValidationError(
-                f"Formato inválido para {field_name}. Use formato internacional: +18091234567"
-            )
+                f"Formato inválido para {field_name}. Ejemplos válidos: +18091234567 ó 18091234567"
+        )
         return value
 
     def clean_telefono(self):
@@ -79,14 +85,20 @@ class ClienteForm(forms.ModelForm):
         return self._clean_phone_field('móvil', self.cleaned_data.get('movil', ''))
 
     def _validate_unique_email_and_cedula(self):
-        """Validación de unicidad para creación"""
+        """Validación de unicidad considerando la instancia actual"""
         cedula = self.cleaned_data.get('cedula_pasaporte')
         email = self.cleaned_data.get('email')
-        if cedula and Cliente.objects.filter(cedula_pasaporte=cedula).exists():
-            self.add_error('cedula_pasaporte', 'Esta cédula/pasaporte ya está registrada')
-        if email and Cliente.objects.filter(email=email).exists():
-            self.add_error('email', 'Este correo electrónico ya está registrado')
-
+        
+        if cedula:
+            qs = Cliente.objects.filter(cedula_pasaporte__iexact=cedula).exclude(pk=self.instance.pk)
+            if qs.exists():
+                self.add_error('cedula_pasaporte', 'Esta identificación ya está registrada')
+        
+        if email:
+            qs = Cliente.objects.filter(email__iexact=email).exclude(pk=self.instance.pk)
+            if qs.exists():
+                self.add_error('email', 'Este correo ya está registrado')
+                
     def clean(self):
         cleaned_data = super().clean()
         # Actualizar campos si contienen "N/A"

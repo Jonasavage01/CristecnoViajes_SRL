@@ -12,7 +12,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-
 <script type="module">
     import { showErrorAlert, showSuccessAlert } from "{% static 'crm/alerts.js' %}";
     
@@ -30,12 +29,10 @@
         .then(response => response.text())
         .then(html => {
             formContainer.innerHTML = html;
-            const form = formContainer.querySelector('form');
-            if (form) {
-                form.action = editUrl;
-                form.addEventListener('submit', handleFormSubmit);
-                setupRealTimeValidation();
-            }
+            // Disparar evento para inicialización
+            document.dispatchEvent(new CustomEvent('ajaxFormLoaded', {
+                detail: { form: formContainer.querySelector('form') }
+            }));
         })
         .catch(error => {
             console.error('Error loading form:', error);

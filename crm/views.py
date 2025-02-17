@@ -36,26 +36,33 @@ class ClienteUpdateView(UpdateView):
         return reverse_lazy('cliente_detail', kwargs={'pk': self.object.pk})
 
     def form_valid(self, form):
-        response = super().form_valid(form)
+        self.object = form.save()
         
-        # Manejar respuesta AJAX
         if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': True,
                 'message': 'Cliente actualizado exitosamente',
-                'redirect_url': self.get_success_url()
+                'cliente_data': {
+                    'id': self.object.id,
+                    'nombre': self.object.nombre_apellido,
+                    'estado': self.object.get_estado_display(),
+                    'telefono': self.object.telefono,
+                    'email': self.object.email
+                }
             })
+            
         messages.success(self.request, 'Cliente actualizado exitosamente!')
-        return response
+        return redirect(self.get_success_url())
 
     def form_invalid(self, form):
-        errors = self._compile_form_errors(form)
+        logger.error("Errores de validación: %s", form.errors.as_json())
         if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'errors': errors,
-                'form_errors': form.errors
+                'errors': form.errors.get_json_data(),
+                'form_errors': form.errors.get_json_data()
             }, status=400)
+            
         return super().form_invalid(form)
     
     def _compile_form_errors(self, form):

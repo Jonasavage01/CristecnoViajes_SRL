@@ -7,7 +7,7 @@ if (!FormData.prototype.entries) {
     };
 }
 
-function getCSRFToken() { // <- Modificar esta línea
+function getCSRFToken() {
     const metaToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
     const cookieToken = document.cookie.match(/csrftoken=([^ ;]+)/)?.[1];
     
@@ -17,7 +17,7 @@ function getCSRFToken() { // <- Modificar esta línea
         return null;
     }
     return metaToken || cookieToken;
-};
+}
 
 /* ============================
    Funciones para Alertas
@@ -41,18 +41,19 @@ function showAlert(type, message) {
     });
 }
 
+/* ============================
+   Formateo de Teléfonos
+============================ */
 const formatPhoneNumber = (value) => {
-    value = value.toUpperCase().replace(/\s/g, '');
+    let formatted = value.replace(/[^0-9+]/g, '');
     
-    if (value === 'NA' || value === 'N/A') {
-        return 'N/A';
+    // Eliminar múltiples símbolos +
+    if ((formatted.match(/\+/g) || []).length > 1) {
+        formatted = '+' + formatted.replace(/\+/g, '');
     }
     
-    if (value.startsWith('+')) {
-        return `+${value.slice(1, 15)}`;
-    }
-    
-    return value.length > 3 ? `+${value.slice(0, 15)}` : value;
+    // Limitar longitud y asegurar + inicial opcional
+    return formatted.slice(0, 15);
 };
 
 /* ============================
@@ -67,12 +68,12 @@ const FieldValidators = {
     telefono: value => {
         value = value.trim().toUpperCase();
         if (value === 'N/A') return true;
-        return /^\+[1-9]\d{1,14}$/.test(value);
+        return /^(\+?[1-9]\d{1,14})$/.test(value);
     },
     movil: value => {
         value = value.trim().toUpperCase();
         if (value === 'N/A') return true;
-        return /^\+[1-9]\d{1,14}$/.test(value);
+        return /^(\+?[1-9]\d{1,14})$/.test(value);
     },
     email: value => {
         if (value.toUpperCase() === 'N/A') return true;
@@ -96,8 +97,8 @@ const validateField = (field) => {
         const messages = {
             cedula_pasaporte: 'Formato inválido. Ej: 40212345678 o PA1234567',
             email: 'Correo electrónico inválido',
-            telefono: 'Formato inválido. Ej: +58 412 5555555',
-            movil: 'Formato inválido. Ej: +58 412 5555555'
+            telefono: 'Formato inválido. Ej: 18091234567 ó +18091234567',
+            movil: 'Formato inválido. Ej: 18091234567 ó +18091234567'
         };
         showFieldError(field, errorElement, messages[field.name]);
         isValid = false;
@@ -120,7 +121,6 @@ const showFieldError = (field, errorElement, message) => {
 const handleFormSubmit = async (e) => {
     e.preventDefault();
     const form = e.target;
-    const isEditForm = form.id === 'clienteEditForm';
     
     let isValid = true;
     form.querySelectorAll('input, select, textarea').forEach(field => {
@@ -131,15 +131,7 @@ const handleFormSubmit = async (e) => {
 
     try {
         const formData = new FormData(form);
-        if (isEditForm) formData.set('_method', 'PUT');
-
-        // Asegurar campos requeridos
-        const requiredFields = form.querySelectorAll('[required]');
-        requiredFields.forEach(field => {
-            if (!formData.get(field.name)) {
-                formData.set(field.name, 'N/A');
-            }
-        });
+        if (form.id === 'clienteEditForm') formData.set('_method', 'PUT');
 
         const response = await fetch(form.action, {
             method: 'POST',
@@ -154,8 +146,15 @@ const handleFormSubmit = async (e) => {
         
         if (response.ok && result.success) {
             showAlert('success', result.message);
-            bootstrap.Modal.getInstance(form.closest('.modal'))?.hide();
-            setTimeout(() => window.location.reload(), 1500);
+            const modal = bootstrap.Modal.getInstance(form.closest('.modal'));
+            if (modal) {
+                modal.hide();
+                // Recargar después de cerrar el modal
+                modal._element.addEventListener('hidden.bs.modal', () => {
+                    window.location.reload();
+                }, {once: true});
+            }
+        
         } else {
             handleFormErrors(form, result);
         }
@@ -177,50 +176,54 @@ const handleFormErrors = (form, result) => {
 };
 
 /* ============================
-   Inicialización General
+   Inicialización de Módulos
 ============================ */
-const initFormValidation = () => {
-    // Event listeners para inputs de teléfono
-    document.querySelectorAll('input[name="telefono"], input[name="movil"]').forEach(input => {
+const initPhoneInputs = (container = document) => {
+    container.querySelectorAll('input[name="telefono"], input[name="movil"]').forEach(input => {
         input.addEventListener('input', (e) => {
             e.target.value = formatPhoneNumber(e.target.value);
         });
     });
+};
 
-    // Manejo de formularios
+const initModalValidation = (modalElement) => {
+    // Validación en tiempo real
+    modalElement.querySelectorAll('input, select, textarea').forEach(field => {
+        field.addEventListener('input', () => validateField(field));
+    });
+
+    // Limpieza al cerrar
+    modalElement.addEventListener('hidden.bs.modal', () => {
+        modalElement.querySelectorAll('.is-invalid').forEach(f => {
+            f.classList.remove('is-invalid');
+        });
+    });
+};
+
+const initFormEvents = () => {
     document.querySelectorAll('#clienteForm, #clienteEditForm').forEach(form => {
         form.addEventListener('submit', handleFormSubmit);
     });
+};
 
-    // Validación en tiempo real
-    const debounce = (func, delay = 300) => {
-        let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), delay);
-        };
-    };
+/* ============================
+   Inicialización General
+============================ */
+const initFormValidation = () => {
+    // Inicializar componentes principales
+    initPhoneInputs();
+    initFormEvents();
 
+    // Manejar modales dinámicos
     document.addEventListener('ajaxFormLoaded', (e) => {
-        e.detail.form.querySelectorAll('input, select, textarea').forEach(field => {
-            if (field.readOnly || field.disabled) return;
-            
-            field.addEventListener('input', debounce(() => validateField(field)));
-            field.addEventListener('blur', () => validateField(field));
-        });
+        const form = e.detail.form;
+        initPhoneInputs(form);
+        initModalValidation(form.closest('.modal'));
     });
 
     // Tooltips
     new bootstrap.Tooltip(document.body, {
         selector: '[data-bs-toggle="tooltip"]'
-    });
-
-    // Limpieza de modales
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('hidden.bs.modal', () => {
-            modal.querySelectorAll('.is-invalid').forEach(f => f.classList.remove('is-invalid'));
-            modal.querySelectorAll('.invalid-feedback').forEach(e => e.style.display = 'none');
-        });
     });
 };
 

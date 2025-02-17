@@ -1,32 +1,79 @@
 document.addEventListener('DOMContentLoaded', () => {
     /*** Funcionalidad de EDICIÓN ***/
-    const loadEditForm = async (url) => {
-        try {
-            const response = await fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': getCSRFToken()
-                }
-            });
-
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            const html = await response.text();
-            const modal = new bootstrap.Modal('#clienteEditModal');
-            const container = document.querySelector('#clienteEditModal #formContainer');
-            
-            container.innerHTML = html;
-            modal.show();
-            
-            // Disparar evento para validación
-            document.dispatchEvent(new CustomEvent('ajaxFormLoaded', {
-                detail: { form: container.querySelector('form') }
-            }));
-            
-        } catch (error) {
-            showAlert('error', `Error cargando formulario: ${error.message}`);
+   
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('hidden.bs.modal', () => {
+        // Eliminar backdrop manualmente si persiste
+        const backdrops = document.getElementsByClassName('modal-backdrop');
+        while(backdrops.length > 0) {
+            backdrops[0].parentNode.removeChild(backdrops[0]);
         }
-    };
+        // Restaurar scroll del body
+        document.body.style.overflow = 'visible';
+        document.body.style.paddingRight = '0';
+    });
+});
+
+// clientes.js (modificar la función loadEditForm)
+const loadEditForm = async (url) => {
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken()
+            }
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const html = await response.text();
+        const modalElement = document.getElementById('clienteEditModal');
+        const modal = new bootstrap.Modal(modalElement);
+        const container = modalElement.querySelector('#formContainer');
+        
+        container.innerHTML = html;
+        modal.show();
+        
+        // Disparar evento para inicialización
+        document.dispatchEvent(new CustomEvent('ajaxFormLoaded', {
+            detail: { form: container.querySelector('form') }
+        }));
+        
+    } catch (error) {
+        showAlert('error', `Error cargando formulario: ${error.message}`);
+    }
+};
+
+document.querySelectorAll('.edit-client').forEach(button => {
+    button.addEventListener('click', (e) => {
+        e.preventDefault();
+        loadEditForm(e.currentTarget.dataset.url);
+    });
+});
+
+
+// Nueva función de inicialización
+const initEditFormValidation = (modalElement) => {
+    // Validación en tiempo real
+    modalElement.querySelectorAll('input, select, textarea').forEach(field => {
+        field.addEventListener('input', () => validateField(field));
+    });
+
+    // Manejar envío
+    const form = modalElement.querySelector('#clienteEditForm');
+    form.addEventListener('submit', handleFormSubmit);
+
+    // Enfocar primer campo
+    const firstInput = form.querySelector('input:not([type="hidden"])');
+    firstInput?.focus();
+
+    // Limpiar errores al cerrar
+    modalElement.addEventListener('hidden.bs.modal', () => {
+        modalElement.querySelectorAll('.is-invalid').forEach(field => {
+            field.classList.remove('is-invalid');
+        });
+    });
+};
 
     document.querySelectorAll('.edit-client').forEach(button => {
         button.addEventListener('click', (e) => {
