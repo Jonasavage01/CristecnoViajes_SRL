@@ -1,0 +1,290 @@
+{% load static %}
+<!-- CSS de SweetAlert2 -->
+
+
+<!-- Modal para Nuevo Cliente -->
+<div class="modal fade" id="clienteModal" tabindex="-1" aria-labelledby="clienteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dark">
+        <div class="modal-content bg-dark">
+            <form id="clienteForm" method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <div class="modal-header border-bottom border-info py-3">
+                    <h5 class="modal-title text-white fw-normal">
+                        <i class="bi bi-person-plus me-2"></i>REGISTRO DE CLIENTE
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Línea decorativa superior -->
+                    <div class="position-absolute top-0 start-0 end-0" style="height: 3px; background: linear-gradient(90deg, #4a9fff, #2d70cc);"></div>
+
+                    <!-- Estado del Lead -->
+                    <div class="mb-5">
+                        <div class="d-flex align-items-center mb-4 gap-3">
+                            <div class="bg-info rounded-circle p-2 d-flex align-items-center">
+                                <i class="bi bi-activity fs-5 text-white"></i>
+                            </div>
+                            <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Estado del Lead</h5>
+                        </div>
+                        <div class="row g-4">
+                            <div class="col-12 col-md-6">
+                                <div class="mb-4 position-relative">
+                                    <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                        {{ form.estado.label }}<span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.estado }}
+                                    {% if form.estado.errors %}
+                                        <div class="invalid-feedback">{{ form.estado.errors|first }}</div>
+                                    {% else %}
+                                        <div class="invalid-feedback" style="display: none;"></div>
+                                    {% endif %}
+                                    <small class="form-text text-muted mt-1">Seleccione el estado actual del lead</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Datos Personales -->
+                    <div class="mb-5">
+                        <div class="d-flex align-items-center mb-4 gap-3">
+                            <div class="bg-info rounded-circle p-2 d-flex align-items-center">
+                                <i class="bi bi-person-lines-fill fs-5 text-white"></i>
+                            </div>
+                            <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Datos Personales</h5>
+                        </div>
+                        <div class="row g-4">
+                            {% for field in form %}
+                                {% if field.name in 'nombre_apellido,cedula_pasaporte,fecha_nacimiento,nacionalidad' %}
+                                    <div class="col-12 col-md-6">
+                                        <div class="mb-4 position-relative">
+                                            <label for="{{ field.id_for_label }}" class="form-label">
+                                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                            </label>
+                                            {{ field }}
+                                            {% if field.help_text %}
+                                                <small class="form-text text-muted mt-1">{{ field.help_text }}</small>
+                                            {% endif %}
+                                            {% if field.errors %}
+                                                <div class="invalid-feedback">{{ field.errors|first }}</div>
+                                            {% else %}
+                                                <div class="invalid-feedback" style="display: none;"></div>
+                                            {% endif %}
+                                            {% if field.field.required %}
+                                                <small class="text-muted form-required-message" style="display: {% if field.value %}none{% else %}block{% endif %};">
+                                                    Este campo es obligatorio
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Datos Laborales -->
+                    <div class="mb-5">
+                        <div class="d-flex align-items-center mb-4 gap-3">
+                            <div class="bg-info rounded-circle p-2 d-flex align-items-center">
+                                <i class="bi bi-building fs-5 text-white"></i>
+                            </div>
+                            <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Datos Laborales</h5>
+                        </div>
+                        <div class="row g-4">
+                            <div class="col-12 col-md-6">
+                                <div class="mb-4 position-relative">
+                                    <label for="{{ form.lugar_trabajo.id_for_label }}" class="form-label">
+                                        {{ form.lugar_trabajo.label }}{% if form.lugar_trabajo.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.lugar_trabajo }}
+                                    {% if form.lugar_trabajo.errors %}
+                                        <div class="invalid-feedback">{{ form.lugar_trabajo.errors|first }}</div>
+                                    {% else %}
+                                        <div class="invalid-feedback" style="display: none;"></div>
+                                    {% endif %}
+                                    <small class="form-text text-muted mt-1">Ej: Nombre de la empresa u organización</small>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="mb-4 position-relative">
+                                    <label for="{{ form.cargo.id_for_label }}" class="form-label">
+                                        {{ form.cargo.label }}{% if form.cargo.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.cargo }}
+                                    {% if form.cargo.errors %}
+                                        <div class="invalid-feedback">{{ form.cargo.errors|first }}</div>
+                                    {% else %}
+                                        <div class="invalid-feedback" style="display: none;"></div>
+                                    {% endif %}
+                                    <small class="form-text text-muted mt-1">Ej: Gerente de Ventas</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                <!-- Información de Contacto -->
+<div class="mb-5">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <div class="bg-info rounded-circle p-2 d-flex align-items-center">
+            <i class="bi bi-telephone-forward fs-5 text-white"></i>
+        </div>
+        <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Contacto</h5>
+    </div>
+    <div class="row g-4">
+        <!-- Email con soporte para N/A -->
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.email.id_for_label }}" class="form-label">
+                    {{ form.email.label }}<span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                    {{ form.email }}
+                    <button type="button" class="btn btn-outline-info" 
+                            onclick="document.getElementById('{{ form.email.id_for_label }}').value = 'N/A'">
+                        <i class="bi bi-x-circle"></i> N/A
+                    </button>
+                </div>
+                {% if form.email.errors %}
+                    <div class="invalid-feedback">{{ form.email.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+                <small class="form-text text-muted mt-1">Ejemplo: nombre@dominio.com o N/A</small>
+            </div>
+        </div>
+
+        <!-- Teléfono con formateo automático -->
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                    {{ form.telefono.label }}<span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                    {{ form.telefono }}
+                    <button type="button" class="btn btn-outline-info" 
+                            onclick="document.getElementById('{{ form.telefono.id_for_label }}').value = 'N/A'">
+                        <i class="bi bi-x-circle"></i> N/A
+                    </button>
+                </div>
+                {% if form.telefono.errors %}
+                    <div class="invalid-feedback">{{ form.telefono.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+                <small class="form-text text-muted mt-1">{{ form.telefono.help_text }}</small>
+            </div>
+        </div>
+
+        <!-- Móvil con validación en tiempo real -->
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.movil.id_for_label }}" class="form-label">
+                    {{ form.movil.label }}<span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                    {{ form.movil }}
+                    <button type="button" class="btn btn-outline-info" 
+                            onclick="document.getElementById('{{ form.movil.id_for_label }}').value = 'N/A'">
+                        <i class="bi bi-x-circle"></i> N/A
+                    </button>
+                </div>
+                {% if form.movil.errors %}
+                    <div class="invalid-feedback">{{ form.movil.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+                <small class="form-text text-muted mt-1">{{ form.movil.help_text }}</small>
+            </div>
+        </div>
+                            <div class="col-12">
+                                <div class="mb-4 position-relative">
+                                    <label for="{{ form.direccion_fisica.id_for_label }}" class="form-label">
+                                        {{ form.direccion_fisica.label }}{% if form.direccion_fisica.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.direccion_fisica }}
+                                    {% if form.direccion_fisica.errors %}
+                                        <div class="invalid-feedback">{{ form.direccion_fisica.errors|first }}</div>
+                                    {% else %}
+                                        <div class="invalid-feedback" style="display: none;"></div>
+                                    {% endif %}
+                                    <small class="form-text text-muted mt-1">Dirección completa incluyendo ciudad y estado</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información Adicional -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center mb-4 gap-3">
+                            <div class="bg-info rounded-circle p-2 d-flex align-items-center">
+                                <i class="bi bi-info-square fs-5 text-white"></i>
+                            </div>
+                            <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Información Adicional</h5>
+                        </div>
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <div class="mb-4 position-relative">
+                                    <label for="{{ form.documento.id_for_label }}" class="form-label">
+                                        <i class="bi bi-cloud-upload me-2"></i>{{ form.documento.label }}{% if form.documento.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.documento }}
+                                    {% if form.documento.errors %}
+                                        <div class="invalid-feedback">{{ form.documento.errors|first }}</div>
+                                    {% else %}
+                                        <div class="invalid-feedback" style="display: none;"></div>
+                                    {% endif %}
+                                    <small class="form-text text-muted mt-1">{{ form.documento.help_text }}</small>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="mb-4 position-relative">
+                                    <label for="{{ form.notas.id_for_label }}" class="form-label">
+                                        {{ form.notas.label }}{% if form.notas.field.required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    {{ form.notas }}
+                                    {% if form.notas.errors %}
+                                        <div class="invalid-feedback">{{ form.notas.errors|first }}</div>
+                                    {% else %}
+                                        <div class="invalid-feedback" style="display: none;"></div>
+                                    {% endif %}
+                                    <small class="form-text text-muted mt-1">Observaciones relevantes sobre el cliente</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top border-secondary px-4 pb-4 pt-3">
+                    <button type="button" class="btn btn-lg btn-outline-light" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-lg btn-info fw-medium">
+                        <i class="bi bi-save2 me-2"></i>Guardar Registro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts al final del documento -->
+
+<script type="module">
+    import { showErrorAlert, showSuccessAlert } from '{% static "crm/alerts.js" %}';
+    window.showErrorAlert = showErrorAlert;
+    window.showSuccessAlert = showSuccessAlert;
+</script>
+
+
+<!-- Scripts adicionales para enfoque y limpieza de errores al abrir/cerrar el modal -->
+<script>
+document.getElementById('clienteModal').addEventListener('shown.bs.modal', function () {
+    const firstInput = this.querySelector('input:not([type="hidden"]), select');
+    firstInput?.focus();
+});
+
+document.getElementById('clienteModal').addEventListener('hide.bs.modal', function () {
+    this.querySelectorAll('.is-invalid').forEach(field => {
+        field.classList.remove('is-invalid');
+    });
+});
+</script>
