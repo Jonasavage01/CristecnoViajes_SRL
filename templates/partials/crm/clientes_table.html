@@ -17,10 +17,10 @@
                 <td>
                     <div class="d-flex align-items-center">
                         <div class="avatar bg-primary text-white me-3">
-                            {{ cliente.nombre_apellido|slice:":1"|upper }}
+                            {{ cliente.nombre|slice:":1"|upper }}
                         </div>
                         <div>
-                            <div class="fw-bold">{{ cliente.nombre_apellido }}</div>
+                            <div class="fw-bold">{{ cliente.nombre }} {{ cliente.apellido }}</div>
                             <small class="text-muted">{{ cliente.nacionalidad.name }}</small>
                         </div>
                     </div>

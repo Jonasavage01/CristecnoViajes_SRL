@@ -5,20 +5,20 @@ import datetime
 
 class Cliente(models.Model):
     ESTADO_CHOICES = [
-        ('nuevo', 'Nuevo'),
-        ('contactado', 'Contactado'),
-        ('en_proceso', 'En Proceso'),
-        ('convertido', 'Convertido'),
+        ('activo', 'Activo'),
+        ('inactivo', 'Inactivo'),
+        ('potencial', 'Potencial'),  # Solo estos 3 estados
     ]
 
-    nombre_apellido = models.CharField('Nombre y Apellido', max_length=200)
+    nombre = models.CharField('Nombre', max_length=100)
+    apellido = models.CharField('Apellido', max_length=100)
     cedula_pasaporte = models.CharField(
         'Cédula/Pasaporte', 
         max_length=20, 
         unique=True,
         help_text='Números para cédula dominicana o número de pasaporte internacional'
     )
-    fecha_nacimiento = models.DateField('Fecha de Nacimiento')
+    fecha_nacimiento = models.DateField('Fecha de Nacimiento', null=True, blank=True)
     nacionalidad = CountryField(
         'Nacionalidad',
         blank=False,  # Obligatorio
@@ -44,7 +44,7 @@ class Cliente(models.Model):
         'Estado del Lead',
         max_length=20,
         choices=ESTADO_CHOICES,
-        default='nuevo'
+        default='activo' 
     )
     notas = models.TextField(blank=True, verbose_name='Notas Adicionales')
     documento = models.FileField(
@@ -62,21 +62,23 @@ class Cliente(models.Model):
             models.Index(fields=['cedula_pasaporte']),
             models.Index(fields=['email']),
         ]
-
     def __str__(self):
-        return self.nombre_apellido
+        return f"{self.nombre} {self.apellido}"
 
     def get_estado_color(self):
         color_map = {
-            'nuevo': 'primary',
-            'contactado': 'info',
-            'en_proceso': 'warning',
-            'convertido': 'success'
+            'activo': 'success',
+            'inactivo': 'secondary',
+            'potencial': 'warning'
         }
-        return color_map.get(self.estado, 'secondary')
+        return color_map.get(self.estado, 'light')
 
     def get_edad(self):
+        if not self.fecha_nacimiento:
+            return "N/A"
+        
         today = datetime.date.today()
-        return today.year - self.fecha_nacimiento.year - (
+        edad = today.year - self.fecha_nacimiento.year - (
             (today.month, today.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
         )
+        return f"{edad} años"

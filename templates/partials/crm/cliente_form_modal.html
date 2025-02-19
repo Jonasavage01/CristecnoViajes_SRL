@@ -19,67 +19,135 @@
                     <div class="position-absolute top-0 start-0 end-0" style="height: 3px; background: linear-gradient(90deg, #4a9fff, #2d70cc);"></div>
 
                     <!-- Estado del Lead -->
-                    <div class="mb-5">
-                        <div class="d-flex align-items-center mb-4 gap-3">
-                            <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-                                <i class="bi bi-activity fs-5 text-white"></i>
-                            </div>
-                            <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Estado del Lead</h5>
-                        </div>
-                        <div class="row g-4">
-                            <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.estado.id_for_label }}" class="form-label">
-                                        {{ form.estado.label }}<span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.estado }}
-                                    {% if form.estado.errors %}
-                                        <div class="invalid-feedback">{{ form.estado.errors|first }}</div>
-                                    {% else %}
-                                        <div class="invalid-feedback" style="display: none;"></div>
-                                    {% endif %}
-                                    <small class="form-text text-muted mt-1">Seleccione el estado actual del lead</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<div class="mb-5">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <div class="bg-info rounded-circle p-2 d-flex align-items-center">
+            <i class="bi bi-activity fs-5 text-white"></i>
+        </div>
+        <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Estado del Lead</h5>
+    </div>
+    <div class="row g-4">
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.estado.id_for_label }}" class="form-label">
+                    {{ form.estado.label }}<span class="text-danger">*</span>
+                </label>
+                {{ form.estado }}
+                {% if form.estado.errors %}
+                    <div class="invalid-feedback">{{ form.estado.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+                <small class="form-text text-muted mt-1">
+                    Opciones: Activo, Inactivo, Potencial
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
 
-                    <!-- Datos Personales -->
-                    <div class="mb-5">
-                        <div class="d-flex align-items-center mb-4 gap-3">
-                            <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-                                <i class="bi bi-person-lines-fill fs-5 text-white"></i>
-                            </div>
-                            <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Datos Personales</h5>
-                        </div>
-                        <div class="row g-4">
-                            {% for field in form %}
-                                {% if field.name in 'nombre_apellido,cedula_pasaporte,fecha_nacimiento,nacionalidad' %}
-                                    <div class="col-12 col-md-6">
-                                        <div class="mb-4 position-relative">
-                                            <label for="{{ field.id_for_label }}" class="form-label">
-                                                {{ field.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                            </label>
-                                            {{ field }}
-                                            {% if field.help_text %}
-                                                <small class="form-text text-muted mt-1">{{ field.help_text }}</small>
-                                            {% endif %}
-                                            {% if field.errors %}
-                                                <div class="invalid-feedback">{{ field.errors|first }}</div>
-                                            {% else %}
-                                                <div class="invalid-feedback" style="display: none;"></div>
-                                            {% endif %}
-                                            {% if field.field.required %}
-                                                <small class="text-muted form-required-message" style="display: {% if field.value %}none{% else %}block{% endif %};">
-                                                    Este campo es obligatorio
-                                                </small>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
+                   <!-- Datos Personales -->
+<div class="mb-5">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <div class="bg-info rounded-circle p-2 d-flex align-items-center">
+            <i class="bi bi-person-lines-fill fs-5 text-white"></i>
+        </div>
+        <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Datos Personales</h5>
+    </div>
+    <div class="row g-4">
+        <!-- Nombre -->
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                    Nombre<span class="text-danger">*</span>
+                </label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}
+                    <div class="invalid-feedback">{{ form.nombre.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+                <small class="text-muted form-required-message" style="display: {% if form.nombre.value %}none{% else %}block{% endif %};">
+                    Este campo es obligatorio
+                </small>
+            </div>
+        </div>
+
+        <!-- Apellido -->
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.apellido.id_for_label }}" class="form-label">
+                    Apellido<span class="text-danger">*</span>
+                </label>
+                {{ form.apellido }}
+                {% if form.apellido.errors %}
+                    <div class="invalid-feedback">{{ form.apellido.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+                <small class="text-muted form-required-message" style="display: {% if form.apellido.value %}none{% else %}block{% endif %};">
+                    Este campo es obligatorio
+                </small>
+            </div>
+        </div>
+
+        <!-- Cédula/Pasaporte -->
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.cedula_pasaporte.id_for_label }}" class="form-label">
+                    {{ form.cedula_pasaporte.label }}<span class="text-danger">*</span>
+                </label>
+                {{ form.cedula_pasaporte }}
+                {% if form.cedula_pasaporte.help_text %}
+                    <small class="form-text text-muted mt-1">{{ form.cedula_pasaporte.help_text }}</small>
+                {% endif %}
+                {% if form.cedula_pasaporte.errors %}
+                    <div class="invalid-feedback">{{ form.cedula_pasaporte.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Fecha de Nacimiento con N/A -->
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">
+                    {{ form.fecha_nacimiento.label }}
+                </label>
+                <div class="input-group">
+                    {{ form.fecha_nacimiento }}
+                    <button type="button" class="btn btn-outline-info" 
+                            onclick="document.getElementById('{{ form.fecha_nacimiento.id_for_label }}').value = ''">
+                        <i class="bi bi-x-circle"></i> N/A
+                    </button>
+                </div>
+                {% if form.fecha_nacimiento.errors %}
+                    <div class="invalid-feedback">{{ form.fecha_nacimiento.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+                <small class="form-text text-muted mt-1">Formato: DD/MM/AAAA</small>
+            </div>
+        </div>
+
+        <!-- Nacionalidad -->
+        <div class="col-12 col-md-6">
+            <div class="mb-4 position-relative">
+                <label for="{{ form.nacionalidad.id_for_label }}" class="form-label">
+                    {{ form.nacionalidad.label }}<span class="text-danger">*</span>
+                </label>
+                {{ form.nacionalidad }}
+                {% if form.nacionalidad.errors %}
+                    <div class="invalid-feedback">{{ form.nacionalidad.errors|first }}</div>
+                {% else %}
+                    <div class="invalid-feedback" style="display: none;"></div>
+                {% endif %}
+                <small class="form-text text-muted mt-1">Seleccione la nacionalidad</small>
+            </div>
+        </div>
+    </div>
+</div>
 
                     <!-- Datos Laborales -->
                     <div class="mb-5">

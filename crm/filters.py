@@ -1,7 +1,6 @@
 # filters.py
 from django.db.models import Q
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 
 class ClienteFilter:
     FILTER_PARAMS = ['q', 'fecha_creacion_desde', 'fecha_creacion_hasta', 'estado']
@@ -19,11 +18,23 @@ class ClienteFilter:
 
     def _apply_search_filter(self):
         if search_query := self.params.get('q'):
-            self.queryset = self.queryset.filter(
-                Q(nombre_apellido__icontains=search_query) |
-                Q(email__icontains=search_query) |
-                Q(cedula_pasaporte__icontains=search_query)
-            )
+            query_terms = search_query.split()
+            queries = []
+            
+            for term in query_terms:
+                term_query = (
+                    Q(nombre__icontains=term) |
+                    Q(apellido__icontains=term) |
+                    Q(email__icontains=term) |
+                    Q(cedula_pasaporte__icontains=term)
+                )
+                queries.append(term_query)
+            
+            final_query = queries.pop()
+            for query in queries:
+                final_query &= query
+                
+            self.queryset = self.queryset.filter(final_query)
 
     def _validate_dates(self, fecha_desde, fecha_hasta):
         if fecha_desde and fecha_hasta:
@@ -42,7 +53,9 @@ class ClienteFilter:
 
     def _apply_estado_filter(self):
         if estado := self.params.get('estado'):
-            self.queryset = self.queryset.filter(estado=estado)
+            valid_states = [choice[0] for choice in self.queryset.model.ESTADO_CHOICES]
+            if estado in valid_states:
+                self.queryset = self.queryset.filter(estado__iexact=estado)
 
     @property
     def has_active_filters(self):

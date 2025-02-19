@@ -19,14 +19,18 @@ class ClienteForm(forms.ModelForm):
         model = Cliente
         fields = '__all__'
         widgets = {
-            'fecha_nacimiento': forms.DateInput(
+             'fecha_nacimiento': forms.DateInput(
                 attrs={
                     'type': 'date',
-                    'max': datetime.date.today().strftime('%Y-%m-%d')
+                    'max': datetime.date.today().strftime('%Y-%m-%d'),
+                    'required': False  # Hacerlo opcional
                 }
             ),
             'nacionalidad': CountrySelectWidget(attrs={'class': 'form-select'}),
-            'estado': forms.Select(attrs={'class': 'form-select'}),
+            'estado': forms.Select(attrs={
+                'class': 'form-select',
+                'choices': Cliente.ESTADO_CHOICES  # Asegurar que use las opciones del modelo
+            }),
             'notas': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Ingrese observaciones relevantes...'}),
             'direccion_fisica': forms.Textarea(attrs={'rows': 2}),
             'telefono': forms.TextInput(attrs={
@@ -123,10 +127,11 @@ class ClienteForm(forms.ModelForm):
 
     def clean_fecha_nacimiento(self):
         fecha = self.cleaned_data.get('fecha_nacimiento')
-        if fecha and fecha > datetime.date.today():
+        # Permitir N/A
+        if fecha is None or fecha == self.NA_CHOICE:
+            return None
+        if fecha > datetime.date.today():
             raise ValidationError("La fecha de nacimiento no puede ser futura.")
-        if fecha and (datetime.date.today().year - fecha.year) < 18:
-            raise ValidationError("El cliente debe ser mayor de edad.")
         return fecha
 
     def clean_documento(self):

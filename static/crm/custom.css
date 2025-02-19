@@ -1,18 +1,29 @@
 /* custom.css */
+/* ========== Variables y Configuraciones Globales ========== */
 :root {
     --sidebar-width: 280px;
     --sidebar-bg: #1a2332;
     --primary-color: #4a90e2;
     --hover-bg: rgba(255,255,255,0.05);
+    --text-light: #ffffff;
+    --text-muted: #6c757d;
+    --error-color: #ff6b6b;
+    --success-color: #27ae60;
+    --border-radius: 8px;
+    --transition-time: 0.3s ease;
 }
 
+
+
+/* ========== Estilos Base ========== */
 body {
     background-color: #f8f9fa;
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
+    color: #212529;
 }
 
-/* Sidebar Mejorado */
+/* ========== Sidebar ========== */
 .sidebar {
     background: var(--sidebar-bg);
     min-height: 100vh;
@@ -23,6 +34,52 @@ body {
     box-shadow: 3px 0 15px rgba(0,0,0,0.1);
     z-index: 1000;
     padding: 1.5rem 0;
+    
+    .nav-link {
+        color: #a0aec0;
+        padding: 0.85rem 2rem;
+        margin: 0.25rem 1rem;
+        border-radius: var(--border-radius);
+        transition: all var(--transition-time);
+        display: flex;
+        align-items: center;
+        font-size: 0.95rem;
+        position: relative;
+        
+        &:hover {
+            background: var(--hover-bg);
+            color: var(--text-light);
+            transform: translateX(8px);
+        }
+        
+        &.active {
+            background: var(--primary-color);
+            color: var(--text-light);
+            font-weight: 500;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            
+            &::after {
+                content: '';
+                position: absolute;
+                right: -24px;
+                top: 50%;
+                transform: translateY(-50%);
+                border: 12px solid transparent;
+                border-right-color: #f8f9fa;
+            }
+        }
+        
+        .bi {
+            font-size: 1.2rem;
+            width: 24px;
+            margin-right: 1rem;
+            transition: transform 0.2s ease;
+            
+            &:hover {
+                transform: scale(1.1);
+            }
+        }
+    }
 }
 
 .sidebar-header {
@@ -30,317 +87,363 @@ body {
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
-.sidebar .nav-link {
-    color: #a0aec0;
-    padding: 0.85rem 2rem;
-    margin: 0.25rem 1rem;
-    border-radius: 8px;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    font-size: 0.95rem;
-    position: relative;
+.sidebar {
+    transition: width var(--transition-time);
 }
 
-.sidebar .nav-link:hover {
-    background: var(--hover-bg);
-    color: #fff;
-    transform: translateX(8px);
-}
-
-.sidebar .nav-link.active {
-    background: var(--primary-color);
-    color: white;
-    font-weight: 500;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-}
-
-.sidebar .nav-link.active::after {
-    content: '';
-    position: absolute;
-    right: -24px;
-    top: 50%;
-    transform: translateY(-50%);
-    border: 12px solid transparent;
-    border-right-color: #f8f9fa;
-}
-
-.sidebar .bi {
-    font-size: 1.2rem;
-    width: 24px;
-    margin-right: 1rem;
-    transition: transform 0.2s ease;
-}
-
-.sidebar .nav-link:hover .bi {
-    transform: scale(1.1);
-}
-
-.main-content {
-    margin-left: var(--sidebar-width);
-    padding-top: 2rem;
-    min-height: 100vh;
-}
-
-/* Mejoras Responsivas */
-@media (max-width: 768px) {
+/* ========== Sidebar Mobile como Bottom Nav ========== */
+@media (max-width: 767.98px) {
     .sidebar {
-        width: 100%;
-        position: relative;
-        min-height: auto;
-    }
-    
-    .main-content {
-        margin-left: 0;
-        padding: 1rem;
-    }
-}
-/* Contenido Principal */
-main {
-    margin-left: 250px;
-    padding: 20px;
-    margin-top: 20px;
-}
-
-/* Tarjetas y Sombras */
-.card {
-    border: none;
-    border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.1);
-}
-
-.table-responsive {
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 0 15px rgba(0,0,0,0.1);
-}
-
-/* Tabla Mejorada */
-.table {
-    margin-bottom: 0;
-}
-
-.table thead {
-    background: #3498db;
-    color: white;
-}
-
-.table thead th {
-    border: none;
-    padding: 15px;
-}
-
-.table tbody tr {
-    transition: background-color 0.2s;
-}
-
-.table tbody tr:hover {
-    background-color: #f8f9fa;
-}
-
-/* CSS Personalizado solo para el formulario de cliente */
-
-/* Modal: aumenta el ancho del modal */
-.modal-dialog.modal-xl {
-    max-width: 90%;
-}
-
-/* Fondo y estilo del modal */
-.modal-dark .modal-content {
-    background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
-    border: 1px solid rgba(74, 159, 255, 0.15);
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-/* Estilos para las etiquetas dentro de #clienteForm */
-#clienteForm .form-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #ffffff;
-    font-size: 1.1rem;
-}
-
-/* Estilos para los campos de entrada dentro de #clienteForm */
-#clienteForm .form-control {
-    background: #2a2a2a !important; /* Fondo oscuro */
-    border: 2px solid #444444 !important;
-    color: #ffffff !important;
-    height: 70px;
-    padding: 1.5rem 2rem !important;
-    border-radius: 16px; /* Bordes más redondeados */
-    font-size: 1.2rem;
-    transition: all 0.3s ease;
-}
-
-#clienteForm .form-control:focus {
-    background: #3a3a3a !important;
-    border-color: #4a9fff !important;
-    box-shadow: 0 0 0 4px rgba(74, 159, 255, 0.15) !important;
-}
-
-#clienteForm .form-control::placeholder {
-    color: transparent;
-}
-
-/* Estilos para mensajes de error dentro de #clienteForm */
-#clienteForm .invalid-feedback {
-    color: #ff6b6b;
-    font-size: 0.9em;
-    padding-left: 0.5rem;
-}
-
-/* Estilos para el input file dentro de #clienteForm */
-#clienteForm .custom-file-input input[type="file"] {
-    display: none;
-}
-
-#clienteForm .custom-file-input .file-label {
-    background: #2a2a2a;
-    border: 2px dashed #444;
-    color: #ffffff;
-    padding: 1.75rem;
-    border-radius: 16px;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-}
-
-#clienteForm .custom-file-input .file-label:hover {
-    background: #3a3a3a;
-    border-color: #4a9fff;
-    color: #fff;
-}
-
-/* Estilos para los botones dentro de #clienteForm */
-#clienteForm .btn-info {
-    background: linear-gradient(135deg, #4a9fff, #2d70cc);
-    border: none;
-    padding: 1rem 2.5rem;
-    border-radius: 16px;
-    font-size: 1.2rem;
-    letter-spacing: 0.5px;
-    transition: all 0.3s ease;
-    color: #ffffff; /* Texto blanco */
-}
-
-#clienteForm .btn-info:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(74, 159, 255, 0.3);
-}
-
-.letter-spacing-1 {
-    letter-spacing: 1px;
-}
-
-
-/* Botones Personalizados */
-.btn-primary {
-    background-color: #3498db;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-    background-color: #2980b9;
-    transform: translateY(-1px);
-}
-
-.btn-outline-success {
-    border-color: #27ae60;
-    color: #27ae60;
-}
-
-.btn-outline-success:hover {
-    background-color: #27ae60;
-    color: white;
-}
-
-/* Paginación */
-.pagination .page-item .page-link {
-    color: #3498db;
-    border: 1px solid #dee2e6;
-    margin: 0 3px;
-    border-radius: 4px;
-}
-
-.pagination .page-item.active .page-link {
-    background: #3498db;
-    border-color: #3498db;
-    color: white;
-}
-
-/* Modal Mejorado */
-.modal-header {
-    border-bottom: none;
-    padding: 1.5rem;
-}
-
-.modal-content {
-    border-radius: 8px;
-}
-
-.modal-title {
-    font-weight: 600;
-}
-
-/* Filtros Mejorados */
-.input-group-text {
-    background: #fff;
-    border-color: #dee2e6;
-    color: #6c757d;
-}
-
-.form-control:focus, .form-select:focus {
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
-    border-color: #4a90e2;
-}
-
-.input-group {
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-.input-group:focus-within {
-    box-shadow: 0 0 8px rgba(74, 144, 226, 0.2);
-}
-
-.form-control-lg {
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-}
-
-/* Placeholder para filtro de producto */
-select:disabled {
-    background-color: #f8f9fa;
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-/* Responsive Design */
-@media (max-width: 768px) {
-    .sidebar {
-        margin-left: -250px;
-    }
-    
-    main {
-        margin-left: 0;
-        padding: 15px;
-    }
-    
-    .table-responsive {
+        position: fixed;
+        bottom: 0;
+        top: auto !important;
+        left: 0;
+        right: 0;
+        width: 100% !important;
+        height: auto;
+        min-height: 70px;
+        z-index: 1000;
+        padding: 0.5rem 1rem;
+        box-shadow: 0 -2px 15px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        background: var(--sidebar-bg);
+        transition: none;
         overflow-x: auto;
     }
+
+    .nav {
+        flex: 1;
+        flex-direction: row !important;
+        justify-content: space-around;
+        gap: 0.5rem;
+        margin: 0 auto;
+        padding: 0;
+        max-width: 600px;
+    }
+
+    .nav-item {
+        flex: 0 1 auto;
+        text-align: center;
+    }
+
+    .nav-link {
+        flex-direction: column;
+        align-items: center;
+        padding: 0.5rem !important;
+        margin: 0 !important;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        min-width: 60px;
+        transition: all 0.2s ease;
+        height: 100%;
+    }
+
+    .nav-link.active {
+        background: var(--primary-color);
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    .nav-link.active::after {
+        display: none !important;
+    }
+
+    .nav-link .bi {
+        font-size: 1.4rem;
+        margin: 0 0 2px 0;
+        transition: transform 0.2s ease;
+    }
+
+    .menu-text {
+        display: block;
+        line-height: 1.2;
+    }
+
+    .main-content {
+        padding-bottom: 80px !important; /* Espacio para el navbar fijo */
+        margin-left: 0 !important;
+        padding-top: 1.5rem !important;
+    }
+    
+    /* Mejorar visibilidad de íconos */
+    .nav-link:not(.active):hover .bi {
+        color: var(--text-light);
+    }
 }
 
-/* Estilos personalizados para la página de CRM */
+/* Ajustes para pantallas muy pequeñas */
+@media (max-width: 380px) {
+    .sidebar {
+        padding: 0.5rem;
+        min-height: 65px;
+    }
+    
+    .nav-link {
+        padding: 0.4rem !important;
+        min-width: 55px;
+    }
+    
+    .nav-link .bi {
+        font-size: 1.2rem;
+    }
+    
+    .menu-text {
+        font-size: 0.65rem;
+    }
+}
 
-/* Avatar: círculo con la inicial */
+/* Mejorar scroll en móviles */
+html {
+    scroll-padding-top: 20px;
+    scroll-behavior: smooth;
+}
+
+/* Asegurar que el contenido no quede detrás del navbar */
+body {
+    padding-bottom: 80px;
+}
+
+@media (min-width: 768px) {
+    body {
+        padding-bottom: 0;
+    }
+}
+
+/* ========== Contenido Principal ========== */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 2rem;
+    transition: margin-left var(--transition-time);
+    min-height: 100vh;
+    
+    @media (max-width: 767.98px) {
+        margin-left: 0 !important;
+        padding: 1.5rem;
+    }
+    
+    .card {
+        @media (max-width: 400px) {
+            border-radius: 0;
+            margin-left: -0.5rem;
+            margin-right: -0.5rem;
+        }
+    }
+}
+
+/* Mejorar transiciones */
+.nav-link {
+    transition: 
+        background-color var(--transition-time),
+        transform var(--transition-time),
+        color var(--transition-time);
+}
+
+/* Optimizar espaciado en desktop */
+@media (min-width: 768px) {
+    .main-content {
+        padding: 2.5rem;
+    }
+    
+    .sidebar-header {
+        padding-bottom: 2rem;
+    }
+}
+
+/* Mejorar accesibilidad */
+.nav-link:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Optimizar sombras */
+.sidebar {
+    box-shadow: 3px 0 20px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 767.98px) {
+    .sidebar {
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+    }
+}
+    
+
+
+/* ========== Tablas ========== */
+.table-responsive {
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    
+    .table {
+        margin-bottom: 0;
+        
+        thead {
+            background: var(--primary-color);
+            color: var(--text-light);
+            
+            th {
+                border: none;
+                padding: 15px;
+            }
+        }
+        
+        tbody tr {
+            transition: background-color var(--transition-time);
+            
+            &:hover {
+                background-color: #f8f9fa;
+                cursor: pointer;
+            }
+        }
+    }
+    .table-responsive {
+        @media (max-width: 400px) {
+            font-size: 0.8rem;
+            
+            .badge {
+                font-size: 0.75em;
+            }
+            
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+            }
+        }
+    }
+    
+    /* Ajustes en los filtros */
+    #filterForm {
+        @media (max-width: 400px) {
+            .col-auto, .col-12 {
+                padding: 0.25rem !important;
+            }
+            
+            .btn {
+                padding: 0.375rem 0.5rem;
+            }
+            
+            .input-group-text {
+                padding: 0.375rem;
+            }
+        }
+    }
+}
+
+/* ========== Modales ========== */
+.modal {
+    &-dialog.modal-xl {
+        max-width: 90%;
+    }
+    
+    &-dark .modal-content {
+        background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+        border: 1px solid rgba(74, 159, 255, 0.15);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    &-header {
+        border-bottom: none;
+        padding: 1.5rem;
+    }
+    
+}
+
+/* ========== Formularios ========== */
+#clienteForm {
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--text-light);
+        font-size: 1.1rem;
+    }
+    
+    .form-control {
+        background: #2a2a2a !important;
+        border: 2px solid #444444 !important;
+        color: var(--text-light) !important;
+        height: 70px;
+        padding: 1.5rem 2rem !important;
+        border-radius: 16px;
+        font-size: 1.2rem;
+        transition: all var(--transition-time);
+        
+        &:focus {
+            background: #3a3a3a !important;
+            border-color: #4a9fff !important;
+            box-shadow: 0 0 0 4px rgba(74, 159, 255, 0.15) !important;
+        }
+        
+        &::placeholder {
+            color: transparent;
+        }
+    }
+    
+    .invalid-feedback {
+        color: var(--error-color);
+        font-size: 0.9em;
+        padding-left: 0.5rem;
+    }
+    
+    .btn-info {
+        background: linear-gradient(135deg, #4a9fff, #2d70cc);
+        border: none;
+        padding: 1rem 2.5rem;
+        border-radius: 16px;
+        font-size: 1.2rem;
+        letter-spacing: 0.5px;
+        transition: all var(--transition-time);
+        color: var(--text-light);
+        
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 159, 255, 0.3);
+        }
+    }
+}
+
+/* ========== Botones y Paginación ========== */
+.btn {
+    &-primary {
+        background-color: var(--primary-color);
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        transition: all var(--transition-time);
+        
+        &:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+    }
+    
+    &-outline-success {
+        border-color: var(--success-color);
+        color: var(--success-color);
+        
+        &:hover {
+            background-color: var(--success-color);
+            color: var(--text-light);
+        }
+    }
+}
+
+.pagination {
+    .page-link {
+        color: var(--primary-color);
+        border: 1px solid #dee2e6;
+        margin: 0 3px;
+        border-radius: 4px;
+    }
+    
+    .active .page-link {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: var(--text-light);
+    }
+}
+
+/* ========== Utilidades ========== */
 .avatar {
     width: 40px;
     height: 40px;
@@ -351,48 +454,23 @@ select:disabled {
     font-weight: 500;
 }
 
-/* Efecto hover en las filas de la tabla */
-.table-hover tbody tr:hover {
-    background-color: #f8f9fa;
-    cursor: pointer;
-}
-
-
-/* error form js */
-
 .invalid-feedback {
     display: none;
-    color: #ff6b6b;
+    color: var(--error-color);
     font-size: 0.875em;
     margin-top: 0.25rem;
 }
 
 .is-invalid {
-    border-color: #ff6b6b !important;
+    border-color: var(--error-color) !important;
     padding-right: calc(1.5em + 0.75rem);
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23ff6b6b'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23ff6b6b' stroke='none'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg...");
     background-repeat: no-repeat;
     background-position: right calc(0.375em + 0.1875rem) center;
     background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
 
-.form-required-message {
-    font-size: 0.875em;
+input[value="N/A"] {
+    font-style: italic;
     color: #6c757d;
-    margin-top: 0.25rem;
-}
-
-
-
-
-/* Ajusta el tamaño de los botones N/A */
-.btn-outline-info {
-    padding: 0.375rem 0.75rem;
-    border-radius: 0 0.375rem 0.375rem 0;
-}
-
-/* Mejora la visibilidad de los placeholders */
-input::placeholder {
-    color: #6c757d !important;
-    opacity: 0.7 !important;
 }
