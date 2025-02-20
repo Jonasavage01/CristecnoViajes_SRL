@@ -1,6 +1,8 @@
 from django.db import models
 from django_countries.fields import CountryField
 import datetime
+from django.contrib.auth.models import User
+
 
 
 class Cliente(models.Model):
@@ -46,7 +48,7 @@ class Cliente(models.Model):
         choices=ESTADO_CHOICES,
         default='activo' 
     )
-    notas = models.TextField(blank=True, verbose_name='Notas Adicionales')
+
     documento = models.FileField(
         'Documento Adjunto',
         upload_to='clientes/documentos/',
@@ -82,3 +84,36 @@ class Cliente(models.Model):
             (today.month, today.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
         )
         return f"{edad} años"
+
+class DocumentoCliente(models.Model):
+    TIPO_CHOICES = [
+        ('general', 'General'),
+        ('contrato', 'Contrato'),
+        ('identificacion', 'Identificación'),
+        ('otros', 'Otros')
+    ]
+    
+    cliente = models.ForeignKey(Cliente, related_name='documentos', on_delete=models.CASCADE)
+    archivo = models.FileField(upload_to='clientes/documentos/%Y/%m/%d/')
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='general')
+    fecha_subida = models.DateTimeField(auto_now_add=True)
+    subido_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return f"Documento {self.get_tipo_display()} - {self.cliente}"
+
+class NotaCliente(models.Model):
+    cliente = models.ForeignKey(Cliente, related_name='notas_cliente', on_delete=models.CASCADE)
+    contenido = models.TextField('Contenido')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    autor = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        blank=True  # Permite que el campo sea opcional
+    )
+
+    class Meta:
+        ordering = ['-fecha_creacion']
+        verbose_name = 'Nota de Cliente'
+        verbose_name_plural = 'Notas de Clientes'

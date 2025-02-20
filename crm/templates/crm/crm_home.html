@@ -156,7 +156,9 @@
                                 </div>
                                 <div>
                                     <div class="fw-bold">
-                                        {{ cliente.nombre }} {{ cliente.apellido }}
+                                        <a href="{% url 'cliente_detail' cliente.pk %}" class="text-decoration-none link-primary">
+                                            {{ cliente.nombre }} {{ cliente.apellido }}
+                                        </a>
                                     </div>
                                     <small class="text-muted">
                                         {{ cliente.nacionalidad.name }}

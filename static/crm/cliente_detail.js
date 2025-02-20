@@ -1,41 +1,226 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar tooltips
-    const tooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    tooltips.map(t => new bootstrap.Tooltip(t))
-    
-    // Control de pestañas
-    const triggerTabList = [].slice.call(document.querySelectorAll('#clientTabs button'))
-    triggerTabList.forEach(triggerEl => {
-        const tabTrigger = new bootstrap.Tab(triggerEl)
-        triggerEl.addEventListener('click', e => {
-            e.preventDefault()
-            tabTrigger.show()
-        })
-    })
-    
-    // Preview documentos
-    const documentPreview = document.getElementById('documentPreview')
-    if(documentPreview) {
-        documentPreview.addEventListener('click', () => {
-            if(documentPreview.dataset.url) {
-                window.open(documentPreview.dataset.url, '_blank')
+    // Configuración inicial de tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+    // Función auxiliar para manejo de formularios
+    async function handleFormSubmission(form, config) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalContent = submitBtn.innerHTML;
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = config.loadingState;
+
+        try {
+            const response = await fetch(form.action, {
+                method: form.method,
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Error en la operación');
             }
-        })
+
+            await config.onSuccess(data);
+            if(config.resetForm) form.reset();
+            Swal.fire('Éxito', config.successMessage, 'success');
+            
+        } catch (error) {
+            console.error('Error:', error);
+            let errorMsg = 'Error de conexión';
+            if (error instanceof SyntaxError) {
+                errorMsg = 'Respuesta inválida del servidor';
+            } else if (error.message) {
+                errorMsg = error.message;
+            }
+            Swal.fire('Error', errorMsg, 'error');
+            if(config.onError) config.onError(error);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalContent;
+        }
+    }
+
+    // Manejo de subida de documentos
+    const uploadForm = document.getElementById('documentUploadForm');
+    if(uploadForm) {
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleFormSubmission(uploadForm, {
+                loadingState: '<i class="bi bi-upload me-2"></i>Subiendo...',
+                successMessage: 'Documento subido correctamente',
+                resetForm: true,
+                onSuccess: (data) => {
+                    const docContainer = document.getElementById('documentosContainer');
+                    const emptyMsg = docContainer.querySelector('.text-center');
+                    if(emptyMsg) emptyMsg.remove();
+
+                    const newDoc = createDocumentElement(data.document);
+                    docContainer.insertAdjacentHTML('afterbegin', newDoc);
+                    refreshTooltips();
+                }
+            });
+        });
+    }
+
+    // Manejo de actualización de notas
+    const notesForm = document.getElementById('notesForm');
+    if(notesForm) {
+        notesForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleFormSubmission(notesForm, {
+                loadingState: '<i class="bi bi-save me-2"></i>Guardando...',
+                successMessage: 'Notas actualizadas correctamente',
+                onSuccess: (data) => {
+                    document.querySelectorAll('[data-last-activity]').forEach(el => {
+                        el.textContent = data.updated_at;
+                    });
+                }
+            });
+        });
+    }
+
+    // Manejo de nuevas notas
+    const newNoteForm = document.getElementById('newNoteForm');
+    if(newNoteForm) {
+        newNoteForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleFormSubmission(newNoteForm, {
+                loadingState: '<i class="bi bi-plus-circle me-2"></i>Creando...',
+                successMessage: 'Nota creada correctamente',
+                resetForm: true,
+                onSuccess: (data) => {
+                    const notesContainer = document.getElementById('notesContainer');
+                    const newNote = createNoteElement(data.nota);
+                    
+                    if(notesContainer.querySelector('.no-notes')) {
+                        notesContainer.innerHTML = '';
+                    }
+                    
+                    notesContainer.prepend(newNote);
+                    setupNoteDeleteHandlers();
+                }
+            });
+        });
+    }
+
+    // Funciones de creación de elementos
+    function createDocumentElement(doc) {
+        return `
+            <div class="col-md-4 mb-3">
+                <div class="document-card border rounded p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        ${getFileIcon(doc.type)}
+                        <span class="text-truncate">${doc.name}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">${doc.upload_date}</small>
+                        <div>
+                            <a href="${doc.url}" 
+                               class="btn btn-sm btn-outline-primary"
+                               download>
+                                <i class="bi bi-download"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger delete-document" 
+                                    data-id="${doc.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
     
-    // Copiar datos al portapapeles
-    document.querySelectorAll('[data-copy]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const text = btn.dataset.copy
-            try {
-                await navigator.clipboard.writeText(text)
-                btn.innerHTML = '<i class="bi bi-check2"></i> Copiado!'
-                setTimeout(() => {
-                    btn.innerHTML = `<i class="bi bi-clipboard"></i> ${btn.dataset.originalText}`
-                }, 2000)
-            } catch(err) {
-                console.error('Error al copiar:', err)
+    function getFileIcon(type) {
+        const icons = {
+            'pdf': 'bi-file-earmark-pdf text-danger',
+            'doc': 'bi-file-earmark-word text-primary',
+            'docx': 'bi-file-earmark-word text-primary',
+            'jpg': 'bi-file-image text-success',
+            'jpeg': 'bi-file-image text-success',
+            'png': 'bi-file-image text-success'
+        };
+        return `<i class="bi ${icons[type.split('/')[1]] || 'bi-file-earmark'} fs-4 me-2"></i>`;
+    }
+
+    function createNoteElement(note) {
+        const noteElement = document.createElement('div');
+        noteElement.className = 'note-item border-bottom pb-3 mb-3';
+        noteElement.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted">${note.fecha}</small>
+                <button class="btn btn-sm btn-danger delete-note" data-id="${note.id}">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+            <p class="mb-0">${note.contenido}</p>
+        `;
+        return noteElement;
+    }
+
+    // Manejo de eliminación de elementos
+    function setupDeleteHandlers(selector, endpoint, successMessage) {
+        document.addEventListener('click', async (e) => {
+            const deleteBtn = e.target.closest(selector);
+            if(deleteBtn) {
+                const id = deleteBtn.dataset.id;
+                const result = await Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: "Esta acción no se puede deshacer",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sí, eliminar'
+                });
+
+                if(result.isConfirmed) {
+                    try {
+                        const response = await fetch(`${endpoint}/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        if(data.success) {
+                            deleteBtn.closest('.document-preview')?.parentElement?.remove();
+                            deleteBtn.closest('.note-item')?.remove();
+                            Swal.fire('Éxito', successMessage, 'success');
+                        }
+                    } catch(error) {
+                        Swal.fire('Error', 'Error al eliminar el elemento', 'error');
+                    }
+                }
             }
-        })
-    })
-})
+        });
+    }
+
+    // Configurar handlers de eliminación
+    setupDeleteHandlers('.delete-document', '/documents', 'Documento eliminado correctamente');
+    setupDeleteHandlers('.delete-note', '/notes', 'Nota eliminada correctamente');
+
+    // Preview de documentos
+    document.addEventListener('click', (e) => {
+        const docPreview = e.target.closest('.document-preview');
+        if(docPreview) {
+            const url = docPreview.dataset.url;
+            window.open(url, '_blank');
+        }
+    });
+
+    // Helper functions
+    function refreshTooltips() {
+        tooltipTriggerList.forEach(tooltip => bootstrap.Tooltip.getInstance(tooltip)?.dispose());
+        tooltipTriggerList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    }
+});

@@ -5,12 +5,16 @@ from django.utils import timezone
 from django.contrib import messages
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
-from .models import Cliente
-from .forms import ClienteEditForm
-import logging
+from django.utils.text import get_valid_filename
 from django.views.generic import View
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
+from .models import Cliente, DocumentoCliente
+from .forms import ClienteEditForm
+import logging
+import uuid
+from django.shortcuts import redirect
+from .models import Cliente, DocumentoCliente
+from .models import Cliente, DocumentoCliente, NotaCliente 
 
 logger = logging.getLogger(__name__)
 
@@ -27,16 +31,21 @@ class ClienteDetailView(DetailView):
             'Datos Personales': 'person-badge',
             'Contacto': 'telephone',
             'Laboral': 'briefcase',
-            'Sistema': 'gear'
+            'Sistema': 'gear',
+            'Documentos': 'folder',
+            'Notas': 'card-text'
         }
         
+        # Secciones principales
         context['secciones'] = [
             {
                 'titulo': 'Datos Personales',
                 'icono': icon_map['Datos Personales'],
                 'campos': [
+                    ('Nombre', cliente.nombre),
+                    ('Apellido', cliente.apellido),
                     ('Cédula/Pasaporte', cliente.cedula_pasaporte),
-                    ('Fecha Nacimiento', cliente.fecha_nacimiento.strftime("%d/%m/%Y")),
+                    ('Fecha Nacimiento', cliente.fecha_nacimiento.strftime("%d/%m/%Y") if cliente.fecha_nacimiento else 'N/A'),
                     ('Edad', cliente.get_edad()),
                     ('Nacionalidad', cliente.nacionalidad.name),
                 ]
@@ -45,8 +54,8 @@ class ClienteDetailView(DetailView):
                 'titulo': 'Contacto',
                 'icono': icon_map['Contacto'],
                 'campos': [
-                    ('Teléfono', cliente.telefono),
-                    ('Móvil', cliente.movil),
+                    ('Teléfono', cliente.telefono or 'N/A'),
+                    ('Móvil', cliente.movil or 'N/A'),
                     ('Email', cliente.email),
                     ('Dirección', cliente.direccion_fisica),
                 ]
@@ -70,7 +79,20 @@ class ClienteDetailView(DetailView):
             }
         ]
         
+        # Documentos adjuntos
+        context['documentos'] = cliente.documentos.all()
+        
+        # Notas
+        context['notas_info'] = {
+        'titulo': 'Notas',
+        'icono': icon_map['Notas'],
+        'contenido': cliente.notas_cliente.all().order_by('-fecha_creacion'),  # Usa la relación correcta
+        'ultima_actualizacion': cliente.ultima_actividad.strftime("%d/%m/%Y %H:%M")
+}
+        
         return context
+
+
 
 class ClienteUpdateView(UpdateView):
     model = Cliente
@@ -79,56 +101,193 @@ class ClienteUpdateView(UpdateView):
     
     def get_success_url(self):
         return reverse_lazy('cliente_detail', kwargs={'pk': self.object.pk})
-    
+
+    def get_context_data(self, **kwargs):
+        """Añadir contexto adicional para depuración"""
+        context = super().get_context_data(**kwargs)
+        context['debug_instance_pk'] = self.object.pk if self.object else 'None'
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """Override para asegurar la instancia antes de procesar el formulario"""
+        logger.debug(f"Editando cliente - Método POST - Usuario: {request.user}")
+        self.object = self.get_object()
+        logger.debug(f"Instancia obtenida - PK: {self.object.pk}")
+        return super().post(request, *args, **kwargs)
+
     def form_valid(self, form):
-        response = super().form_valid(form)
-        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        """Manejar respuesta exitosa con depuración"""
+        logger.debug("Iniciando form_valid...")
+        
+        # Guardar cambios
+        self.object = form.save()
+        logger.info(f"Cliente {self.object.pk} actualizado por {self.request.user}")
+
+        # Respuesta AJAX
+        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            logger.debug("Respondiendo a solicitud AJAX")
             return JsonResponse({
                 'success': True,
                 'message': 'Cliente actualizado exitosamente',
-                'new_data': {
-                    'nombre_apellido': self.object.nombre_apellido,
-                    'estado': self.object.get_estado_display(),
-                    'estado_color': self.object.get_estado_color(),
-                    'ultima_actividad': self.object.ultima_actividad.strftime("%d/%m/%Y %H:%M")
+                'cliente_data': {
+                    'id': self.object.id,
+                   'nombre': self.object.nombre,
+                    'apellido': self.object.apellido,
+            'estado': self.object.estado,
+            'estado_display': self.object.get_estado_display(),
+           'estado_color': self.object.get_estado_color(),
+                    'telefono': self.object.telefono,
+                    'email': self.object.email,
+                    'cedula': self.object.cedula_pasaporte,
+                    'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M")
                 }
             })
-        return response
-    
-# Agregar después de ClienteUpdateView
+        
+        # Respuesta normal
+        messages.success(self.request, 'Cliente actualizado exitosamente!')
+        return redirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        """Manejar errores de validación con logging detallado"""
+        logger.error("Errores de validación en el formulario de edición")
+        logger.debug("Datos del formulario inválidos: %s", form.data)
+        logger.debug("Errores detallados: %s", form.errors.as_json())
+        
+        # Depuración de la instancia
+        if hasattr(form, 'instance'):
+            logger.debug(f"Instancia en formulario inválido - PK: {form.instance.pk if form.instance else 'None'}")
+        else:
+            logger.warning("Formulario no tiene instancia asociada")
+
+        # Respuesta AJAX
+        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors.get_json_data(),
+                'form_errors': form.errors.get_json_data(),
+                'debug': {
+                    'instance_pk': self.object.pk if self.object else 'None',
+                    'form_instance_pk': form.instance.pk if form.instance else 'None'
+                }
+            }, status=400)
+            
+        return super().form_invalid(form)
+
+    def _compile_form_errors(self, form):
+        """Método auxiliar para formatear errores (usado en plantillas)"""
+        errors = []
+        for field, error_list in form.errors.items():
+            errors.append({
+                'field': field,
+                'messages': error_list
+            })
+        return errors
+
 class DocumentUploadView(View):
     def post(self, request, pk):
         cliente = get_object_or_404(Cliente, pk=pk)
         file = request.FILES.get('documento')
+        tipo = request.POST.get('tipo', 'general')  # Obtiene el tipo de documento
         
         if file:
-            # Validar tipo de archivo
-            allowed_types = ['application/pdf', 'application/msword', 
-                           'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+            allowed_types = [
+                'application/pdf', 
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'image/jpeg', 
+                'image/png'
+            ]
+            
             if file.content_type not in allowed_types:
-                return JsonResponse({'success': False, 'error': 'Tipo de archivo no permitido'}, status=400)
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'Tipo de archivo no permitido'
+                }, status=400)
             
-            # Validar tamaño (max 5MB)
             if file.size > 5 * 1024 * 1024:
-                return JsonResponse({'success': False, 'error': 'El archivo excede 5MB'}, status=400)
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'El archivo excede 5MB'
+                }, status=400)
             
-            cliente.documento = file
+            # Generar nombre único para el archivo
+            original_name = get_valid_filename(file.name)
+            unique_name = f"{uuid.uuid4().hex}_{original_name}"
+            
+            documento = DocumentoCliente(
+                cliente=cliente,
+                archivo=file,
+                tipo=tipo,  # Guarda el tipo de documento
+            )
+            documento.archivo.name = unique_name
+            documento.save()
+            
+            cliente.ultima_actividad = timezone.now()
             cliente.save()
+            
             return JsonResponse({
                 'success': True,
-                'document_url': cliente.documento.url,
-                'filename': cliente.documento.name.split('/')[-1]
+                'document': {
+                    'url': documento.archivo.url,
+                    'name': original_name,
+                    'upload_date': documento.fecha_subida.strftime("%d/%m/%Y %H:%M")
+                }
             })
-        return JsonResponse({'success': False, 'error': 'No se recibió ningún archivo'}, status=400)
+            
+        return JsonResponse({
+            'success': False, 
+            'error': 'No se recibió ningún archivo'
+        }, status=400)
 
 class NotesUpdateView(View):
     def post(self, request, pk):
         cliente = get_object_or_404(Cliente, pk=pk)
-        notas = request.POST.get('notas', '')
+        notas = request.POST.get('notas', '').strip()
+        
+        if len(notas) > 1000:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Máximo 1000 caracteres'
+            }, status=400)
         
         cliente.notas = notas
+        cliente.ultima_actividad = timezone.now()
         cliente.save()
+        
         return JsonResponse({
             'success': True,
-            'updated_at': cliente.ultima_actividad.strftime("%d/%m/%Y %H:%M")
+            'updated_at': cliente.ultima_actividad.strftime("%d/%m/%Y %H:%M"),
+            'notas_content': notas or 'No hay notas registradas'
         })
+
+class NoteCreateView(View):
+    def post(self, request, pk):
+        cliente = get_object_or_404(Cliente, pk=pk)
+        contenido = request.POST.get('contenido', '').strip()
+        
+        if len(contenido) > 1000:
+            return JsonResponse({'success': False, 'error': 'Máximo 1000 caracteres'}, status=400)
+        
+        try:
+            # Asegúrate de que el campo 'autor' sea opcional en el modelo o maneja usuarios anónimos
+            nota = NotaCliente.objects.create(
+                cliente=cliente,
+                contenido=contenido,
+                autor=request.user if request.user.is_authenticated else None
+            )
+            cliente.ultima_actividad = timezone.now()
+            cliente.save()
+            
+            return JsonResponse({
+                'success': True,
+                'nota': {
+                    'id': nota.id,
+                    'contenido': nota.contenido,
+                    'fecha': nota.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+                    'autor': nota.autor.get_full_name() if nota.autor else 'Anónimo'  # Manejo más seguro
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Error creando nota: {str(e)}", exc_info=True)
+            return JsonResponse({'success': False, 'error': 'Error del servidor'}, status=500)

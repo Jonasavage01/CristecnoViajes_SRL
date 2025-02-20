@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Detalle de Cliente - {{ cliente.nombre_apellido }}{% endblock %}
+{% block title %}Detalle de Cliente - {{ cliente.nombre }} {{ cliente.apellido }}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'crm/cliente_detail.css' %}">
@@ -14,7 +14,7 @@
         <div class="card-header bg-white border-0 pb-0">
             <div class="d-flex flex-wrap justify-content-between align-items-center">
                 <div class="mb-3">
-                    <h1 class="h2 mb-2">{{ cliente.nombre_apellido }}</h1>
+                    <h1 class="h2 mb-2">{{ cliente.nombre }} {{ cliente.apellido }}</h1>
                     <span class="status-badge badge bg-{{ cliente.get_estado_color }}">
                         {{ cliente.get_estado_display }}
                     </span>
@@ -109,97 +109,120 @@
                     </div>
                 </div>
 
-                <!-- Pestaña Documentos -->
-                <div class="tab-pane fade" id="docsTab">
-                    <div class="row g-4">
-                        <div class="col-12 col-lg-8">
-                            <div class="section-card card h-100">
-                                <div class="card-header bg-light border-0 py-3">
-                                    <h5 class="mb-0 d-flex align-items-center">
-                                        <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                                        Subir nuevo documento
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <form id="documentUploadForm" 
-                                          action="{% url 'upload_document' cliente.id %}" 
-                                          method="post" 
-                                          enctype="multipart/form-data">
-                                        {% csrf_token %}
-                                        <div class="input-group">
-                                            <input type="file" 
-                                                   class="form-control" 
-                                                   name="documento"
-                                                   accept=".pdf,.doc,.docx">
-                                            <button class="btn btn-primary" type="submit">
-                                                <i class="bi bi-upload me-2"></i>Subir
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-12 col-lg-4">
-                            <div class="section-card card h-100">
-                                <div class="card-header bg-light border-0 py-3">
-                                    <h5 class="mb-0 d-flex align-items-center">
-                                        <i class="bi bi-file-earmark me-2"></i>
-                                        Documentos adjuntos
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    {% if cliente.documento %}
-                                    <div id="documentPreview" 
-                                         class="document-preview rounded d-flex align-items-center justify-content-center cursor-pointer mb-3"
-                                         data-url="{{ cliente.documento.url }}"
-                                         data-bs-toggle="tooltip"
-                                         title="Haz clic para ver el documento">
-                                        <i class="bi bi-file-earmark-pdf fs-1 text-danger"></i>
-                                    </div>
-                                    <a href="{{ cliente.documento.url }}" 
-                                       class="btn btn-outline-primary w-100"
-                                       target="_blank">
-                                        <i class="bi bi-download me-2"></i>Descargar
-                                    </a>
-                                    {% else %}
-                                    <div class="text-center py-4">
-                                        <i class="bi bi-file-earmark-excel fs-1 text-muted"></i>
-                                        <p class="text-muted mt-2 mb-0">No hay documentos adjuntos</p>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<!-- Pestaña Documentos -->
+<div class="tab-pane fade" id="docsTab">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5><i class="bi bi-files me-2"></i>Documentos Adjuntos</h5>
                 </div>
+                <div class="card-body">
+                    <!-- Formulario de subida -->
+                    <form id="documentUploadForm" method="post" 
+                          action="{% url 'upload_document' cliente.pk %}" 
+                          enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="tipo_documento" class="form-label">Tipo de Documento:</label>
+                            <select name="tipo" id="tipo_documento" class="form-control" required>
+                                <option value="general">General</option>
+                                <option value="contrato">Contrato</option>
+                                <option value="identificacion">Identificación</option>
+                                <option value="otros">Otros</option>
+                            </select>
+                        </div>
 
-                <!-- Pestaña Notas -->
-                <div class="tab-pane fade" id="notesTab">
-                    <div class="section-card card">
-                        <div class="card-header bg-light border-0 py-3">
-                            <h5 class="mb-0 d-flex align-items-center">
-                                <i class="bi bi-pencil-square me-2"></i>
-                                Gestión de Notas
-                            </h5>
+                        <div class="mb-3">
+                            <label for="fileInput" class="form-label">Seleccionar Archivo:</label>
+                            <input type="file" name="documento" id="fileInput"
+                                   class="form-control" required 
+                                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
                         </div>
-                        <div class="card-body">
-                            <form id="notesForm" 
-                                  action="{% url 'update_notes' cliente.id %}" 
-                                  method="post">
-                                {% csrf_token %}
-                                <textarea class="form-control mb-3" 
-                                          name="notas" 
-                                          rows="6"
-                                          placeholder="Escribe aquí las notas importantes...">{{ cliente.notas }}</textarea>
-                                <button type="submit" 
-                                        class="btn btn-primary float-end"
-                                        data-bs-toggle="tooltip"
-                                        title="Guardar cambios">
-                                    <i class="bi bi-save me-2"></i>Guardar Notas
-                                </button>
-                            </form>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload me-2"></i>Subir Documento
+                        </button>
+                    </form>
+
+                    <hr>
+
+                    <div id="documentsContainer" class="row">
+                        {% for documento in documentos %}
+                        <div class="col-md-4 mb-3">
+                            <div class="document-card border rounded p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-file-earmark-text fs-4 text-primary me-2"></i>
+                                    <span class="text-truncate">{{ documento.archivo.name }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">
+                                        {{ documento.get_tipo_display }} - {{ documento.fecha_subida|date:"d/m/Y H:i" }}
+                                    </small>
+                                    <a href="{{ documento.archivo.url }}" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       download>
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
+                        {% empty %}
+                        <div class="col-12 text-center py-4">
+                            <i class="bi bi-folder-x fs-1 text-muted"></i>
+                            <p class="text-muted mt-2">No hay documentos adjuntos</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Pestaña Notas (dentro de #notesTab) -->
+<div class="tab-pane fade" id="notesTab">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light border-0 py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-journal-text me-2"></i>Notas del Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario para nueva nota -->
+                    <form id="newNoteForm" method="post" action="{% url 'add_note' cliente.pk %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <textarea name="contenido" class="form-control" rows="3" 
+                                      placeholder="Escribe una nueva nota..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Agregar Nota
+                        </button>
+                    </form>
+
+                    <!-- Listado de notas existentes -->
+                    <div class="mt-4" id="notesContainer">
+                        {% if notas_info.contenido %}
+                        {% for nota in notas_info.contenido %}
+                                <div class="note-item border-bottom pb-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <small class="text-muted">{{ nota.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                                        <button class="btn btn-sm btn-danger delete-note" data-id="{{ nota.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                    <p class="mb-0">{{ nota.contenido }}</p>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted no-notes">No hay notas registradas.</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
