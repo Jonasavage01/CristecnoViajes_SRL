@@ -212,14 +212,15 @@ class DocumentUploadView(View):
             
             # Generar nombre único para el archivo
             original_name = get_valid_filename(file.name)
-            unique_name = f"{uuid.uuid4().hex}_{original_name}"
+            ext = original_name.split('.')[-1].lower()
+            safe_name = f"{uuid.uuid4().hex}_{original_name}"
             
             documento = DocumentoCliente(
-                cliente=cliente,
-                archivo=file,
-                tipo=tipo,  # Guarda el tipo de documento
-            )
-            documento.archivo.name = unique_name
+            cliente=cliente,
+            archivo=file,
+            tipo=tipo,
+        )
+            documento.archivo.name = safe_name  # Esto usará el upload_to del modelo
             documento.save()
             
             cliente.ultima_actividad = timezone.now()
@@ -281,14 +282,13 @@ class NoteCreateView(View):
             cliente.save()
             
             return JsonResponse({
-    'success': True,
-    'nota': {
-        'id': nota.id,
-        'contenido': nota.contenido,
-        'fecha_creacion': nota.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
-        'autor': nota.autor.get_full_name() if nota.autor else 'Anónimo'
-    }
-})
+            'success': True,
+            'nota': {
+                'id': nota.id,
+                'contenido': nota.contenido,
+                'fecha_creacion': nota.fecha_creacion.strftime("%d/%m/%Y %H:%M"),  # Formatear fecha aquí
+            }
+        })
             
         except Exception as e:
             logger.error(f"Error creando nota: {str(e)}", exc_info=True)

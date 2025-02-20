@@ -84,13 +84,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 resetForm: true,
                 onSuccess: (data) => {
                     const notesContainer = document.getElementById('notesContainer');
-                    const newNote = createNoteElement(data.nota);
                     
-                    if(notesContainer.querySelector('.no-notes')) {
+                    // Limpiar completamente el contenedor si hay mensaje de "no hay notas"
+                    if (notesContainer.querySelector('.no-notes')) {
                         notesContainer.innerHTML = '';
                     }
                     
-                    notesContainer.prepend(newNote);
+                    // Crear elemento y asegurar la inserción correcta
+                    const newNote = document.createElement('div');
+                    newNote.innerHTML = createNoteElement(data.nota).trim();
+                    
+                    notesContainer.prepend(newNote.firstChild);
                 }
             });
         });
@@ -125,18 +129,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function getFileIcon(type) {
-        if (!type) return '<i class="bi bi-file-earmark fs-4 me-2"></i>';
-        
-        const fileType = type.split('/')[1] || 'unknown';
-        const icons = {
+        const iconMap = {
+            // Extensiones de archivo
             'pdf': 'bi-file-earmark-pdf text-danger',
             'doc': 'bi-file-earmark-word text-primary',
             'docx': 'bi-file-earmark-word text-primary',
             'jpg': 'bi-file-image text-success',
             'jpeg': 'bi-file-image text-success',
-            'png': 'bi-file-image text-success'
+            'png': 'bi-file-image text-success',
+            'txt': 'bi-file-text text-secondary',
+            
+            // Mime types como fallback
+            'application/pdf': 'bi-file-earmark-pdf text-danger',
+            'application/msword': 'bi-file-earmark-word text-primary',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'bi-file-earmark-word text-primary',
+            'image/jpeg': 'bi-file-image text-success',
+            'image/png': 'bi-file-image text-success'
         };
-        return `<i class="bi ${icons[fileType] || 'bi-file-earmark'} fs-4 me-2"></i>`;
+        
+        // Primero intentar por extensión
+        const extension = type.split('.').pop().toLowerCase();
+        if (iconMap[extension]) {
+            return `<i class="bi ${iconMap[extension]} fs-4 me-2"></i>`;
+        }
+        
+        // Si no, intentar por mime type
+        const mimeType = type.split('/')[1]?.toLowerCase();
+        return `<i class="bi ${iconMap[mimeType] || 'bi-file-earmark'} fs-4 me-2"></i>`;
     }
 
     function createNoteElement(note) {
@@ -148,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
-                <p class="mb-0">${note.contenido}</p>
+               <p class="mb-0">${note.contenido.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
             </div>
         `;
     }

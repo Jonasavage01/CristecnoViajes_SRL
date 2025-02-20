@@ -98,6 +98,14 @@ class DocumentoCliente(models.Model):
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='general')
     fecha_subida = models.DateTimeField(auto_now_add=True)
     subido_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    
+    def archivo_upload_to(instance, filename):
+        # Formato: clientes/documentos/cliente_<id>/<uuid>_<nombre_original>
+        ext = filename.split('.')[-1]
+        new_filename = f"{uuid.uuid4().hex}_{filename}"
+        return f"clientes/documentos/cliente_{instance.cliente.id}/{new_filename}"
+
+    archivo = models.FileField(upload_to=archivo_upload_to)
 
     def __str__(self):
         return f"Documento {self.get_tipo_display()} - {self.cliente}"
