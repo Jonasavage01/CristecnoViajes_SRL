@@ -1,3 +1,6 @@
+// cliente_detail.js
+const clienteId = window.CLIENTE_ID; // Obtenemos el ID desde Django
+
 document.addEventListener('DOMContentLoaded', function() {
     // Configuración inicial de tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -58,30 +61,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 successMessage: 'Documento subido correctamente',
                 resetForm: true,
                 onSuccess: (data) => {
-                    const docContainer = document.getElementById('documentosContainer');
+                    const docContainer = document.getElementById('documentsContainer');
                     const emptyMsg = docContainer.querySelector('.text-center');
                     if(emptyMsg) emptyMsg.remove();
-
+                
                     const newDoc = createDocumentElement(data.document);
                     docContainer.insertAdjacentHTML('afterbegin', newDoc);
                     refreshTooltips();
-                }
-            });
-        });
-    }
-
-    // Manejo de actualización de notas
-    const notesForm = document.getElementById('notesForm');
-    if(notesForm) {
-        notesForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await handleFormSubmission(notesForm, {
-                loadingState: '<i class="bi bi-save me-2"></i>Guardando...',
-                successMessage: 'Notas actualizadas correctamente',
-                onSuccess: (data) => {
-                    document.querySelectorAll('[data-last-activity]').forEach(el => {
-                        el.textContent = data.updated_at;
-                    });
                 }
             });
         });
@@ -105,7 +91,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     notesContainer.prepend(newNote);
-                    setupNoteDeleteHandlers();
                 }
             });
         });
@@ -140,6 +125,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function getFileIcon(type) {
+        if (!type) return '<i class="bi bi-file-earmark fs-4 me-2"></i>';
+        
+        const fileType = type.split('/')[1] || 'unknown';
         const icons = {
             'pdf': 'bi-file-earmark-pdf text-danger',
             'doc': 'bi-file-earmark-word text-primary',
@@ -148,30 +136,31 @@ document.addEventListener('DOMContentLoaded', function() {
             'jpeg': 'bi-file-image text-success',
             'png': 'bi-file-image text-success'
         };
-        return `<i class="bi ${icons[type.split('/')[1]] || 'bi-file-earmark'} fs-4 me-2"></i>`;
+        return `<i class="bi ${icons[fileType] || 'bi-file-earmark'} fs-4 me-2"></i>`;
     }
 
     function createNoteElement(note) {
-        const noteElement = document.createElement('div');
-        noteElement.className = 'note-item border-bottom pb-3 mb-3';
-        noteElement.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <small class="text-muted">${note.fecha}</small>
-                <button class="btn btn-sm btn-danger delete-note" data-id="${note.id}">
-                    <i class="bi bi-trash"></i>
-                </button>
+        return `
+            <div class="note-item border-bottom pb-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">${note.fecha_creacion}</small>
+                    <button class="btn btn-sm btn-danger delete-note" data-id="${note.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <p class="mb-0">${note.contenido}</p>
             </div>
-            <p class="mb-0">${note.contenido}</p>
         `;
-        return noteElement;
     }
 
     // Manejo de eliminación de elementos
-    function setupDeleteHandlers(selector, endpoint, successMessage) {
+    function setupDeleteHandlers(selector, endpointBase, successMessage) {
         document.addEventListener('click', async (e) => {
             const deleteBtn = e.target.closest(selector);
             if(deleteBtn) {
                 const id = deleteBtn.dataset.id;
+                const endpoint = `${endpointBase}${id}/`;
+                
                 const result = await Swal.fire({
                     title: '¿Estás seguro?',
                     text: "Esta acción no se puede deshacer",
@@ -184,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if(result.isConfirmed) {
                     try {
-                        const response = await fetch(`${endpoint}/${id}`, {
+                        const response = await fetch(endpoint, {
                             method: 'DELETE',
                             headers: {
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -193,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         const data = await response.json();
                         if(data.success) {
-                            deleteBtn.closest('.document-preview')?.parentElement?.remove();
+                            deleteBtn.closest('.document-card')?.remove();
                             deleteBtn.closest('.note-item')?.remove();
                             Swal.fire('Éxito', successMessage, 'success');
                         }
@@ -204,19 +193,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
-    // Configurar handlers de eliminación
-    setupDeleteHandlers('.delete-document', '/documents', 'Documento eliminado correctamente');
-    setupDeleteHandlers('.delete-note', '/notes', 'Nota eliminada correctamente');
-
-    // Preview de documentos
-    document.addEventListener('click', (e) => {
-        const docPreview = e.target.closest('.document-preview');
-        if(docPreview) {
-            const url = docPreview.dataset.url;
-            window.open(url, '_blank');
-        }
-    });
+    
+    // Configurar handlers con nueva estructura de URLs
+    setupDeleteHandlers('.delete-document', `/clientes/${clienteId}/documentos/`, 'Documento eliminado');
+    setupDeleteHandlers('.delete-note', `/clientes/${clienteId}/notas/`, 'Nota eliminada');
 
     // Helper functions
     function refreshTooltips() {

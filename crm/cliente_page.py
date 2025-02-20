@@ -226,13 +226,15 @@ class DocumentUploadView(View):
             cliente.save()
             
             return JsonResponse({
-                'success': True,
-                'document': {
-                    'url': documento.archivo.url,
-                    'name': original_name,
-                    'upload_date': documento.fecha_subida.strftime("%d/%m/%Y %H:%M")
-                }
-            })
+            'success': True,
+            'document': {
+                'url': documento.archivo.url,
+                'name': original_name,
+                'type': file.content_type,  # Añadir este campo
+                'upload_date': documento.fecha_subida.strftime("%d/%m/%Y %H:%M"),
+                'id': documento.id  # Añadir ID para eliminación
+            }
+        })
             
         return JsonResponse({
             'success': False, 
@@ -279,15 +281,34 @@ class NoteCreateView(View):
             cliente.save()
             
             return JsonResponse({
-                'success': True,
-                'nota': {
-                    'id': nota.id,
-                    'contenido': nota.contenido,
-                    'fecha': nota.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
-                    'autor': nota.autor.get_full_name() if nota.autor else 'Anónimo'  # Manejo más seguro
-                }
-            })
+    'success': True,
+    'nota': {
+        'id': nota.id,
+        'contenido': nota.contenido,
+        'fecha_creacion': nota.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+        'autor': nota.autor.get_full_name() if nota.autor else 'Anónimo'
+    }
+})
             
         except Exception as e:
             logger.error(f"Error creando nota: {str(e)}", exc_info=True)
             return JsonResponse({'success': False, 'error': 'Error del servidor'}, status=500)
+
+class DeleteNoteView(View):
+    def delete(self, request, cliente_pk, note_pk):  # Cambiar nombres de parámetros
+        try:
+            note = NotaCliente.objects.get(id=note_pk, cliente_id=cliente_pk)
+            note.delete()
+            return JsonResponse({'success': True})
+        except NotaCliente.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Nota no encontrada'}, status=404)
+
+class DeleteDocumentView(View):
+    def delete(self, request, cliente_pk, doc_pk):  # Cambiar nombres de parámetros
+        try:
+            documento = DocumentoCliente.objects.get(id=doc_pk, cliente_id=cliente_pk)
+            documento.archivo.delete()
+            documento.delete()
+            return JsonResponse({'success': True})
+        except DocumentoCliente.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Documento no encontrado'}, status=404)
