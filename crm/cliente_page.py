@@ -15,6 +15,7 @@ import uuid
 from django.shortcuts import redirect
 from .models import Cliente, DocumentoCliente
 from .models import Cliente, DocumentoCliente, NotaCliente 
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -182,65 +183,53 @@ class ClienteUpdateView(UpdateView):
                 'messages': error_list
             })
         return errors
-
 class DocumentUploadView(View):
     def post(self, request, pk):
         cliente = get_object_or_404(Cliente, pk=pk)
         file = request.FILES.get('documento')
-        tipo = request.POST.get('tipo', 'general')  # Obtiene el tipo de documento
+        tipo = request.POST.get('tipo', 'general')
         
-        if file:
-            allowed_types = [
-                'application/pdf', 
-                'application/msword',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'image/jpeg', 
-                'image/png'
-            ]
-            
-            if file.content_type not in allowed_types:
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'Tipo de archivo no permitido'
-                }, status=400)
-            
-            if file.size > 5 * 1024 * 1024:
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'El archivo excede 5MB'
-                }, status=400)
-            
-            # Generar nombre único para el archivo
-            original_name = get_valid_filename(file.name)
-            ext = original_name.split('.')[-1].lower()
-            safe_name = f"{uuid.uuid4().hex}_{original_name}"
-            
-            documento = DocumentoCliente(
+        if not file:
+            return JsonResponse({'success': False, 'error': 'No se recibió ningún archivo'}, status=400)
+
+        # Validar tipo de archivo
+        allowed_extensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']
+        ext = os.path.splitext(file.name)[1][1:].lower()
+        
+        if ext not in allowed_extensions:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Extensión no permitida: .{ext}'
+            }, status=400)
+
+        if file.size > 5 * 1024 * 1024:
+            return JsonResponse({
+                'success': False, 
+                'error': 'El archivo excede 5MB'
+            }, status=400)
+
+        # Crear documento (el nombre se maneja automáticamente en el modelo)
+        documento = DocumentoCliente(
             cliente=cliente,
             archivo=file,
             tipo=tipo,
+            subido_por=request.user if request.user.is_authenticated else None
         )
-            documento.archivo.name = safe_name  # Esto usará el upload_to del modelo
-            documento.save()
-            
-            cliente.ultima_actividad = timezone.now()
-            cliente.save()
-            
-            return JsonResponse({
+        documento.save()
+
+        cliente.ultima_actividad = timezone.now()
+        cliente.save()
+
+        return JsonResponse({
             'success': True,
             'document': {
                 'url': documento.archivo.url,
-                'name': original_name,
-                'type': file.content_type,  # Añadir este campo
+                'name': documento.nombre_archivo,
+                'type': ext.upper(),
                 'upload_date': documento.fecha_subida.strftime("%d/%m/%Y %H:%M"),
-                'id': documento.id  # Añadir ID para eliminación
+                'id': documento.id
             }
         })
-            
-        return JsonResponse({
-            'success': False, 
-            'error': 'No se recibió ningún archivo'
-        }, status=400)
 
 class NotesUpdateView(View):
     def post(self, request, pk):

@@ -2,6 +2,9 @@ from django.db import models
 from django_countries.fields import CountryField
 import datetime
 from django.contrib.auth.models import User
+import os
+from django.utils.text import get_valid_filename
+
 
 
 
@@ -94,21 +97,49 @@ class DocumentoCliente(models.Model):
     ]
     
     cliente = models.ForeignKey(Cliente, related_name='documentos', on_delete=models.CASCADE)
-    archivo = models.FileField(upload_to='clientes/documentos/%Y/%m/%d/')
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='general')
     fecha_subida = models.DateTimeField(auto_now_add=True)
-    subido_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    
+    subido_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
     def archivo_upload_to(instance, filename):
-        # Formato: clientes/documentos/cliente_<id>/<uuid>_<nombre_original>
-        ext = filename.split('.')[-1]
-        new_filename = f"{uuid.uuid4().hex}_{filename}"
-        return f"clientes/documentos/cliente_{instance.cliente.id}/{new_filename}"
+        # Directorio: clientes/documentos/cliente_<id>/
+        # Nombre archivo: nombre_original
+        base_dir = f"clientes/documentos/cliente_{instance.cliente.id}/"
+        original_name = get_valid_filename(filename)
+        
+        # Si el archivo existe, añadir sufijo numérico
+        counter = 1
+        name, ext = os.path.splitext(original_name)
+        while os.path.exists(os.path.join(base_dir, original_name)):
+            original_name = f"{name}_{counter}{ext}"
+            counter += 1
+            
+        return os.path.join(base_dir, original_name)
 
     archivo = models.FileField(upload_to=archivo_upload_to)
 
     def __str__(self):
         return f"Documento {self.get_tipo_display()} - {self.cliente}"
+
+   
+    @property
+    def extension(self):
+        return os.path.splitext(self.archivo.name)[1][1:].upper()
+    
+    @property
+    def nombre_archivo(self):
+        return os.path.basename(self.archivo.name)
+    @property
+    def icon_class(self):
+        icon_map = {
+            'PDF': 'bi-file-earmark-pdf text-danger',
+            'DOC': 'bi-file-earmark-word text-primary',
+            'DOCX': 'bi-file-earmark-word text-primary',
+            'JPG': 'bi-file-image text-success',
+            'JPEG': 'bi-file-image text-success',
+            'PNG': 'bi-file-image text-success',
+        }
+        return icon_map.get(self.extension, 'bi-file-earmark text-secondary')
 
 class NotaCliente(models.Model):
     cliente = models.ForeignKey(Cliente, related_name='notas_cliente', on_delete=models.CASCADE)

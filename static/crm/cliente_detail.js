@@ -101,32 +101,140 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Funciones de creación de elementos
-    function createDocumentElement(doc) {
-        return `
-            <div class="col-md-4 mb-3">
-                <div class="document-card border rounded p-3">
-                    <div class="d-flex align-items-center mb-2">
-                        ${getFileIcon(doc.type)}
-                        <span class="text-truncate">${doc.name}</span>
+    // Función para crear elementos de documento (actualizada)
+function createDocumentElement(doc) {
+    const previewContent = getPreviewContent(doc);
+    
+    return `
+        <div class="col-md-4 mb-3">
+            <div class="document-card border rounded p-3">
+                <div class="doc-thumbnail position-relative">
+                    ${previewContent}
+                    
+                    <span class="badge bg-dark position-absolute top-0 start-0 m-2">
+                        ${doc.tipo_display}
+                    </span>
+                    
+                    <div class="doc-actions position-absolute top-0 end-0 m-2">
+                        <a href="${doc.url}" 
+                           class="btn btn-sm btn-light shadow-sm"
+                           download="${doc.name}"
+                           data-bs-toggle="tooltip" 
+                           title="Descargar">
+                            <i class="bi bi-download"></i>
+                        </a>
+                        <button class="btn btn-sm btn-light shadow-sm delete-document" 
+                                data-id="${doc.id}"
+                                data-bs-toggle="tooltip" 
+                                title="Eliminar">
+                            <i class="bi bi-trash text-danger"></i>
+                        </button>
                     </div>
-                    <div class="d-flex justify-content-between">
-                        <small class="text-muted">${doc.upload_date}</small>
-                        <div>
-                            <a href="${doc.url}" 
-                               class="btn btn-sm btn-outline-primary"
-                               download>
-                                <i class="bi bi-download"></i>
-                            </a>
-                            <button class="btn btn-sm btn-outline-danger delete-document" 
-                                    data-id="${doc.id}">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                </div>
+                
+                <div class="doc-meta mt-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-truncate">
+                            <small class="text-muted">${doc.upload_date}</small>
+                            <h6 class="mb-0 text-truncate">${doc.name}</h6>
                         </div>
                     </div>
                 </div>
             </div>
-        `;
+        </div>
+    `;
+}
+
+// Función para contenido de vista previa
+function getPreviewContent(doc) {
+    const imageTypes = ['JPG', 'JPEG', 'PNG'];
+    const pdfTypes = ['PDF'];
+    
+    if (imageTypes.includes(doc.type)) {
+        return `
+            <a href="${doc.url}" class="glightbox">
+                <img src="${doc.url}" 
+                     alt="${doc.name}"
+                     class="img-fluid preview-image">
+            </a>`;
     }
+    
+    if (pdfTypes.includes(doc.type)) {
+        return `
+            <div class="pdf-preview-container">
+                <iframe src="${doc.url}#view=fitH" 
+                        class="pdf-preview" 
+                        frameborder="0"></iframe>
+            </div>`;
+    }
+    
+    return `
+        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted py-3">
+            <i class="bi ${getFileIcon(doc.type)} fs-1"></i>
+            <small class="mt-2">${doc.type}</small>
+        </div>`;
+}
+
+// Inicializar GLightbox
+const lightbox = GLightbox({
+    selector: '.glightbox',
+    zoomable: true,
+    touchNavigation: true,
+    loop: true
+});
+
+// Añadir estilos CSS adicionales
+const style = document.createElement('style');
+style.textContent = `
+    .doc-thumbnail {
+        height: 250px;
+        overflow: hidden;
+        border-radius: 8px;
+        background: #f8f9fa;
+        transition: transform 0.2s;
+    }
+    
+    .doc-thumbnail:hover {
+        transform: translateY(-5px);
+    }
+    
+    .pdf-preview-container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
+    
+    .pdf-preview {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    
+    .preview-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .doc-actions .btn {
+        backdrop-filter: blur(5px);
+        background: rgba(255, 255, 255, 0.8);
+    }
+`;
+document.head.appendChild(style);
+
+// Hacer PDFs responsivos
+function adjustPDFPreviews() {
+    document.querySelectorAll('.doc-pdf-preview').forEach(iframe => {
+        const container = iframe.closest('.doc-thumbnail');
+        if (container) {
+            iframe.style.height = container.offsetHeight + 'px';
+        }
+    });
+}
+
+window.addEventListener('resize', adjustPDFPreviews);
+adjustPDFPreviews();
     
     function getFileIcon(type) {
         const iconMap = {
