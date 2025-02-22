@@ -16,6 +16,14 @@ from django.shortcuts import redirect
 from .models import Cliente, DocumentoCliente
 from .models import Cliente, DocumentoCliente, NotaCliente 
 import os
+from django.views.generic import FormView
+from django.urls import reverse_lazy
+from django.utils import timezone
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
+from .models import DocumentoCliente, Cliente
+from .forms import DocumentoForm
+from django.views.generic import DeleteView
 
 logger = logging.getLogger(__name__)
 
@@ -81,14 +89,26 @@ class ClienteDetailView(DetailView):
         ]
         
         # Documentos adjuntos
-        context['documentos'] = cliente.documentos.all()
+        context['documentos_json'] = [
+    {
+        'url': doc.archivo.url,
+        'name': doc.nombre_archivo,
+        'type': doc.extension,
+        'upload_date': doc.fecha_subida.strftime("%d/%m/%Y %H:%M"),
+        'id': doc.id,
+        'tipo': doc.tipo  # Cambiar de tipo_display a tipo
+    } 
+    for doc in self.object.documentos.all().select_related('cliente')
+]
+
         
         # Notas
         context['notas_info'] = {
-        'titulo': 'Notas',
-        'icono': icon_map['Notas'],
-        'contenido': cliente.notas_cliente.all().order_by('-fecha_creacion'),  # Usa la relación correcta
-        'ultima_actualizacion': cliente.ultima_actividad.strftime("%d/%m/%Y %H:%M")
+    'titulo': 'Notas',
+    'icono': icon_map['Notas'],
+    'contenido': cliente.notas_cliente.all().order_by('-fecha_creacion')
+                 .select_related('autor').only('contenido', 'fecha_creacion', 'autor__username'),
+    'ultima_actualizacion': cliente.ultima_actividad.strftime("%d/%m/%Y %H:%M")
 }
         
         return context
@@ -183,53 +203,49 @@ class ClienteUpdateView(UpdateView):
                 'messages': error_list
             })
         return errors
-class DocumentUploadView(View):
-    def post(self, request, pk):
-        cliente = get_object_or_404(Cliente, pk=pk)
-        file = request.FILES.get('documento')
-        tipo = request.POST.get('tipo', 'general')
+
+class DocumentUploadView(FormView):
+    form_class = DocumentoForm
+    template_name = 'clientes/documentos_form.html'
+    
+    def form_valid(self, form):
+        cliente = Cliente.objects.get(pk=self.kwargs['pk'])
+        documento = form.save(commit=False)
+        documento.cliente = cliente
         
-        if not file:
-            return JsonResponse({'success': False, 'error': 'No se recibió ningún archivo'}, status=400)
-
-        # Validar tipo de archivo
-        allowed_extensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']
-        ext = os.path.splitext(file.name)[1][1:].lower()
-        
-        if ext not in allowed_extensions:
-            return JsonResponse({
-                'success': False, 
-                'error': f'Extensión no permitida: .{ext}'
-            }, status=400)
-
-        if file.size > 5 * 1024 * 1024:
-            return JsonResponse({
-                'success': False, 
-                'error': 'El archivo excede 5MB'
-            }, status=400)
-
-        # Crear documento (el nombre se maneja automáticamente en el modelo)
-        documento = DocumentoCliente(
-            cliente=cliente,
-            archivo=file,
-            tipo=tipo,
-            subido_por=request.user if request.user.is_authenticated else None
-        )
+        # Solo asignar usuario si está autenticado
+        if self.request.user.is_authenticated:
+            documento.subido_por = self.request.user
+            
         documento.save()
-
+        
         cliente.ultima_actividad = timezone.now()
         cliente.save()
 
         return JsonResponse({
-            'success': True,
-            'document': {
-                'url': documento.archivo.url,
-                'name': documento.nombre_archivo,
-                'type': ext.upper(),
-                'upload_date': documento.fecha_subida.strftime("%d/%m/%Y %H:%M"),
-                'id': documento.id
+           
+        'success': True,
+        'document': {
+            'url': documento.archivo.url,
+            'name': documento.nombre_archivo,
+            'type': documento.extension,
+            'upload_date': documento.fecha_subida.strftime("%d/%m/%Y %H:%M"),
+            'id': documento.id,
+            'tipo': documento.tipo  # Mantener consistencia con el formato
             }
         })
+    
+    def form_invalid(self, form):
+        logger.error(f"Errores en DocumentUploadView: {form.errors.as_json()}")
+        return JsonResponse({
+            'success': False,
+            'errors': form.errors.get_json_data()
+        }, status=400)
+        
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['instance'] = DocumentoCliente()
+        return kwargs
 
 class NotesUpdateView(View):
     def post(self, request, pk):
@@ -271,13 +287,14 @@ class NoteCreateView(View):
             cliente.save()
             
             return JsonResponse({
-            'success': True,
-            'nota': {
-                'id': nota.id,
-                'contenido': nota.contenido,
-                'fecha_creacion': nota.fecha_creacion.strftime("%d/%m/%Y %H:%M"),  # Formatear fecha aquí
-            }
-        })
+    'success': True,
+    'nota': {
+        'id': nota.id,
+        'contenido': nota.contenido,
+        'fecha_creacion': nota.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+        'autor': nota.autor.username if nota.autor else 'Sistema'
+    }
+})
             
         except Exception as e:
             logger.error(f"Error creando nota: {str(e)}", exc_info=True)
@@ -292,12 +309,9 @@ class DeleteNoteView(View):
         except NotaCliente.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Nota no encontrada'}, status=404)
 
-class DeleteDocumentView(View):
-    def delete(self, request, cliente_pk, doc_pk):  # Cambiar nombres de parámetros
-        try:
-            documento = DocumentoCliente.objects.get(id=doc_pk, cliente_id=cliente_pk)
-            documento.archivo.delete()
-            documento.delete()
-            return JsonResponse({'success': True})
-        except DocumentoCliente.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Documento no encontrado'}, status=404)
+class DocumentDeleteView(DeleteView):
+    model = DocumentoCliente
+    
+    def delete(self, request, *args, **kwargs):
+        self.get_object().delete()
+        return JsonResponse({'success': True})

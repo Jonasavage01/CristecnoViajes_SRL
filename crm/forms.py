@@ -8,6 +8,7 @@ import logging
 from django import forms
 from django.db.models import Q
 from django.core.exceptions import ValidationError
+from .models import DocumentoCliente
 
 logger = logging.getLogger(__name__)
 
@@ -226,3 +227,18 @@ class ClienteEditForm(ClienteForm):
             logger.debug(f"{key}: {value}")
 
         return cleaned_data
+
+
+
+class DocumentoForm(forms.ModelForm):
+    class Meta:
+        model = DocumentoCliente
+        fields = ['tipo', 'archivo']
+        
+    def clean_archivo(self):
+        archivo = self.cleaned_data.get('archivo')
+        if archivo:
+            # Validación de tamaño
+            if archivo.size > 5 * 1024 * 1024:  # 5MB
+                raise forms.ValidationError('El archivo excede 5MB')
+        return archivo

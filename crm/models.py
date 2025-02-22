@@ -4,7 +4,15 @@ import datetime
 from django.contrib.auth.models import User
 import os
 from django.utils.text import get_valid_filename
-
+import uuid
+from django.db import models
+from django.utils.text import get_valid_filename
+from django.core.validators import FileExtensionValidator
+from django.db import models
+from django.utils.text import get_valid_filename
+from django.core.validators import FileExtensionValidator
+import os
+import uuid
 
 
 
@@ -88,6 +96,14 @@ class Cliente(models.Model):
         )
         return f"{edad} años"
 
+
+def documento_upload_to(instance, filename):
+    """Función renombrada y definida fuera de la clase"""
+    original_name = get_valid_filename(filename)
+    name, ext = os.path.splitext(original_name)
+    unique_name = f"{name}_{uuid.uuid4().hex[:6]}{ext}"
+    return f"clientes/documentos/cliente_{instance.cliente.id}/{unique_name}"
+
 class DocumentoCliente(models.Model):
     TIPO_CHOICES = [
         ('general', 'General'),
@@ -96,32 +112,45 @@ class DocumentoCliente(models.Model):
         ('otros', 'Otros')
     ]
     
-    cliente = models.ForeignKey(Cliente, related_name='documentos', on_delete=models.CASCADE)
-    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='general')
-    fecha_subida = models.DateTimeField(auto_now_add=True)
-    subido_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-
-    def archivo_upload_to(instance, filename):
-        # Directorio: clientes/documentos/cliente_<id>/
-        # Nombre archivo: nombre_original
-        base_dir = f"clientes/documentos/cliente_{instance.cliente.id}/"
-        original_name = get_valid_filename(filename)
-        
-        # Si el archivo existe, añadir sufijo numérico
-        counter = 1
-        name, ext = os.path.splitext(original_name)
-        while os.path.exists(os.path.join(base_dir, original_name)):
-            original_name = f"{name}_{counter}{ext}"
-            counter += 1
-            
-        return os.path.join(base_dir, original_name)
-
-    archivo = models.FileField(upload_to=archivo_upload_to)
-
+    cliente = models.ForeignKey(
+        'Cliente', 
+        related_name='documentos', 
+        on_delete=models.CASCADE,
+        verbose_name='Cliente'
+    )
+    
+    tipo = models.CharField(
+        max_length=20, 
+        choices=TIPO_CHOICES, 
+        default='general',
+        verbose_name='Tipo de documento'
+    )
+    
+    fecha_subida = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de subida'
+    )
+    
+    subido_por = models.ForeignKey(
+        'auth.User', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        verbose_name='Subido por'
+    )
+    
+    archivo = models.FileField(
+        upload_to=documento_upload_to,  # Usar la función renombrada
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']
+            )
+        ],
+        verbose_name='Archivo'
+    )
     def __str__(self):
         return f"Documento {self.get_tipo_display()} - {self.cliente}"
 
-   
     @property
     def extension(self):
         return os.path.splitext(self.archivo.name)[1][1:].upper()
@@ -129,6 +158,7 @@ class DocumentoCliente(models.Model):
     @property
     def nombre_archivo(self):
         return os.path.basename(self.archivo.name)
+    
     @property
     def icon_class(self):
         icon_map = {
@@ -140,6 +170,14 @@ class DocumentoCliente(models.Model):
             'PNG': 'bi-file-image text-success',
         }
         return icon_map.get(self.extension, 'bi-file-earmark text-secondary')
+
+    class Meta:
+        verbose_name = 'Documento de cliente'
+        verbose_name_plural = 'Documentos de clientes'
+        ordering = ['-fecha_subida']  # Orden consistente
+        indexes = [
+            models.Index(fields=['cliente', 'tipo']),
+        ]
 
 class NotaCliente(models.Model):
     cliente = models.ForeignKey(Cliente, related_name='notas_cliente', on_delete=models.CASCADE)
@@ -154,5 +192,6 @@ class NotaCliente(models.Model):
 
     class Meta:
         ordering = ['-fecha_creacion']
+        get_latest_by = 'fecha_creacion'
         verbose_name = 'Nota de Cliente'
         verbose_name_plural = 'Notas de Clientes'
