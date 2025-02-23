@@ -1,29 +1,44 @@
-# crm/views/cliente_page.py
-from django.views.generic import DetailView, UpdateView
+# Standard library imports
+import os
+import uuid
+import logging
+
+# Django URL imports
 from django.urls import reverse_lazy
+
+
+# Django utilities
 from django.utils import timezone
-from django.contrib import messages
+from django.utils.text import get_valid_filename
+from django.views.decorators.clickjacking import xframe_options_sameorigin
+from django.utils.decorators import method_decorator
+
+# Django HTTP and exceptions
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
-from django.utils.text import get_valid_filename
-from django.views.generic import View
-from django.shortcuts import get_object_or_404
-from .models import Cliente, DocumentoCliente
-from .forms import ClienteEditForm
-import logging
-import uuid
-from django.shortcuts import redirect
-from .models import Cliente, DocumentoCliente
-from .models import Cliente, DocumentoCliente, NotaCliente 
-import os
-from django.views.generic import FormView
-from django.urls import reverse_lazy
-from django.utils import timezone
+
+# Django authentication and messages
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
-from .models import DocumentoCliente, Cliente
-from .forms import DocumentoForm
-from django.views.generic import DeleteView
+
+# Django shortcuts
+from django.shortcuts import get_object_or_404, redirect
+
+# Django class-based views
+from django.views.generic import (
+    View,
+    DetailView,
+    UpdateView,
+    FormView,
+    DeleteView
+)
+
+# Project-specific imports: Models
+from .models import Cliente, DocumentoCliente, NotaCliente
+
+# Project-specific imports: Forms
+from .forms import ClienteEditForm, DocumentoForm
+
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +129,7 @@ class ClienteDetailView(DetailView):
         return context
 
 
-
+@method_decorator(xframe_options_sameorigin, name='dispatch')
 class ClienteUpdateView(UpdateView):
     model = Cliente
     form_class = ClienteEditForm
@@ -203,6 +218,7 @@ class ClienteUpdateView(UpdateView):
                 'messages': error_list
             })
         return errors
+
 
 class DocumentUploadView(FormView):
     form_class = DocumentoForm

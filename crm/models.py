@@ -1,18 +1,22 @@
-from django.db import models
-from django_countries.fields import CountryField
+# Standard library imports
+import os
+import uuid
 import datetime
+
+# Django database imports
+from django.db import models
+
+# Django authentication
 from django.contrib.auth.models import User
-import os
+
+# Django utilities
 from django.utils.text import get_valid_filename
-import uuid
-from django.db import models
-from django.utils.text import get_valid_filename
+
+# Django validators
 from django.core.validators import FileExtensionValidator
-from django.db import models
-from django.utils.text import get_valid_filename
-from django.core.validators import FileExtensionValidator
-import os
-import uuid
+
+# Third-party package imports
+from django_countries.fields import CountryField
 
 
 

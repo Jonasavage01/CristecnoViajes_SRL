@@ -1,18 +1,34 @@
+# Standard library imports
 import logging
 
+# Django views
 from django.views.generic import ListView, DetailView, UpdateView, DeleteView
+
+# Django URL handling
 from django.urls import reverse_lazy
-from django.contrib import messages
-from django.db.models import Q
-from django.shortcuts import redirect
-from django.db import IntegrityError
+
+# Django utilities
 from django.utils import timezone
-from django.http import JsonResponse
 from django.core.exceptions import ValidationError
+
+# Django database imports
+from django.db import IntegrityError
+from django.db.models import Q
+
+# Django HTTP and messages
+from django.http import JsonResponse
+from django.contrib import messages
+
+# Django shortcuts
+from django.shortcuts import redirect
+
+# Third-party package imports
 from .filters import ClienteFilter
 
+# Project-specific imports: Models and Forms
 from .models import Cliente
 from .forms import ClienteForm, ClienteEditForm
+
 
 logger = logging.getLogger(__name__)
 
