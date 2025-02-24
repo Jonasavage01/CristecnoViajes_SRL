@@ -54,6 +54,15 @@ const formatPhoneNumber = (value) => {
     return formatted.slice(0, 15);
 };
 
+// Actualizar tooltips
+const tooltipTriggerList = [].slice.call(row.querySelectorAll('[data-bs-toggle="tooltip"]'));
+tooltipTriggerList.forEach(tooltip => {
+    const instance = bootstrap.Tooltip.getInstance(tooltip);
+    if (instance) instance.dispose();
+    new bootstrap.Tooltip(tooltip);
+});
+
+
 /* ============================
    Sistema de Validación
 ============================ */
@@ -137,21 +146,32 @@ const validateField = (field) => {
    Actualización Dinámica de Tabla
 ============================ */
 const updateClientRow = (row, clientData) => {
-    const updateField = (selector, value) => {
+    const updateField = (selector, value, attribute = 'textContent') => {
         const element = row.querySelector(selector);
-        if (element) element.textContent = value;
+        if (element) element[attribute] = value || 'N/A';
     };
 
+    // Actualización completa de todos los campos
     updateField('.client-name', `${clientData.nombre} ${clientData.apellido}`);
+    updateField('.client-email a', clientData.email);
+    updateField('.client-phone', clientData.telefono);
+    updateField('.client-cedula code', clientData.cedula_pasaporte);
+    updateField('.client-created', new Date(clientData.fecha_creacion).toLocaleString());
     
+
     const avatar = row.querySelector('.avatar');
     if (avatar && clientData.nombre) {
         avatar.textContent = clientData.nombre.charAt(0).toUpperCase();
+        avatar.className = `avatar bg-${clientData.estado_color.replace('bg-', '')}`;
     }
 
+    // Estado
     const statusBadge = row.querySelector('.client-status');
     if (statusBadge) {
-        statusBadge.textContent = clientData.estado_display;
+        statusBadge.innerHTML = `
+            <i class="bi bi-circle-fill me-2"></i>
+            ${clientData.estado_display}
+        `;
         statusBadge.className = `badge bg-${clientData.estado_color} rounded-pill`;
     }
 
@@ -197,8 +217,9 @@ const showFieldError = (field, errorElement, message) => {
     }
 };
 
+
 /* ============================
-   Manejo de Formularios
+   Manejo de Formularios - MEJORADO
 ============================ */
 const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -214,6 +235,7 @@ const handleFormSubmit = async (e) => {
     try {
         const formData = new FormData(form);
         const isEditForm = form.id === 'clienteEditForm';
+        const clientId = form.dataset.clientId;
         
         if (isEditForm) formData.append('_method', 'PUT');
 
@@ -231,7 +253,6 @@ const handleFormSubmit = async (e) => {
         if (response.ok && result.success) {
             showAlert('success', result.message);
             
-            // Obtener instancia del modal correctamente
             const modalElement = form.closest('.modal');
             const modal = bootstrap.Modal.getInstance(modalElement);
             
@@ -239,10 +260,16 @@ const handleFormSubmit = async (e) => {
                 modal.hide();
                 
                 if (isEditForm && result.cliente_data) {
-                    const row = document.querySelector(`tr[data-client-id="${result.cliente_data.id}"]`);
-                    if (row) updateClientRow(row, result.cliente_data);
+                    const row = document.querySelector(`tr[data-client-id="${clientId}"]`);
+                    if (row) {
+                        updateClientRow(row, result.cliente_data);
+                        // Actualizar datos en la página de detalle si está abierta
+                        if (window.location.pathname.includes('/clientes/')) {
+                            window.location.reload();
+                        }
+                    }
                 } else {
-                    window.location.reload();
+                    setTimeout(() => window.location.href = `{% url 'cliente_detail' 0 %}`.replace('0', result.cliente_id), 1500);
                 }
             }
         } else {
@@ -253,6 +280,7 @@ const handleFormSubmit = async (e) => {
         console.error('Error:', error);
     }
 };
+
 
 const handleFormErrors = (form, result) => {
     form.querySelectorAll('.is-invalid').forEach(field => field.classList.remove('is-invalid'));
@@ -317,22 +345,28 @@ const initFormEvents = () => {
     });
 };
 
+
 /* ============================
-   Inicialización General
+   Inicialización de Módulos - ACTUALIZADO
 ============================ */
 const initFormValidation = () => {
     initPhoneInputs();
     initFormEvents();
     initDateInputs();
 
-    document.addEventListener('ajaxFormLoaded', (e) => {
-        const form = e.detail.form;
-        initPhoneInputs(form);
-        initModalValidation(form.closest('.modal'));
+    // Delegación de eventos para actualizaciones dinámicas
+    document.addEventListener('click', (e) => {
+        // Actualizar tooltips dinámicos
+        if (e.target.closest('[data-bs-toggle="tooltip"]')) {
+            const tooltip = e.target.closest('[data-bs-toggle="tooltip"]');
+            const instance = bootstrap.Tooltip.getInstance(tooltip);
+            if (!instance) new bootstrap.Tooltip(tooltip);
+        }
     });
 
     new bootstrap.Tooltip(document.body, {
-        selector: '[data-bs-toggle="tooltip"]'
+        selector: '[data-bs-toggle="tooltip"]',
+        boundary: 'window'
     });
 };
 

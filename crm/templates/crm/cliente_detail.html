@@ -20,12 +20,14 @@
                     </div>
                 </div>
                 <div class="header-actions d-flex gap-2">
-                    <a href="{% url 'cliente_edit' cliente.pk %}" 
-                       class="btn btn-light btn-hover-scale btn-actions"
-                       data-bs-toggle="tooltip"
-                       title="Editar cliente">
-                        <i class="bi bi-pencil-square"></i>
-                    </a>
+                    <a href="#" 
+   class="btn btn-light btn-hover-scale btn-actions edit-client"
+   data-bs-toggle="modal"
+   data-bs-target="#clienteEditModal"
+   data-url="{% url 'cliente_edit' cliente.pk %}"
+   title="Editar cliente">
+    <i class="bi bi-pencil-square"></i>
+</a>
                     <a href="{% url 'crm_home' %}" 
                        class="btn btn-light btn-hover-scale btn-actions"
                        data-bs-toggle="tooltip"
@@ -233,6 +235,6 @@
         </div>
     </div>
 </div>
-
+{% include "partials/crm/cliente_edit_modal.html" %}
 
 {% endblock %}
