@@ -1,12 +1,14 @@
 {% load static %}
 
-<div class="modal-header border-bottom border-info py-3">
-    <h5 class="modal-title text-white fw-normal">
-        <i class="bi bi-person-gear me-2"></i>
-        EDITAR CLIENTE
+<div class="modal-header py-3">
+    <h5 class="modal-title fw-semibold">
+        <i class="bi bi-person-plus me-2"></i>Editar Cliente
     </h5>
-    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
 </div>
+
+ <!-- Línea decorativa superior -->
+ <div class="position-absolute top-0 start-0 end-0" style="height: 3px; background: linear-gradient(90deg, #4a9fff, #2d70cc);"></div>
 
 <div class="modal-body p-4">
     <form id="clienteEditForm" 
@@ -306,9 +308,9 @@
         </div>
 
         <div class="modal-footer border-top border-secondary px-4 pb-4 pt-3">
-            <button type="button" class="btn btn-lg btn-outline-light" data-bs-dismiss="modal">
-                <i class="bi bi-x-lg me-2"></i>Cancelar
-            </button>
+           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-2"></i>Cancelar
+                    </button>
             <button type="submit" class="btn btn-lg btn-info fw-medium">
                 <i class="bi bi-arrow-repeat me-2"></i>Actualizar Cliente
             </button>

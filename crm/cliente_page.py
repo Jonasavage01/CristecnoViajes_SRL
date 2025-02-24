@@ -2,10 +2,16 @@
 import os
 import uuid
 import logging
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from django.views.generic import DetailView
+from weasyprint import HTML
+import tempfile
+from django.utils.text import slugify
 
 # Django URL imports
 from django.urls import reverse_lazy
-
+import requests
 
 # Django utilities
 from django.utils import timezone
@@ -16,6 +22,7 @@ from django.utils.decorators import method_decorator
 # Django HTTP and exceptions
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse, HttpResponseServerError
 
 # Django authentication and messages
 from django.contrib import messages
@@ -38,6 +45,11 @@ from .models import Cliente, DocumentoCliente, NotaCliente
 
 # Project-specific imports: Forms
 from .forms import ClienteEditForm, DocumentoForm
+
+import requests
+from django.conf import settings
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 
 
 logger = logging.getLogger(__name__)
@@ -331,3 +343,98 @@ class DocumentDeleteView(DeleteView):
     def delete(self, request, *args, **kwargs):
         self.get_object().delete()
         return JsonResponse({'success': True})
+    
+
+class ClientePDFView(DetailView):
+    model = Cliente
+    template_name = 'crm/cliente_pdf.html'
+    context_object_name = 'cliente'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cliente = self.object  # Objeto ya obtenido por DetailView
+        
+        try:
+            # Optimizar consulta de notas con sus autores
+            notas = cliente.notas_cliente.all().order_by('-fecha_creacion').select_related('autor').only(
+                'contenido', 'fecha_creacion', 'autor__username'
+            )
+
+            context['secciones'] = [
+                {
+                    'titulo': 'Datos Personales',
+                    'campos': [
+                        ('Nombre', cliente.nombre),
+                        ('Apellido', cliente.apellido),
+                        ('Cédula/Pasaporte', cliente.cedula_pasaporte),
+                        ('Fecha Nacimiento', cliente.fecha_nacimiento.strftime("%d/%m/%Y") if cliente.fecha_nacimiento else 'N/A'),
+                        ('Edad', cliente.get_edad()),
+                        ('Nacionalidad', cliente.nacionalidad.name if cliente.nacionalidad else 'N/A'),  # Manejo seguro
+                    ]
+                },
+                {
+                    'titulo': 'Contacto',
+                    'campos': [
+                        ('Teléfono', cliente.telefono or 'N/A'),
+                        ('Móvil', cliente.movil or 'N/A'),
+                        ('Email', cliente.email or 'N/A'),
+                        ('Dirección', cliente.direccion_fisica or 'N/A'),
+                    ]
+                },
+                {
+                    'titulo': 'Laboral',
+                    'campos': [
+                        ('Lugar de Trabajo', cliente.lugar_trabajo or 'N/A'),
+                        ('Cargo', cliente.cargo or 'N/A'),
+                    ]
+                },
+                {
+                    'titulo': 'Sistema',
+                    'campos': [
+                        ('Estado', cliente.get_estado_display()),
+                        ('Fecha Creación', cliente.fecha_creacion.strftime("%d/%m/%Y %H:%M")),
+                        ('Última Actividad', cliente.ultima_actividad.strftime("%d/%m/%Y %H:%M") if cliente.ultima_actividad else 'N/A'),
+                    ]
+                }
+            ]
+            
+            context['notas'] = notas
+            context['generation_date'] = timezone.now().strftime("%d/%m/%Y %H:%M")
+            
+            return context
+
+        except Exception as e:
+            logger.error(f"Error generando contexto PDF: {str(e)}", exc_info=True)
+            raise
+
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            context = self.get_context_data()
+            
+            # Renderizar HTML
+            html_string = render_to_string(self.template_name, context)
+            
+            # Configurar WeasyPrint
+            html = HTML(
+                string=html_string,
+                base_url=request.build_absolute_uri('/'),
+                encoding='utf-8'
+            )
+            
+            # Generar PDF
+            pdf_file = html.write_pdf(timeout=30)
+            
+            # Nombre del archivo modificado (solo ID y nombre)
+            nombre_slug = slugify(f"{self.object.nombre} {self.object.apellido}")
+            filename = f"Cliente_{self.object.pk}_{nombre_slug}.pdf"
+            
+            
+            
+            response = HttpResponse(pdf_file, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+
+        except Exception as e:
+            logger.error(f"Error generando PDF: {str(e)}", exc_info=True)
+            return HttpResponseServerError("Error generando el documento. Por favor intente más tarde.")

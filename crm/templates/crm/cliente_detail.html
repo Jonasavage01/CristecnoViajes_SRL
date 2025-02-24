@@ -34,6 +34,13 @@
                        title="Volver al listado">
                         <i class="bi bi-arrow-left"></i>
                     </a>
+<a href="{% url 'cliente_pdf' cliente.pk %}" 
+   class="btn btn-light btn-hover-scale btn-actions"
+   data-bs-toggle="tooltip"
+   title="Exportar a PDF">
+   <i class="bi bi-file-earmark-pdf"></i>
+</a>
+
                 </div>
             </div>
             

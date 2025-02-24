@@ -4,15 +4,15 @@
 
 <!-- Modal para Nuevo Cliente -->
 <div class="modal fade" id="clienteModal" tabindex="-1" aria-labelledby="clienteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dark">
-        <div class="modal-content bg-dark">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
             <form id="clienteForm" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
-                <div class="modal-header border-bottom border-info py-3">
-                    <h5 class="modal-title text-white fw-normal">
-                        <i class="bi bi-person-plus me-2"></i>REGISTRO DE CLIENTE
+                <div class="modal-header py-3">
+                    <h5 class="modal-title fw-semibold">
+                        <i class="bi bi-person-plus me-2"></i>Registro de Cliente
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body p-4">
                     <!-- Línea decorativa superior -->
@@ -321,12 +321,12 @@
                     </div>
                 </div>
 
-                <div class="modal-footer border-top border-secondary px-4 pb-4 pt-3">
-                    <button type="button" class="btn btn-lg btn-outline-light" data-bs-dismiss="modal">
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x-lg me-2"></i>Cancelar
                     </button>
-                    <button type="submit" class="btn btn-lg btn-info fw-medium">
-                        <i class="bi bi-save2 me-2"></i>Guardar Registro
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save2 me-2"></i>Guardar Cliente
                     </button>
                 </div>
             </form>

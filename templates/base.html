@@ -42,7 +42,7 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/ventas/">
                         <i class="bi bi-cart"></i>
-                        <span class="menu-text">Ventas</span>
+                        <span class="menu-text">Reservas</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -66,43 +66,45 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Navbar Móvil -->
-    <nav class="sidebar d-md-none">
-        <div class="sidebar-sticky">
-            <ul class="nav justify-content-around">
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/">
-                        <i class="bi bi-speedometer2"></i>
-                        <span class="menu-text">Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.path|slice:":4" == '/crm' %}active{% endif %}" href="/crm/">
-                        <i class="bi bi-people"></i>
-                        <span class="menu-text">Clientes</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/ventas/">
-                        <i class="bi bi-cart"></i>
-                        <span class="menu-text">Ventas</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/reportes/">
-                        <i class="bi bi-graph-up"></i>
-                        <span class="menu-text">Reportes</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/config/">
-                        <i class="bi bi-gear"></i>
-                        <span class="menu-text">Config</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-    </nav>
+<!-- Navbar Móvil -->
+<!-- Navbar Móvil Fija Abajo -->
+<nav class="sidebar d-md-none fixed-bottom">
+    <div class="container-fluid">
+        <ul class="nav justify-content-around">
+            <!-- Items más compactos -->
+            <li class="nav-item">
+                <a class="nav-link py-1" href="/dashboard/">
+                    <i class="bi bi-speedometer2 d-block"></i>
+                    <span class="menu-text">Inicio</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link py-1" href="/crm/">
+                    <i class="bi bi-people d-block"></i>
+                    <span class="menu-text">Clientes</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link py-1" href="/ventas/">
+                    <i class="bi bi-cart d-block"></i>
+                    <span class="menu-text">Ventas</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link py-1" href="/reportes/">
+                    <i class="bi bi-graph-up d-block"></i>
+                    <span class="menu-text">Reportes</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link py-1" href="/config/">
+                    <i class="bi bi-gear d-block"></i>
+                    <span class="menu-text">Config</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
 
 
 {# Bootstrap 5 debe ir PRIMERO ya que es la base de funcionalidades y componentes #}

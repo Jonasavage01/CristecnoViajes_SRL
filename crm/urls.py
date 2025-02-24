@@ -7,7 +7,8 @@ from .cliente_page import (
     DocumentUploadView,
     NotesUpdateView,
     NoteCreateView,
-    DocumentDeleteView
+    DocumentDeleteView,
+    ClientePDFView
 )
 from .views import CRMView, ClienteDeleteView
 
@@ -24,6 +25,7 @@ urlpatterns = [
     # Gestión de documentos
     path('clientes/<int:pk>/subir-documento/', DocumentUploadView.as_view(), name='upload_document'),
     path('documentos/<int:pk>/eliminar/', DocumentDeleteView.as_view(), name='delete_document'),
+    path('clientes/<int:pk>/pdf/', ClientePDFView.as_view(), name='cliente_pdf'),
 
     # Detalle del cliente (debe estar al final para evitar conflictos con otras rutas)
     path('clientes/<int:pk>/', ClienteDetailView.as_view(), name='cliente_detail'),

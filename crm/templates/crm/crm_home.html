@@ -25,18 +25,37 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="card border-0 shadow-lg">
-        <!-- Encabezado -->
-        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-            <div>
+
+<!-- Encabezado Mejorado Responsive -->
+<div class="card-header bg-white py-3">
+    <div class="d-flex flex-column flex-md-row justify-content-center justify-content-md-between align-items-center gap-2 text-center text-md-start">
+        <!-- Contenido Izquierdo -->
+        <div class="d-flex flex-column align-items-center align-items-md-start">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-people-fill fs-4 text-primary"></i>
                 <h4 class="mb-0">Gestión de Clientes</h4>
-                <small class="text-muted">{{ page_obj.paginator.count }} clientes registrados</small>
             </div>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clienteModal">
-                <i class="bi bi-plus-lg me-2"></i>Nuevo Cliente
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary-opacity-10 text-primary fs-6 py-2">
+                    <i class="bi bi-person-badge me-1"></i>
+                    {{ page_obj.paginator.count }} registrados
+                </span>
+            </div>
+        </div>
+        
+        <!-- Botón Derecha -->
+        <div class="mt-2 mt-md-0">
+            <button class="btn btn-primary btn-hover-scale py-2 px-3 w-100 w-md-auto" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#clienteModal">
+                <i class="bi bi-plus-lg me-1 me-md-2"></i>
+                <span>Nuevo Cliente</span>
             </button>
         </div>
+    </div>
+</div>
+
+
  <!-- Filtros Avanzados Mejorados -->
 <div class="card-body border-bottom bg-light">
     <form method="get" class="row g-3 align-items-end" id="filterForm">
@@ -134,9 +153,9 @@
 </div>
         
         <!-- Tabla de Clientes -->
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
+        <div class="table-responsive-container">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
                     <tr>
                         <th style="width: 25%">Cliente</th>
                         <th style="width: 20%">Contacto</th>
