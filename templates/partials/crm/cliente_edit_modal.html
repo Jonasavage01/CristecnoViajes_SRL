@@ -13,31 +13,23 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script type="module">
-    import { showErrorAlert, showSuccessAlert } from "{% static 'crm/alerts.js' %}";
+<!-- Eliminar todo el bloque type="module" -->
+<script src="{% static 'crm/alerts.js' %}"></script>
+<script>
+// Código corregido sin type="module"
+document.getElementById('clienteEditModal').addEventListener('shown.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    if (!button || !button.dataset.url) return;
     
-    document.getElementById('clienteEditModal').addEventListener('shown.bs.modal', function(event) {
-        const button = event.relatedTarget;
-        const formContainer = this.querySelector('#formContainer');
-        const editUrl = button.getAttribute('data-url');
-        
-        fetch(editUrl, {
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.text())
-        .then(html => {
-            formContainer.innerHTML = html;
-            // Disparar evento para inicialización
-            document.dispatchEvent(new CustomEvent('ajaxFormLoaded', {
-                detail: { form: formContainer.querySelector('form') }
-            }));
-        })
-        .catch(error => {
-            console.error('Error loading form:', error);
-            showErrorAlert('Error al cargar el formulario de edición');
-        });
-    });
+    const formContainer = this.querySelector('#formContainer');
+    fetch(button.dataset.url, {
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => formContainer.innerHTML = html)
+    .catch(error => console.error('Error:', error));
+});
 </script>

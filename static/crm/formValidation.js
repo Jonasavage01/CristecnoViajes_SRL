@@ -55,7 +55,7 @@ const formatPhoneNumber = (value) => {
 };
 
 // Actualizar tooltips
-const tooltipTriggerList = [].slice.call(row.querySelectorAll('[data-bs-toggle="tooltip"]'));
+const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
 tooltipTriggerList.forEach(tooltip => {
     const instance = bootstrap.Tooltip.getInstance(tooltip);
     if (instance) instance.dispose();
@@ -225,13 +225,15 @@ const handleFormSubmit = async (e) => {
     e.preventDefault();
     const form = e.target;
     
+    // Obtener la URL base desde el HTML
+    const clienteDetailUrl = document.getElementById('urls').dataset.clienteDetail;
+
     let isValid = true;
     form.querySelectorAll('input, select, textarea').forEach(field => {
         if (!validateField(field)) isValid = false;
     });
     
     if (!isValid) return showAlert('error', 'Por favor corrija los errores');
-
     try {
         const formData = new FormData(form);
         const isEditForm = form.id === 'clienteEditForm';
@@ -269,7 +271,10 @@ const handleFormSubmit = async (e) => {
                         }
                     }
                 } else {
-                    setTimeout(() => window.location.href = `{% url 'cliente_detail' 0 %}`.replace('0', result.cliente_id), 1500);
+                    setTimeout(() => {
+                        const detailUrl = clienteDetailUrl.replace('0', result.cliente_id);
+                        window.location.href = detailUrl;
+                    }, 1500);
                 }
             }
         } else {

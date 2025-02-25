@@ -1,21 +1,26 @@
 from django.urls import path
 
 # Imports de vistas
-from .cliente_page import (
+from .views import (
     ClienteDetailView,
     ClienteUpdateView,
     DocumentUploadView,
     NotesUpdateView,
     NoteCreateView,
     DocumentDeleteView,
-    ClientePDFView
+    ClientePDFView,
+    CRMView, ClienteDeleteView
 )
-from .views import CRMView, ClienteDeleteView
+from .empresas import EmpresasView, EmpresaUpdateView
 
 # Definición de rutas
 urlpatterns = [
     # Página principal del CRM
     path('', CRMView.as_view(), name='crm_home'),
+    
+     # Empresas
+    path('empresas/', EmpresasView.as_view(), name='empresas'),
+    path('empresas/<int:pk>/editar/', EmpresaUpdateView.as_view(), name='empresa_edit'),
 
     # Gestión de clientes
     path('clientes/<int:pk>/edit/', ClienteUpdateView.as_view(), name='cliente_edit'),

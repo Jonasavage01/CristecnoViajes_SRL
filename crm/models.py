@@ -199,3 +199,176 @@ class NotaCliente(models.Model):
         get_latest_by = 'fecha_creacion'
         verbose_name = 'Nota de Cliente'
         verbose_name_plural = 'Notas de Clientes'
+        
+
+""" Empresas """
+
+class Empresa(models.Model):
+    ESTADO_CHOICES = [
+        ('activo', 'Activo'),
+        ('inactivo', 'Inactivo'),
+        ('potencial', 'Potencial'),
+    ]
+
+    nombre_comercial = models.CharField('Nombre Comercial', max_length=200)
+    razon_social = models.CharField('Razón Social', max_length=200)
+    rnc = models.CharField(
+        'RNC', 
+        max_length=20, 
+        unique=True,
+        help_text='Registro Nacional de Contribuyente'
+    )
+    direccion_fisica = models.TextField('Dirección Física')
+    direccion_electronica = models.EmailField('Dirección Electrónica', unique=True)
+    telefono = models.CharField(
+        'Teléfono Principal', 
+        max_length=20,
+        help_text='Formato internacional: +18091234567'
+    )
+    telefono2 = models.CharField(
+        'Teléfono Secundario', 
+        max_length=20, 
+        blank=True,
+        help_text='Formato internacional: +18091234567 (Opcional)'
+    )
+    sitio_web = models.URLField('Sitio Web', blank=True)
+    representante = models.CharField('Representante Legal', max_length=200)
+    cargo_representante = models.CharField('Cargo del Representante', max_length=100)
+    fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Registro')
+    ultima_actividad = models.DateTimeField(auto_now=True, verbose_name='Última Actividad')
+    estado = models.CharField(
+        'Estado',
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='activo' 
+    )
+
+    documento = models.FileField(
+        'Documento Adjunto',
+        upload_to='empresas/documentos/',
+        blank=True,
+        null=True
+    )
+
+    class Meta:
+        verbose_name = 'Empresa'
+        verbose_name_plural = 'Empresas'
+        ordering = ['-fecha_registro']
+        indexes = [
+            models.Index(fields=['rnc']),
+            models.Index(fields=['direccion_electronica']),  # Corrección aquí
+        ]
+
+    def __str__(self):
+        return self.nombre_comercial
+
+    def get_estado_color(self):
+        color_map = {
+            'activo': 'success',
+            'inactivo': 'secondary',
+            'potencial': 'warning'
+        }
+        return color_map.get(self.estado, 'light')
+
+def documento_empresa_upload_to(instance, filename):
+    original_name = get_valid_filename(filename)
+    name, ext = os.path.splitext(original_name)
+    unique_name = f"{name}_{uuid.uuid4().hex[:6]}{ext}"
+    return f"empresas/documentos/empresa_{instance.empresa.id}/{unique_name}"
+
+class DocumentoEmpresa(models.Model):
+    TIPO_CHOICES = [
+        ('general', 'General'),
+        ('contrato', 'Contrato'),
+        ('rnc', 'RNC'),
+        ('otros', 'Otros')
+    ]
+    
+    empresa = models.ForeignKey(
+        'Empresa', 
+        related_name='documentos_empresa', 
+        on_delete=models.CASCADE,
+        verbose_name='Empresa'
+    )
+    
+    tipo = models.CharField(
+        max_length=20, 
+        choices=TIPO_CHOICES, 
+        default='general',
+        verbose_name='Tipo de documento'
+    )
+    
+    fecha_subida = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de subida'
+    )
+    
+    subido_por = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        verbose_name='Subido por'
+    )
+    
+    archivo = models.FileField(
+        upload_to=documento_empresa_upload_to,
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']
+            )
+        ],
+        verbose_name='Archivo'
+    )
+
+    # Mantenemos todas las propiedades igual que en DocumentoCliente
+    def __str__(self):
+        return f"Documento {self.get_tipo_display()} - {self.empresa}"
+
+    @property
+    def extension(self):
+        return os.path.splitext(self.archivo.name)[1][1:].upper()
+    
+    @property
+    def nombre_archivo(self):
+        return os.path.basename(self.archivo.name)
+    
+    @property
+    def icon_class(self):
+        icon_map = {
+            'PDF': 'bi-file-earmark-pdf text-danger',
+            'DOC': 'bi-file-earmark-word text-primary',
+            'DOCX': 'bi-file-earmark-word text-primary',
+            'JPG': 'bi-file-image text-success',
+            'JPEG': 'bi-file-image text-success',
+            'PNG': 'bi-file-image text-success',
+        }
+        return icon_map.get(self.extension, 'bi-file-earmark text-secondary')
+
+    class Meta:
+        verbose_name = 'Documento de empresa'
+        verbose_name_plural = 'Documentos de empresas'
+        ordering = ['-fecha_subida']
+        indexes = [
+            models.Index(fields=['empresa', 'tipo']),
+        ]
+
+class NotaEmpresa(models.Model):
+    empresa = models.ForeignKey(Empresa, related_name='notas_empresa', on_delete=models.CASCADE)
+    contenido = models.TextField('Contenido')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    autor = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        ordering = ['-fecha_creacion']
+        get_latest_by = 'fecha_creacion'
+        verbose_name = 'Nota de Empresa'
+        verbose_name_plural = 'Notas de Empresas'
+
+    def __str__(self):
+        return f"Nota {self.fecha_creacion} - {self.empresa}"
