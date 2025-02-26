@@ -1,4 +1,4 @@
-// Versión corregida sin exports
+// alerts.js (versión sin módulos)
 function showErrorAlert(message, options = {}) {
     Swal.fire({
         icon: 'error',
@@ -30,3 +30,7 @@ function showSuccessAlert(message, options = {}) {
         ...options.swalOptions
     });
 }
+
+// Asignar al objeto global window
+window.showErrorAlert = showErrorAlert;
+window.showSuccessAlert = showSuccessAlert;

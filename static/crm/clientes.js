@@ -28,29 +28,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateClientRow = (clientId, data) => {
         const row = document.querySelector(`tr[data-client-id="${clientId}"]`);
         if (!row) return;
-
-        // Actualizar cada campo dinámicamente
+    
+        // Actualizar campos principales
         const fieldsToUpdate = {
-            '.client-name': data.nombre,
-            '.client-email': data.email,
+            '.client-name': `${data.nombre} ${data.apellido}`,
+            '.client-email a': data.email,
             '.client-phone': data.telefono,
-            '.client-status': data.estado,
-            '.client-id': data.cedula_pasaporte
+            '.client-cedula code': data.cedula_pasaporte,
+            '.client-created': new Date(data.fecha_creacion).toLocaleString()
         };
-
+    
         Object.entries(fieldsToUpdate).forEach(([selector, value]) => {
             const element = row.querySelector(selector);
-            if (element) element.textContent = value;
+            if (element) element.textContent = value || 'N/A';
         });
-
-        // Actualizar badge de estado
+    
+        // Actualizar avatar y estado
+        const avatar = row.querySelector('.avatar');
+        if (avatar) {
+            avatar.textContent = data.nombre.charAt(0).toUpperCase();
+            avatar.className = `avatar bg-${data.estado_color.replace('bg-', '')}`;
+        }
+    
         const statusBadge = row.querySelector('.badge');
         if (statusBadge) {
             statusBadge.className = `badge bg-${data.estado_color} rounded-pill`;
-            statusBadge.textContent = data.estado_display;
+            statusBadge.innerHTML = `<i class="bi bi-circle-fill me-2"></i>${data.estado_display}`;
         }
     };
-
+    
     const loadEditForm = async (url) => {
         try {
             const response = await fetch(url, {

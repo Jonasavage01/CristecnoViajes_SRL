@@ -335,13 +335,7 @@
 </div>
 
 <!-- Scripts al final del documento -->
-
-<script type="module">
-    import { showErrorAlert, showSuccessAlert } from '{% static "crm/alerts.js" %}';
-    window.showErrorAlert = showErrorAlert;
-    window.showSuccessAlert = showSuccessAlert;
-</script>
-
+<script src="{% static 'crm/alerts.js' %}"></script> <!-- Sin type="module" -->
 
 <!-- Scripts adicionales para enfoque y limpieza de errores al abrir/cerrar el modal -->
 <script>

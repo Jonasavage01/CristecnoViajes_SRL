@@ -251,7 +251,6 @@ const handleFormSubmit = async (e) => {
         });
 
         const result = await response.json();
-
         if (response.ok && result.success) {
             showAlert('success', result.message);
             
@@ -261,22 +260,23 @@ const handleFormSubmit = async (e) => {
             if (modal) {
                 modal.hide();
                 
+                // Obtener URL base y ID del cliente
+                const clienteDetailUrl = document.getElementById('urls').dataset.clienteDetail;
+                const clientId = isEditForm ? form.dataset.clientId : result.cliente_id;
+                
+                // Actualizar fila si es edición
                 if (isEditForm && result.cliente_data) {
                     const row = document.querySelector(`tr[data-client-id="${clientId}"]`);
-                    if (row) {
-                        updateClientRow(row, result.cliente_data);
-                        // Actualizar datos en la página de detalle si está abierta
-                        if (window.location.pathname.includes('/clientes/')) {
-                            window.location.reload();
-                        }
-                    }
-                } else {
-                    setTimeout(() => {
-                        const detailUrl = clienteDetailUrl.replace('0', result.cliente_id);
-                        window.location.href = detailUrl;
-                    }, 1500);
+                    if (row) updateClientRow(row, result.cliente_data);
                 }
+        
+                // Redirección dinámica
+                setTimeout(() => {
+                    const detailUrl = clienteDetailUrl.replace('0', clientId);
+                    window.location.href = detailUrl;
+                }, 1500);
             }
+        
         } else {
             handleFormErrors(form, result);
         }

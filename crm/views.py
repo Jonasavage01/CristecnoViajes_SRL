@@ -349,19 +349,19 @@ class ClienteUpdateView(UpdateView):
         if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             logger.debug("Respondiendo a solicitud AJAX")
             return JsonResponse({
-                'success': True,
-                'message': 'Cliente actualizado exitosamente',
-                'cliente_data': {
-                    'id': self.object.id,
-                   'nombre': self.object.nombre,
-                    'apellido': self.object.apellido,
+               'success': True,
+        'message': 'Cliente actualizado exitosamente',
+        'cliente_data': {
+            'id': self.object.id,
+            'nombre': self.object.nombre,
+            'apellido': self.object.apellido,
             'estado': self.object.estado,
             'estado_display': self.object.get_estado_display(),
-           'estado_color': self.object.get_estado_color(),
-                    'telefono': self.object.telefono,
-                    'email': self.object.email,
-                    'cedula': self.object.cedula_pasaporte,
-                    'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M")
+            'estado_color': self.object.get_estado_color(),
+            'telefono': self.object.telefono,
+            'email': self.object.email,
+            'cedula_pasaporte': self.object.cedula_pasaporte,
+            'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M")
                 }
             })
         

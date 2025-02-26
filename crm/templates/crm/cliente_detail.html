@@ -4,6 +4,9 @@
 {% block title %}Detalle de Cliente - {{ cliente.nombre }} {{ cliente.apellido }}{% endblock %}
 
 {% block content %}
+<div id="urls" 
+     data-cliente-detail="{% url 'cliente_detail' 0 %}"
+     style="display: none;"></div>
 <div class="container-fluid px-0 px-lg-4 py-4">
     <div class="client-detail-card card mx-lg-4 border-0 shadow-lg">
         <!-- Header con pestañas -->
@@ -21,13 +24,14 @@
                 </div>
                 <div class="header-actions d-flex gap-2">
                     <a href="#" 
-   class="btn btn-light btn-hover-scale btn-actions edit-client"
-   data-bs-toggle="modal"
-   data-bs-target="#clienteEditModal"
-   data-url="{% url 'cliente_edit' cliente.pk %}"
-   title="Editar cliente">
-    <i class="bi bi-pencil-square"></i>
-</a>
+                    class="btn btn-light btn-hover-scale btn-actions edit-client"
+                    data-bs-toggle="modal"
+                    data-bs-target="#clienteEditModal"
+                    data-url="{% url 'cliente_edit' cliente.pk %}"
+                    data-client-id="{{ cliente.id }}"  <!-- Corregir aquí -->
+                    <title="Editar cliente">
+                     <i class="bi bi-pencil-square"></i>
+                 </a>
                     <a href="{% url 'crm_home' %}" 
                        class="btn btn-light btn-hover-scale btn-actions"
                        data-bs-toggle="tooltip"
