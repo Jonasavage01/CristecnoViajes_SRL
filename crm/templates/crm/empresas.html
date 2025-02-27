@@ -140,7 +140,20 @@
         </div>
     </form>
 </div>
-
+<!-- Añadir indicador de filtros activos -->
+<div class="card-header bg-light py-2">
+    {% if has_filters %}
+    <div class="alert alert-info alert-dismissible mb-0 py-2 fade show" role="alert">
+        <i class="bi bi-funnel me-2"></i>
+        Filtros aplicados: 
+        {% if request.GET.q %}<span class="badge bg-info">Búsqueda: "{{ request.GET.q }}"</span>{% endif %}
+        {% if request.GET.estado %}<span class="badge bg-info">Estado: {{ request.GET.estado }}</span>{% endif %}
+        {% if request.GET.fecha_registro_desde %}<span class="badge bg-info">Desde: {{ request.GET.fecha_registro_desde }}</span>{% endif %}
+        {% if request.GET.fecha_registro_hasta %}<span class="badge bg-info">Hasta: {{ request.GET.fecha_registro_hasta }}</span>{% endif %}
+        <a href="?" class="btn-close" aria-label="Close"></a>
+    </div>
+    {% endif %}
+</div>
 <!-- Tabla de Empresas -->
 <div class="table-responsive-container">
     <div class="table-responsive">
@@ -157,7 +170,7 @@
             </thead>
             <tbody>
                 {% for empresa in empresas %}
-                <tr class="position-relative" data-empresa-id="{{ empresa.id }}">
+                <tr class="position-relative new-row-highlight" data-empresa-id="{{ empresa.id }}">
                     <td>
                         <div class="d-flex align-items-center">
                             <div class="avatar bg-info text-white me-3">
@@ -177,13 +190,18 @@
                     </td>
                     <td>
                         <code>{{ empresa.rnc }}</code>
+                        {% if empresa.documentos_empresa.exists %}
+                        <i class="bi bi-paperclip ms-2 text-muted" 
+                           data-bs-toggle="tooltip" 
+                           title="{{ empresa.documentos_empresa.count }} documentos adjuntos"></i>
+                        {% endif %}
                     </td>
                     <td>
                         <div class="text-truncate" style="max-width: 200px;">
                             {{ empresa.representante|default:"N/A" }}
                         </div>
                         <small class="text-muted text-truncate d-block" style="max-width: 200px;">
-                            {{ empresa.email|default:"N/A" }}
+                            {{ empresa.direccion_electronica|default:"N/A" }}
                         </small>
                     </td>
                     <td>

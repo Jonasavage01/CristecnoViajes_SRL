@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_countries',  # App de terceros
+     'django_cleanup.apps.CleanupConfig',
 
     # Apps locales:
     'crm',

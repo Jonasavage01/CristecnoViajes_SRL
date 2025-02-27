@@ -2,6 +2,8 @@
 import os
 import uuid
 import datetime
+import shutil
+from django.conf import settings
 
 # Django database imports
 from django.db import models
@@ -99,6 +101,23 @@ class Cliente(models.Model):
             (today.month, today.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
         )
         return f"{edad} años"
+    def delete(self, *args, **kwargs):
+        # Eliminar archivo principal del cliente
+        if self.documento:
+            documento_path = self.documento.path
+            if os.path.isfile(documento_path):
+                os.remove(documento_path)
+        
+        # Eliminar directorio de documentos
+        document_dir = os.path.join(
+            settings.MEDIA_ROOT, 
+            'clientes/documentos', 
+            f'cliente_{self.id}'
+        )
+        if os.path.exists(document_dir):
+            shutil.rmtree(document_dir)
+            
+        super().delete(*args, **kwargs)
 
 
 def documento_upload_to(instance, filename):
@@ -174,7 +193,14 @@ class DocumentoCliente(models.Model):
             'PNG': 'bi-file-image text-success',
         }
         return icon_map.get(self.extension, 'bi-file-earmark text-secondary')
-
+    def delete(self, *args, **kwargs):
+        # Eliminar archivo asociado
+        if self.archivo:
+            archivo_path = self.archivo.path
+            if os.path.isfile(archivo_path):
+                os.remove(archivo_path)
+        super().delete(*args, **kwargs)
+        
     class Meta:
         verbose_name = 'Documento de cliente'
         verbose_name_plural = 'Documentos de clientes'
@@ -255,8 +281,10 @@ class Empresa(models.Model):
         verbose_name_plural = 'Empresas'
         ordering = ['-fecha_registro']
         indexes = [
-            models.Index(fields=['rnc']),
-            models.Index(fields=['direccion_electronica']),  # Corrección aquí
+            models.Index(fields=['nombre_comercial']),
+        models.Index(fields=['rnc']),
+        models.Index(fields=['direccion_electronica']),
+        models.Index(fields=['estado', 'fecha_registro']),
         ]
 
     def __str__(self):
@@ -369,6 +397,7 @@ class NotaEmpresa(models.Model):
         get_latest_by = 'fecha_creacion'
         verbose_name = 'Nota de Empresa'
         verbose_name_plural = 'Notas de Empresas'
+        
 
     def __str__(self):
         return f"Nota {self.fecha_creacion} - {self.empresa}"

@@ -59,25 +59,29 @@ class EmpresaForm(forms.ModelForm):
 
     def clean_rnc(self):
         data = self.cleaned_data['rnc'].strip()
+    
         if not data:
-            raise ValidationError("El RNC es obligatorio")
-        
-        if not re.match(r'^[0-9-]{9,20}$', data):
-            raise ValidationError("Formato inválido. Ejemplos válidos: 123456789 o 123-456789-0")
-        
-        return data
+         raise ValidationError("El RNC es obligatorio")
+    
+    # Permitir solo números y guiones
+        if not re.match(r'^[\d-]+$', data):
+            raise ValidationError("El RNC solo puede contener números y guiones")
+    
+    # Eliminar guiones para guardar en base de datos
+        cleaned_data = data.replace('-', '')
+        return cleaned_data
 
     def _clean_phone_field(self, field_name, value):
         value = value.strip().upper()
+    
         if value == self.NA_CHOICE:
             return self.NA_CHOICE
-            
-        # Nueva validación sin +
-        pattern = r'^[1-9]\d{7,14}$'
-        if not re.match(pattern, value):
+        
+    # Permitir números con o sin +
+        if not re.match(r'^\+?\d{7,15}$', value):
             raise ValidationError(
-                f"Formato inválido para {field_name}. Ejemplo válido: 8091234567"
-            )
+                f"Formato inválido para {field_name}. Ejemplos válidos: 8091234567, +18091234567"
+        )
         return value
 
     def clean_telefono(self):
@@ -96,25 +100,32 @@ class EmpresaForm(forms.ModelForm):
         email = self.cleaned_data.get('direccion_electronica', '').lower().strip()
         if not email:
             raise ValidationError("La dirección electrónica es obligatoria")
+    
+    # Validación más precisa
+        if not re.match(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            raise ValidationError("Formato de email inválido. Ejemplo válido: usuario@dominio.com")
         
-        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
-            raise ValidationError("Formato de email inválido")
-            
         return email
 
     def clean_documento(self):
         documento = self.cleaned_data.get('documento')
         if documento:
-            # Validar extensión
+        # Validar tipo de archivo
             valid_extensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
             ext = os.path.splitext(documento.name)[1].lower()
             if ext not in valid_extensions:
-                raise ValidationError("Tipo de archivo no permitido. Formatos aceptados: PDF, DOC, DOCX, JPG, JPEG, PNG")
-            
-            # Validar tamaño
+                raise ValidationError(
+                    "Tipo de archivo no permitido. Formatos aceptados: " + 
+                    ", ".join(ext.upper() for ext in valid_extensions)
+             )
+        
+        # Validar tamaño
             max_size = 5 * 1024 * 1024  # 5MB
             if documento.size > max_size:
-                raise ValidationError(f"Tamaño máximo permitido: {max_size/1024/1024}MB")
+                raise ValidationError(
+                f"Tamaño máximo permitido: {max_size/1024/1024}MB. " +
+                f"Archivo actual: {documento.size/1024/1024:.2f}MB"
+            )
         return documento
 
     def _validate_unique_rnc_and_email(self):

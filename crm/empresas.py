@@ -10,6 +10,8 @@ import logging
 from django.urls import reverse_lazy
 from django.views.generic.edit import UpdateView
 from django.forms.models import model_to_dict
+from django.urls import reverse
+from django.template.loader import render_to_string 
 
 from .models import Empresa
 from .empresas_forms import EmpresaForm  # Asegúrate de crear este formulario
@@ -18,6 +20,7 @@ from .empresas_filters import EmpresaFilter
 from .empresas_forms import EmpresaEditForm, DocumentoEmpresaForm
 
 logger = logging.getLogger(__name__)
+
 
 class EmpresasView(ListView):
     model = Empresa
@@ -28,31 +31,41 @@ class EmpresasView(ListView):
 
     def get_queryset(self):
         try:
-            queryset = super().get_queryset()
+            queryset = Empresa.objects.prefetch_related('documentos_empresa')
             empresa_filter = EmpresaFilter(self.request.GET, queryset)
-            return empresa_filter.apply_filters()
+            return empresa_filter.apply_filters().order_by('-fecha_registro')
         except ValidationError as e:
             messages.error(self.request, str(e))
             return self.model.objects.none()
 
+        # Modificar el método get para mejor manejo de AJAX
     def get(self, request, *args, **kwargs):
         try:
+        # Inicializar el queryset base
+            self.object_list = self.get_queryset()
+        
             if 'apply_filters' in request.GET:
-                empresa_filter = EmpresaFilter(request.GET, self.get_queryset())
+                empresa_filter = EmpresaFilter(request.GET, self.object_list)
+            
                 if not empresa_filter.has_active_filters:
                     messages.warning(request, "Por favor ingresa al menos un criterio de filtrado")
                     return redirect('empresas')
-
+            
+            # Aplicar filtros y actualizar object_list
+                self.object_list = empresa_filter.apply_filters()
+        
+        # Manejar requests AJAX
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 self.template_name = 'partials/crm/empresas_table.html'
-            
+                context = self.get_context_data()
+                return self.render_to_response(context)
+        
+        # Llamar al get() de la clase base con el object_list actualizado
             return super().get(request, *args, **kwargs)
-
+    
         except ValidationError as e:
             messages.error(request, str(e))
-            self.object_list = self.model.objects.none()
-            context = self.get_context_data()
-            return self.render_to_response(context)
+            return redirect('empresas')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -60,63 +73,68 @@ class EmpresasView(ListView):
             'form': EmpresaForm(),
             'estados': Empresa.ESTADO_CHOICES,
             'default_date': timezone.now().strftime('%Y-%m-%d'),
-            'get_params': self._clean_get_params(),
-            'has_filters': EmpresaFilter(self.request.GET, self.get_queryset()).has_active_filters
+            'has_filters': EmpresaFilter(self.request.GET, self.get_queryset()).has_active_filters,
+            'filter_params': self._clean_get_params()
+            
         })
         return context
 
-    def _clean_get_params(self):
+    def _clean_get_params(self):  # <-- Añadir este método
+        """Limpia los parámetros GET eliminando 'page' para mantener los filtros en la paginación"""
         params = self.request.GET.copy()
-        params.pop('page', None)
+        if 'page' in params:
+            del params['page']
         return params.urlencode()
 
-    def _compile_form_errors(self, form):
-        errors = []
-        for field, field_errors in form.errors.items():
-            label = form.fields[field].label
-            error_msg = f"{label}: {field_errors[0]}"
-            if field == 'documento' and 'El archivo es demasiado grande' in field_errors[0]:
-                error_msg = "El documento excede el tamaño máximo permitido (5MB)"
-            errors.append(error_msg)
-        return errors
-
-    def _render_form_with_errors(self, form):
-        self.object_list = self.get_queryset()
-        context = self.get_context_data()
-        context['form'] = form
-        return self.render_to_response(context)
-
-    def _parse_integrity_error(self, error):
-        error_str = str(error).lower()
-        if 'unique constraint' in error_str:
-            if 'rnc' in error_str:
-                return 'El RNC ya está registrado'
-            if 'direccion_electronica' in error_str:
-                return 'La dirección electrónica ya existe'
-        return 'Error de duplicidad en los datos'
-
+    
     def _handle_success_response(self, is_ajax, empresa_id):
         if is_ajax:
+            empresa = Empresa.objects.get(pk=empresa_id)
+            
+            # Renderizar tabla actualizada
+            self.object_list = self.get_queryset()
+            context = self.get_context_data()
+            table_html = render_to_string('partials/crm/empresas_table.html', context, self.request)
+            
             return JsonResponse({
-    'success': True,
-    'message': '...',
-    'empresa_id': empresa_id,  # Corregir variable id -> empresa_id
-    # Para actualizar tabla incluir:
-    'empresa_data': { ... }  # Opcional si se necesita actualizar sin recargar
-})
+                'success': True,
+                'message': 'Empresa creada exitosamente!',
+                'table_html': table_html,  # Clave crítica para actualización
+                'empresa_data': {
+                    'id': empresa.id,
+                    'nombre_comercial': empresa.nombre_comercial,
+                    'rnc': empresa.rnc,
+                    'estado': empresa.get_estado_display(),
+                    'fecha_registro': empresa.fecha_registro.strftime('%d/%m/%Y'),
+                    'telefono': empresa.telefono,
+                    'direccion_electronica': empresa.direccion_electronica,
+                    'representante': empresa.representante,
+                    'edit_url': reverse('empresa_edit', args=[empresa_id]),
+                }
+            })
+        
         messages.success(self.request, 'Empresa creada exitosamente!')
         return redirect('empresas')
 
     def _handle_form_errors(self, form, is_ajax):
-        errors = self._compile_form_errors(form)
+        # Reemplazar la línea errors = self._compile_form_errors(form) por:
+        errors = []
+        for field, field_errors in form.errors.items():
+            for error in field_errors:
+                errors.append(f"{form.fields[field].label}: {error}")
+    
         if is_ajax:
             return JsonResponse({
                 'success': False,
                 'errors': errors,
                 'form_errors': form.errors
             }, status=400)
+    
+    # Para requests normales, necesitamos re-renderizar el template con el formulario
         messages.error(self.request, 'Por favor corrija los errores en el formulario')
-        return self._render_form_with_errors(form)
+        context = self.get_context_data()
+        context['form'] = form  # Pasar el formulario con errores
+        return self.render_to_response(context)
 
     def _handle_integrity_error(self, error, is_ajax):
         error_message = self._parse_integrity_error(error)
@@ -148,14 +166,14 @@ class EmpresasView(ListView):
                 empresa = form.save()
                 logger.info(f'Empresa creada: {empresa.id}')
                 return self._handle_success_response(is_ajax, empresa.id)
-            
+
             logger.warning('Errores de validación en el formulario')
             return self._handle_form_errors(form, is_ajax)
-            
+    
         except IntegrityError as e:
             logger.error(f'Error de integridad: {str(e)}')
             return self._handle_integrity_error(e, is_ajax)
-            
+
         except Exception as e:
             logger.critical(f'Error inesperado: {str(e)}', exc_info=True)
             return self._handle_generic_error(e, is_ajax)
