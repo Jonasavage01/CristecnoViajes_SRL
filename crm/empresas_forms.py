@@ -10,6 +10,13 @@ from django import forms
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 import os
+import logging
+from django import forms
+from django.db.models import Q
+from django.core.exceptions import ValidationError
+from .models import Empresa
+
+logger = logging.getLogger(__name__)
 
 class EmpresaForm(forms.ModelForm):
     NA_CHOICE = 'N/A'
@@ -159,83 +166,228 @@ class EmpresaForm(forms.ModelForm):
         
         return cleaned_data
 
-class EmpresaEditForm(EmpresaForm):
+
+class EmpresaEditForm(forms.ModelForm):
     NA_CHOICE = 'N/A'
-    class Meta(EmpresaForm.Meta):
+    
+    class Meta:
         model = Empresa
+        fields = '__all__'
         exclude = ['documento', 'fecha_registro', 'ultima_actividad']
         widgets = {
-            'representante': forms.TextInput(attrs={'class': 'form-control'}),
-            'cargo_representante': forms.Select(attrs={'class': 'form-select'})
+            
+            'rnc': forms.TextInput(attrs={'class': 'form-control'}),
+            'direccion_electronica': forms.EmailInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
+        # Extraer el user antes de inicializar el formulario
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Campos de solo lectura con estilo mejorado
-        readonly_fields = ['rnc', 'direccion_electronica']
-        for field in readonly_fields:
-            if field in self.fields:
-                current_value = getattr(self.instance, field, '')
-                self.fields[field].widget.attrs.update({
-                    'readonly': True,
-                    'class': 'form-control-plaintext bg-light',
-                    'data-original-value': current_value
-                })
+        self._setup_phone_fields()
+        self._remove_readonly_attrs()
+        self._add_help_texts()
+        
+        if self.user:
+            logger.debug(f"Instancia en formulario - PK: {self.instance.pk if self.instance else 'None'}")
+        logger.debug(f"Datos iniciales RNC: {self.initial.get('rnc')}")
+        logger.debug(f"Valor inicial email: {self.initial.get('direccion_electronica')}")
 
-        # Configurar campos de teléfono
+    def _setup_phone_fields(self):
+        """Configuración de campos telefónicos con validación mejorada"""
         phone_fields = ['telefono', 'telefono2']
+        pattern = r'^(\+?1?\-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}|N/A)$'
+        
         for field in phone_fields:
             self.fields[field].widget.attrs.update({
-                'placeholder': 'Ej: +18091234567 o N/A',
-                'class': 'form-control phone-input'
+                'placeholder': 'Ej: +1 (809) 123-4567 o N/A',
+                'class': 'form-control phone-input',
+                'pattern': r'^(N/A|[1-9]\d{7,14})$', # Agrega 'r' aquí
+                'title': 'Formato internacional: +[código país][número]'
             })
-            self.fields[field].help_text = 'Formato internacional o "N/A" si no aplica'
-    
-    def _validate_unique_rnc_and_email(self):
-        """Validación mejorada para edición"""
-        if not self.instance.pk:
-            raise ValidationError("Operación inválida: Empresa no existe")
-        
-        rnc = self.cleaned_data.get('rnc')
-        email = self.cleaned_data.get('direccion_electronica')
+            self.fields[field].help_text = 'Ejemplos válidos: +18091234567, 8091234567, N/A'
 
-        # Validación de RNC
-        if rnc:
-            qs = Empresa.objects.filter(
-                Q(rnc__iexact=rnc) & 
-                ~Q(pk=self.instance.pk)  # Paréntesis corregido
-            )
-            if qs.exists():
+    def _remove_readonly_attrs(self):
+        """Elimina atributos de solo lectura y ajusta clases CSS"""
+        for field_name, field in self.fields.items():
+            attrs = field.widget.attrs
+            if 'readonly' in attrs:
+                del attrs['readonly']
+            if 'form-control-plaintext' in attrs.get('class', ''):
+                attrs['class'] = attrs['class'].replace('form-control-plaintext', 'form-control')
+                attrs['style'] = 'cursor: text; background-color: #f8f9fa !important;'
+
+    def _validate_unique_rnc_and_email(self):
+        """Validación mejorada con normalización consistente"""
+        rnc = self.cleaned_data.get('rnc', '')
+        email = self.cleaned_data.get('direccion_electronica', '').strip().lower()
+
+        # Obtener valores originales normalizados
+        original_rnc = self.instance.rnc if self.instance else ''
+        original_email = self.instance.direccion_electronica.lower() if self.instance.direccion_electronica else ''
+
+        # Solo validar si hay cambios reales
+        if rnc != original_rnc:
+            if Empresa.objects.filter(rnc=rnc).exclude(pk=self.instance.pk).exists():
                 self.add_error('rnc', 'Este RNC ya está registrado')
 
-        # Validación de email
-        if email:
-            qs = Empresa.objects.filter(
-                Q(direccion_electronica__iexact=email) & 
-                ~Q(pk=self.instance.pk)  # Paréntesis corregido
-            )
-            if qs.exists():
+        if email != original_email:
+            if Empresa.objects.filter(direccion_electronica__iexact=email).exclude(pk=self.instance.pk).exists():
                 self.add_error('direccion_electronica', 'Este email ya está registrado')
+
+    def _validate_rnc_format(self):
+        """Validación flexible de formato"""
+        rnc = self.cleaned_data.get('rnc', '')
+        if rnc:
+            if not re.match(r'^[\d-]+$', rnc):
+                self.add_error('rnc', 'Solo se permiten números y guiones')
+                
+    def _normalize_rnc(self):
+        """Normalización consistente con el modelo"""
+        rnc = self.cleaned_data.get('rnc', '')
+        if rnc:
+            self.cleaned_data['rnc'] = rnc.replace('-', '').replace(' ', '')
+            
+    def _add_help_texts(self):
+        """Actualiza textos de ayuda con información más clara"""
+        help_texts = {
+            'rnc': 'RNC de 9 dígitos sin guiones',
+            'direccion_electronica': 'Correo electrónico válido (no se permite N/A)',
+            'estado': 'Estado actual en el sistema',
+            'telefono': 'Teléfono principal de contacto',
+            'telefono2': 'Teléfono secundario (opcional)'
+        }
+        
+        for field, text in help_texts.items():
+            if field in self.fields:
+                self.fields[field].help_text = text
+
+    def clean(self):
+        """Ejecuta todas las validaciones personalizadas"""
+        cleaned_data = super().clean()
+        
+        # Ejecutar validaciones en orden específico
+        validation_sequence = [
+            self._normalize_na_values,
+            self._validate_rnc_format,
+            self._validate_contact_methods,
+            self._validate_unique_rnc_and_email
+        ]
+        
+        for validation in validation_sequence:
+            if not self.errors:  # Solo continuar si no hay errores
+                validation()
+            else:
+                break
+
+        return cleaned_data
+
+
+    def _validate_contact_methods(self):
+        """Valida métodos de contacto con lógica mejorada"""
+        contact_data = {
+            'teléfono': self.cleaned_data.get('telefono', '').strip(),
+            'teléfono secundario': self.cleaned_data.get('telefono2', '').strip(),
+            'email': self.cleaned_data.get('direccion_electronica', '').strip().lower()
+        }
+
+        valid_contacts = [
+            value for key, value in contact_data.items() 
+            if value and value != self.NA_CHOICE
+        ]
+
+        if not valid_contacts:
+            error_msg = (
+                "Se requiere al menos un método de contacto válido: "
+                "teléfono principal, secundario o email"
+            )
+            self.add_error(None, error_msg)
+            logger.error("Falta método de contacto válido")
+
+    def _validate_rnc_format(self):
+        """Validación de formato RNC: números y guiones"""
+        rnc = self.cleaned_data.get('rnc', '')
+        if rnc:
+            # Permitir números y guiones, sin longitud fija
+            if not re.match(r'^[\d-]+$', rnc):
+                self.add_error(
+                    'rnc', 
+                    'Solo se permiten números y guiones (-)'
+                )
+                logger.warning(f"Formato RNC inválido: {rnc}")
+
+    def _normalize_rnc(self):
+        """Normalizar RNC: quitar guiones y espacios"""
+        rnc = self.cleaned_data.get('rnc', '')
+        if rnc:
+            self.cleaned_data['rnc'] = rnc.replace('-', '').replace(' ', '')
 
     def clean(self):
         cleaned_data = super().clean()
         
-        # Ejecutar validación personalizada
-        self._validate_unique_rnc_and_email()
+        # Nuevo paso de normalización
+        self._normalize_rnc()
         
-        # Validación de contacto mínimo
-        telefono = cleaned_data.get('telefono')
-        telefono2 = cleaned_data.get('telefono2')
-        email = cleaned_data.get('direccion_electronica')
+        validation_sequence = [
+            self._normalize_na_values,
+            self._validate_rnc_format,  # Validar después de normalizar
+            self._validate_contact_methods,
+            self._validate_unique_rnc_and_email
+        ]
+        
+        for validation in validation_sequence:
+            if not self.errors:
+                validation()
+            else:
+                break
 
-        if (telefono == self.NA_CHOICE and
-            telefono2 == self.NA_CHOICE and
-            not email):
-            raise ValidationError("Debe proporcionar al menos un método de contacto válido")
-        
         return cleaned_data
 
+    
+
+    def _normalize_na_values(self):
+        """Normalización de valores N/A con manejo de casos especiales"""
+        na_fields = ['telefono', 'telefono2']
+        
+        for field in na_fields:
+            value = self.cleaned_data.get(field, '')
+            if value.upper() == self.NA_CHOICE:
+                self.cleaned_data[field] = self.NA_CHOICE
+                logger.debug(f"Campo {field} normalizado a N/A")
+
+        # Validación especial para email
+        email = self.cleaned_data.get('direccion_electronica', '')
+        if email.upper() == self.NA_CHOICE:
+            self.add_error(
+                'direccion_electronica', 
+                'El email no puede ser N/A - proporcione una dirección válida'
+            )
+
+    def save(self, commit=True):
+        """Guardado con normalización adicional y registro detallado"""
+        instance = super().save(commit=False)
+        
+        # Normalización final de datos
+        instance.rnc = instance.rnc.strip()
+        instance.direccion_electronica = instance.direccion_electronica.strip().lower()
+        
+        if commit:
+            try:
+                instance.save()
+                logger.info(
+                    f"Empresa {instance.pk} actualizada por {self.user}",
+                    extra={'user': self.user, 'empresa': instance}
+                )
+            except Exception as e:
+                logger.error(
+                    f"Error guardando empresa: {str(e)}",
+                    exc_info=True,
+                    extra={'user': self.user, 'data': self.cleaned_data}
+                )
+                raise
+
+        return instance
 
 class DocumentoEmpresaForm(forms.ModelForm):
     class Meta:

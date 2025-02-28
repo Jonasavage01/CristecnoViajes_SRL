@@ -1,121 +1,186 @@
 // static/crm/empresas_filtros.js
 document.addEventListener('DOMContentLoaded', function() {
+    // Elementos principales
     const filterForm = document.getElementById('filterForm');
     const empresasTable = document.getElementById('empresasTable');
     const paginationContainer = document.querySelector('.pagination');
-    const loadingIndicator = document.createElement('div');
+    const loadingIndicator = createLoadingIndicator();
     
-    // Configurar indicador de carga
-    loadingIndicator.className = 'loading-overlay';
-    loadingIndicator.innerHTML = `
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Cargando...</span>
-        </div>
-    `;
+    // Inicialización
+    initEstadoFilterStyle();
+    setupEventListeners();
+    initTooltips();
+    updateClearFilterButton();
 
-    // Manejar submit del formulario de filtros
-    filterForm.addEventListener('submit', function(e) {
+    function createLoadingIndicator() {
+        const indicator = document.createElement('div');
+        indicator.className = 'loading-overlay';
+        indicator.innerHTML = `
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>`;
+        return indicator;
+    }
+
+    function setupEventListeners() {
+        filterForm.addEventListener('submit', handleFormSubmit);
+        
+        document.querySelectorAll('input[type="date"]').forEach(input => {
+            input.addEventListener('change', handleDateChange);
+        });
+
+        paginationContainer.addEventListener('click', handlePaginationClick);
+    }
+
+    function handleFormSubmit(e) {
         e.preventDefault();
         applyFilters();
-    });
+    }
 
-    // Manejar cambios en los inputs de fecha
-    document.querySelectorAll('input[type="date"]').forEach(input => {
-        input.addEventListener('change', () => {
-            if(input.value) applyFilters();
+    function handleDateChange(e) {
+        if(e.target.value) applyFilters();
+    }
+
+    async function applyFilters() {
+        try {
+            showLoading();
+            const params = new URLSearchParams(new FormData(filterForm));
+            const response = await fetchData(params);
+            
+            if (!response.ok) throw await handleErrorResponse(response);
+            
+            const html = await response.text();
+            processResponse(html);
+        } catch (error) {
+            handleApplicationError(error);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function fetchData(params) {
+        return fetch(`${window.location.pathname}?${params.toString()}&partial=1`, {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
         });
-    });
+    }
 
-    // Mejorar la función applyFilters con manejo de errores
-function applyFilters() {
-    const formData = new FormData(filterForm);
-    const params = new URLSearchParams(formData);
-    
-    // Mantener parámetros existentes en la URL
-    const existingParams = new URLSearchParams(window.location.search);
-    existingParams.forEach((value, key) => {
-        if (!params.has(key)) params.append(key, value);
-    });
-    
-    showLoading();
-    
-    fetch(`${window.location.pathname}?${params.toString()}&partial=1`, {
-        headers: {'X-Requested-With': 'XMLHttpRequest'}
-    })
-    .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return response.text();
-    })
-    .then(html => {
+    async function handleErrorResponse(response) {
+        const error = await response.json();
+        return new Error(error.message || 'Error al aplicar filtros');
+    }
+
+    function processResponse(html) {
         const doc = new DOMParser().parseFromString(html, 'text/html');
+        validateResponse(doc);
+        updateUI(doc);
+    }
+
+    function validateResponse(doc) {
+        const errorMessages = doc.querySelector('.alert-danger');
+        if (errorMessages) {
+            throw new Error(errorMessages.textContent);
+        }
+    }
+
+    function updateUI(doc) {
         updateTableContent(doc);
         updatePagination(doc);
         initDynamicComponents();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showErrorAlert('Error al aplicar filtros');
-    })
-    .finally(() => hideLoading());
-}
+    }
 
-// Nueva función para actualizar la tabla
-function updateTableContent(doc) {
-    const newTable = doc.getElementById('empresasTable');
-    if (newTable) {
-        empresasTable.innerHTML = newTable.innerHTML;
-        // Resaltar nuevas coincidencias
+    function updateTableContent(doc) {
+        const newTable = doc.getElementById('empresasTable');
+        if (newTable) {
+            empresasTable.innerHTML = newTable.innerHTML;
+            highlightNewRows();
+        }
+    }
+
+    function highlightNewRows() {
         empresasTable.querySelectorAll('tr').forEach(row => {
             row.classList.add('filter-highlight');
             setTimeout(() => row.classList.remove('filter-highlight'), 1000);
         });
     }
-}
 
-    // Mostrar/ocultar carga
+    function handlePaginationClick(e) {
+        if (!e.target.closest('.page-link')) return;
+        
+        e.preventDefault();
+        const page = new URL(e.target.closest('.page-link').href).searchParams.get('page');
+        filterForm.page.value = page;
+        applyFilters();
+    }
+
+    function updatePagination(doc) {
+        const newPagination = doc.querySelector('.pagination');
+        paginationContainer.innerHTML = newPagination?.innerHTML || '';
+        
+        if (newPagination) {
+            paginationContainer.querySelectorAll('.page-link').forEach(link => {
+                link.addEventListener('click', handlePaginationClick);
+            });
+        }
+    }
+
+    function initDynamicComponents() {
+        initTooltips();
+        updateClearFilterButton();
+    }
+
     function showLoading() {
         document.body.appendChild(loadingIndicator);
     }
 
     function hideLoading() {
-        if(document.body.contains(loadingIndicator)) {
+        if (document.body.contains(loadingIndicator)) {
             document.body.removeChild(loadingIndicator);
         }
     }
 
-    // Actualizar botón de limpiar filtros
     function updateClearFilterButton() {
         const clearBtn = document.getElementById('clearFilters');
-        const hasFilters = Array.from(filterForm.elements).some(
-            el => el.name && el.value && el.name !== 'page'
+        const hasFilters = Array.from(filterForm.elements).some(el => 
+            el.name && el.value && el.name !== 'page'
         );
-        
-        if(hasFilters) {
-            clearBtn.classList.remove('d-none');
-        } else {
-            clearBtn.classList.add('d-none');
-        }
+        clearBtn?.classList.toggle('d-none', !hasFilters);
     }
 
-    // Inicializar tooltips
     function initTooltips() {
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.forEach(tooltipTriggerEl => {
-            new bootstrap.Tooltip(tooltipTriggerEl);
+        new bootstrap.Tooltip(document.body, {
+            selector: '[data-bs-toggle="tooltip"]',
+            trigger: 'hover'
         });
     }
 
-    // Manejar paginación
-    document.querySelector('.pagination').addEventListener('click', function(e) {
-        if(e.target.closest('.page-link')) {
-            e.preventDefault();
-            const page = new URL(e.target.closest('.page-link').href).searchParams.get('page');
-            filterForm.page.value = page;
-            applyFilters();
+    function initEstadoFilterStyle() {
+        const estadoSelect = document.querySelector('select[name="estado"]');
+        if (estadoSelect) {
+            updateSelectStyle(estadoSelect);
+            estadoSelect.addEventListener('change', () => updateSelectStyle(estadoSelect));
         }
-    });
+    }
 
-    // Inicializar
-    initTooltips();
-    updateClearFilterButton();
+    function updateSelectStyle(select) {
+        const selectedOption = select.options[select.selectedIndex];
+        const color = selectedOption?.dataset.color || 'secondary';
+        select.style.backgroundColor = `var(--bs-${color}-bg-subtle)`;
+        select.style.borderColor = `var(--bs-${color}-border-subtle)`;
+    }
+
+    function handleApplicationError(error) {
+        console.error('Error:', error);
+        showErrorAlert(error.message);
+    }
+
+    function showErrorAlert(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger position-fixed top-0 end-0 m-3';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alert);
+        setTimeout(() => alert.remove(), 5000);
+    }
 });

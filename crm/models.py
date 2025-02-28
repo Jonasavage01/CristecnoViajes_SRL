@@ -4,6 +4,7 @@ import uuid
 import datetime
 import shutil
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 # Django database imports
 from django.db import models
@@ -287,15 +288,17 @@ class Empresa(models.Model):
         models.Index(fields=['estado', 'fecha_registro']),
         ]
 
-    def __str__(self):
-        return self.nombre_comercial
+    def clean(self):
+    # Solo validar email
+        if self.direccion_electronica.upper() == 'N/A':
+            raise ValidationError({'direccion_electronica': 'El email no puede ser N/A'})
 
     def get_estado_color(self):
         color_map = {
-            'activo': 'success',
-            'inactivo': 'secondary',
-            'potencial': 'warning'
-        }
+        'activo': 'success',   # Verde
+        'inactivo': 'secondary', # Gris
+        'potencial': 'warning',   # Amarillo/naranja
+    }
         return color_map.get(self.estado, 'light')
 
 def documento_empresa_upload_to(instance, filename):
@@ -303,6 +306,12 @@ def documento_empresa_upload_to(instance, filename):
     name, ext = os.path.splitext(original_name)
     unique_name = f"{name}_{uuid.uuid4().hex[:6]}{ext}"
     return f"empresas/documentos/empresa_{instance.empresa.id}/{unique_name}"
+def save(self, *args, **kwargs):
+        """Normalización automática del RNC al guardar"""
+        if self.rnc:
+            self.rnc = self.rnc.replace('-', '').replace(' ', '')
+        self.direccion_electronica = self.direccion_electronica.strip().lower()
+        super().save(*args, **kwargs)
 
 class DocumentoEmpresa(models.Model):
     TIPO_CHOICES = [

@@ -6,12 +6,13 @@
         <table class="table table-hover align-middle" id="empresasTable">
             <thead class="table-light">
                 <tr>
-                    <th style="width: 25%">Empresa</th>
-                    <th style="width: 15%">RNC</th>
-                    <th style="width: 20%">Contacto</th>
-                    <th style="width: 15%">Teléfono</th>
-                    <th style="width: 15%">Registro</th>
-                    <th style="width: 10%" class="text-end">Acciones</th>
+                    <th style="width: 20%">Empresa</th> <!-- Reducir ancho -->
+                    <th style="width: 12%">RNC</th> <!-- Reducir ancho -->
+                    <th style="width: 18%">Contacto</th> <!-- Reducir ancho -->
+                    <th style="width: 12%">Teléfono</th> <!-- Reducir ancho -->
+                    <th style="width: 12%">Registro</th> <!-- Reducir ancho -->
+                    <th style="width: 10%">Estado</th> <!-- Nueva columna -->
+                    <th style="width: 16%" class="text-end">Acciones</th> <!-- Ajustar ancho -->
                 </tr>
             </thead>
             <tbody>
@@ -53,6 +54,14 @@
                     </td>
                     <td>
                         {{ empresa.fecha_registro|date:"d/m/Y" }}
+                    </td>
+                    <td>
+                        <span class="badge badge-estado bg-{{ empresa.get_estado_color }} position-relative">
+                            {{ empresa.get_estado_display }}
+                            <i class="bi bi-info-circle ms-1" 
+                               data-bs-toggle="tooltip" 
+                               title="Última actividad: {{ empresa.ultima_actividad|date:'d/m/Y H:i' }}"></i>
+                        </span>
                     </td>
                     <td class="text-end">
                         <div class="d-flex gap-2 justify-content-end">

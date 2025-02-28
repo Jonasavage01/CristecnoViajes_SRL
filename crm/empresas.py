@@ -198,16 +198,18 @@ class EmpresaUpdateView(UpdateView):
         return Empresa.objects.all()
     
     def get_form_kwargs(self):
-        """Pasar el usuario actual al formulario si es necesario"""
+        """Pasar el usuario actual y la instancia al formulario"""
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
+        # Asegurar que la instancia está correctamente asignada
+        if not kwargs.get('instance'):
+            kwargs['instance'] = self.get_object()
         return kwargs
 
     def post(self, request, *args, **kwargs):
         """Override para asegurar la instancia antes de procesar el formulario"""
-        logger.debug(f"Editando empresa - Método POST - Usuario: {request.user}")
         self.object = self.get_object()
-        logger.debug(f"Instancia obtenida - PK: {self.object.pk}")
+        logger.debug(f"Editando empresa PK: {self.object.pk}")
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -252,6 +254,11 @@ class EmpresaUpdateView(UpdateView):
         logger.error("Errores de validación en el formulario de edición de empresa")
         logger.debug("Datos del formulario inválidos: %s", form.data)
         logger.debug("Errores detallados: %s", form.errors.as_json())
+        """Manejar errores de unicidad específicos"""
+        if 'rnc' in form.errors:
+            logger.warning(f"Intento de RNC duplicado: {form.data.get('rnc')}")
+        if 'direccion_electronica' in form.errors:
+            logger.warning(f"Intento de email duplicado: {form.data.get('direccion_electronica')}")
         
         # Depuración de la instancia
         if hasattr(form, 'instance'):

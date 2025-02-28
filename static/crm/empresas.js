@@ -207,3 +207,161 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+/* Editar empresa form */
+// Manejar edición de empresas
+document.addEventListener('DOMContentLoaded', function() {
+    let editModal = null;
+    
+    // Delegación de eventos para botones de edición
+    document.body.addEventListener('click', function(e) {
+        if(e.target.closest('.edit-empresa')) {
+            e.preventDefault();
+            handleEditEmpresa(e.target.closest('.edit-empresa'));
+        }
+    });
+
+    async function handleEditEmpresa(btn) {
+        const url = btn.dataset.url;
+        const empresaId = btn.dataset.pk;
+        
+        try {
+            const response = await fetch(url, {
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            });
+            
+            if (!response.ok) throw new Error('Error cargando formulario');
+            
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const modalElement = doc.getElementById('empresaEditModal');
+            
+            // Eliminar modal existente si hay
+            if (editModal) {
+                editModal.dispose();
+                document.getElementById('empresaEditModal')?.remove();
+            }
+            
+            document.body.appendChild(modalElement);
+            editModal = new bootstrap.Modal(modalElement);
+            
+            // Configurar evento submit
+            modalElement.querySelector('form').addEventListener('submit', handleEditSubmit);
+            editModal.show();
+            
+        } catch (error) {
+            console.error('Error:', error);
+            showErrorAlert('Error al cargar formulario de edición');
+        }
+    }
+
+    async function handleEditSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const url = form.action;
+        const empresaId = new URL(url).pathname.split('/').filter(Boolean).pop();
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        
+        try {
+            // Mostrar estado de carga
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i>Guardando...';
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.errors || 'Error al guardar cambios');
+            }
+
+            if (data.success) {
+                // Actualizar la fila en la tabla
+                updateEmpresaRow(data.empresa_data);
+                editModal.hide();
+                showSuccessAlert(data.message, 3000);
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            handleEditErrors(error, form);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
+    }
+
+    function updateEmpresaRow(empresaData) {
+        const row = document.querySelector(`tr[data-empresa-id="${empresaData.id}"]`);
+        
+        if (row) {
+            // Actualizar cada celda con los nuevos datos
+            row.querySelector('.nombre-comercial').textContent = empresaData.nombre_comercial;
+            row.querySelector('.razon-social').textContent = empresaData.razon_social;
+            row.querySelector('.rnc code').textContent = empresaData.rnc;
+            row.querySelector('.estado .badge').textContent = empresaData.estado_display;
+            row.querySelector('.estado .badge').className = `badge badge-estado bg-${empresaData.estado_color}`;
+            row.querySelector('.telefono').textContent = empresaData.telefono;
+            row.querySelector('.direccion-electronica').textContent = empresaData.direccion_electronica;
+            
+            // Resaltar la fila actualizada
+            row.classList.add('updated-row');
+            setTimeout(() => row.classList.remove('updated-row'), 2000);
+        }
+    }
+
+    function handleEditErrors(error, form) {
+        // Limpiar errores previos
+        form.querySelectorAll('.is-invalid').forEach(field => field.classList.remove('is-invalid'));
+        form.querySelectorAll('.invalid-feedback').forEach(el => el.style.display = 'none');
+    
+        // Mostrar nuevos errores
+        if (error.errors) {
+            Object.entries(error.errors).forEach(([field, errors]) => {
+                const input = form.querySelector(`[name="${field}"]`);
+                const errorContainer = input?.closest('.position-relative')?.querySelector('.invalid-feedback');
+                
+                if (input && errorContainer) {
+                    input.classList.add('is-invalid');
+                    errorContainer.textContent = errors.map(e => e.message).join(', ');
+                    errorContainer.style.display = 'block';
+                }
+            });
+        }
+        
+        // Mostrar error general si no hay errores de campo específicos
+        if (!error.errors || Object.keys(error.errors).length === 0) {
+            showErrorAlert(error.message || 'Error al guardar cambios');
+        }
+    }
+
+    // Helper para obtener CSRF Token
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+    }
+});
+
+// Observador para nuevos elementos en la tabla
+const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+        if (mutation.addedNodes.length) {
+            initDynamicFeatures();
+        }
+    });
+});
+
+observer.observe(document.getElementById('empresasTable'), {
+    childList: true,
+    subtree: true
+});
+
