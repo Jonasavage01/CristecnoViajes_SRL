@@ -316,7 +316,9 @@
     </div>
   </div>
 </div>
-
-
 {% endblock %}
 
+{% block extra_js %}
+<script src="{% static 'crm/formValidation.js' %}"></script>
+ <script src="{% static 'crm/clientes.js' %}"></script>
+{% endblock %}

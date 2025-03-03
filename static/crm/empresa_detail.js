@@ -255,7 +255,32 @@ function showToast(message, type = 'success') {
 }
 
 function getCookie(name) {
-    // Función estándar para obtener cookies
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Añadir en empresa_detail.js
+function getDocumentIcon(url) {
+    const ext = url.split('.').pop().toUpperCase();
+    const iconMap = {
+        'PDF': 'bi-file-earmark-pdf text-danger',
+        'DOC': 'bi-file-earmark-word text-primary',
+        'DOCX': 'bi-file-earmark-word text-primary',
+        'JPG': 'bi-file-image text-success',
+        'JPEG': 'bi-file-image text-success',
+        'PNG': 'bi-file-image text-success'
+    };
+    return iconMap[ext] || 'bi-file-earmark text-secondary';
 }
 
 function createProgressBar() {

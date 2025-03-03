@@ -293,9 +293,9 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'crm/empresas_table.js' %}"></script>
-<script src="{% static 'crm/empresas_filtros.js' %}"></script>
-
+    <!-- Scripts específicos de empresas -->
+    <script src="{% static 'crm/empresas.js' %}"></script>
+    <script src="{% static 'crm/empresas_table.js' %}"></script>
 {% endblock %}
 
 <style>

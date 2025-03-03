@@ -160,20 +160,9 @@
 
  <!-- Scripts base -->
  <script src="{% static 'crm/alerts.js' %}"></script>
- <script src="{% static 'crm/formValidation.js' %}"></script>
- 
- <!-- Scripts de funcionalidad específica -->
-  
- <script src="{% static 'crm/empresas.js' %}"></script>
- <script src="{% static 'crm/clientes.js' %}"></script>
- <script src="{% static 'crm/empresas_table.js' %}"></script>
- 
- <!-- Otros scripts -->
- <script src="{% static 'crm/filtros.js' %}"></script>
- <script src="{% static 'crm/cliente_detail.js' %}"></script>
 
 {# Bloque para scripts adicionales en templates hijos #}
-{% block extra_scripts %}{% endblock %}
+{% block extra_js %}{% endblock %}
 <!-- Agregar esto antes de cerrar el body -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
     <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
