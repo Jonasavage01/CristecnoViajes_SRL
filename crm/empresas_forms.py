@@ -14,7 +14,7 @@ import logging
 from django import forms
 from django.db.models import Q
 from django.core.exceptions import ValidationError
-from .models import Empresa
+from .models import Empresa, NotaEmpresa
 
 logger = logging.getLogger(__name__)
 
@@ -427,3 +427,15 @@ class DocumentoEmpresaForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance  # Corregido: se removió el ':' adicional
+    
+class NotaEmpresaForm(forms.ModelForm):
+    class Meta:
+        model = NotaEmpresa
+        fields = ['contenido']
+        widgets = {
+            'contenido': forms.Textarea(attrs={
+                'rows': 3,
+                'class': 'form-control',
+                'placeholder': 'Escribe una nueva nota...'
+            })
+        }

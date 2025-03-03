@@ -1,16 +1,18 @@
 // static/crm/empresas_filtros.js
 document.addEventListener('DOMContentLoaded', function() {
-    // Elementos principales
+    // Elementos principales con verificación de nulidad
     const filterForm = document.getElementById('filterForm');
     const empresasTable = document.getElementById('empresasTable');
     const paginationContainer = document.querySelector('.pagination');
     const loadingIndicator = createLoadingIndicator();
     
-    // Inicialización
-    initEstadoFilterStyle();
-    setupEventListeners();
-    initTooltips();
-    updateClearFilterButton();
+    // Solo inicializar si existen los elementos esenciales
+    if (filterForm && empresasTable) {
+        initEstadoFilterStyle();
+        setupEventListeners();
+        initTooltips();
+        updateClearFilterButton();
+    }
 
     function createLoadingIndicator() {
         const indicator = document.createElement('div');
@@ -21,15 +23,20 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>`;
         return indicator;
     }
-
+    
     function setupEventListeners() {
-        filterForm.addEventListener('submit', handleFormSubmit);
-        
-        document.querySelectorAll('input[type="date"]').forEach(input => {
-            input.addEventListener('change', handleDateChange);
-        });
+        // Verificar existencia antes de agregar listeners
+        if (filterForm) {
+            filterForm.addEventListener('submit', handleFormSubmit);
+            
+            document.querySelectorAll('#filterForm input[type="date"]').forEach(input => {
+                input.addEventListener('change', handleDateChange);
+            });
+        }
 
-        paginationContainer.addEventListener('click', handlePaginationClick);
+        if (paginationContainer) {
+            paginationContainer.addEventListener('click', handlePaginationClick);
+        }
     }
 
     function handleFormSubmit(e) {
@@ -83,8 +90,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateUI(doc) {
-        updateTableContent(doc);
-        updatePagination(doc);
+        const newTable = doc.getElementById('empresasTable');
+        const newPagination = doc.querySelector('.pagination');
+        
+        if (newTable) {
+            empresasTable.innerHTML = newTable.innerHTML;
+            highlightNewRows();
+        }
+        
+        if (newPagination) {
+            paginationContainer.innerHTML = newPagination.innerHTML;
+            // Re-inicializar listeners de paginación
+            initPaginationListeners();
+        }
+        
         initDynamicComponents();
     }
 
@@ -110,6 +129,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const page = new URL(e.target.closest('.page-link').href).searchParams.get('page');
         filterForm.page.value = page;
         applyFilters();
+    }
+
+    function initPaginationListeners() {
+        if (paginationContainer) {
+            paginationContainer.querySelectorAll('.page-link').forEach(link => {
+                link.addEventListener('click', handlePaginationClick);
+            });
+        }
     }
 
     function updatePagination(doc) {

@@ -12,9 +12,12 @@ from django.views.generic.edit import UpdateView
 from django.forms.models import model_to_dict
 from django.urls import reverse
 from django.template.loader import render_to_string 
+from django.views.generic import DetailView, CreateView,DeleteView
+from django.shortcuts import get_object_or_404
+from .models import NotaEmpresa, DocumentoEmpresa
 
 from .models import Empresa
-from .empresas_forms import EmpresaForm  # Asegúrate de crear este formulario
+from .empresas_forms import EmpresaForm, NotaEmpresaForm
 from .empresas_filters import EmpresaFilter
 
 from .empresas_forms import EmpresaEditForm, DocumentoEmpresaForm
@@ -247,7 +250,9 @@ class EmpresaUpdateView(UpdateView):
         
         # Respuesta normal
         messages.success(self.request, '¡Empresa actualizada exitosamente!')
-        return redirect(self.get_success_url())
+        def get_success_url(self):
+            return reverse('empresa_detail', kwargs={'pk': self.object.pk})
+
 
     def form_invalid(self, form):
         """Manejar errores de validación con logging detallado"""
@@ -290,3 +295,85 @@ class EmpresaUpdateView(UpdateView):
             })
         return errors
     
+
+class EmpresaDetailView(DetailView):
+    model = Empresa
+    template_name = "crm/empresa_detail.html"
+    context_object_name = 'empresa'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        empresa = self.get_object()
+        
+        context.update({
+            'notas': empresa.notas_empresa.all().order_by('-fecha_creacion'),
+            'documentos': empresa.documentos_empresa.all().order_by('-fecha_subida'),
+            'nota_form': NotaEmpresaForm(),
+            'documento_form': DocumentoEmpresaForm(),
+        })
+        return context
+
+class NotaEmpresaCreateView(CreateView):
+    model = NotaEmpresa
+    fields = ['contenido']
+    
+    def form_valid(self, form):
+        empresa = get_object_or_404(Empresa, pk=self.kwargs['pk'])
+        form.instance.empresa = empresa
+        form.instance.autor = self.request.user
+        response = super().form_valid(form)
+        
+        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'nota': {
+                    'contenido': form.instance.contenido,
+                    'fecha': form.instance.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+                    'autor': form.instance.autor.get_full_name() if form.instance.autor else "Anónimo"
+                }
+            })
+            
+        return redirect('empresa_detail', pk=empresa.pk)
+
+    def get_success_url(self):
+        return reverse('empresa_detail', kwargs={'pk': self.kwargs['pk']})
+
+class DocumentoEmpresaUploadView(CreateView):
+    form_class = DocumentoEmpresaForm
+    template_name = "crm/empresa_detail.html"
+
+    def form_valid(self, form):
+        empresa = get_object_or_404(Empresa, pk=self.kwargs['pk'])
+        documento = form.save(commit=False)
+        documento.empresa = empresa
+        documento.subido_por = self.request.user
+        documento.save()
+        
+        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'documento': {
+                    'nombre': documento.nombre_archivo,
+                    'tipo': documento.get_tipo_display(),
+                    'fecha': documento.fecha_subida.strftime("%d/%m/%Y %H:%M"),
+                    'url': documento.archivo.url
+                }
+            })
+            
+        return redirect('empresa_detail', pk=empresa.pk)
+
+    def form_invalid(self, form):
+        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors.get_json_data()
+            }, status=400)
+        return super().form_invalid(form)
+
+class DeleteDocumentoEmpresaView(DeleteView):
+    model = DocumentoEmpresa
+    success_url = reverse_lazy('empresas')
+    
+class DeleteNotaEmpresaView(DeleteView):
+    model = NotaEmpresa
+    success_url = reverse_lazy('empresas')

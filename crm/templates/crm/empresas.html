@@ -182,7 +182,9 @@
             </thead>
             <tbody>
                 {% for empresa in empresas %}
-                <tr class="position-relative new-row-highlight" data-empresa-id="{{ empresa.id }}">
+                <tr class="position-relative new-row-highlight clickable-row" 
+                    data-empresa-id="{{ empresa.id }}"
+                    data-detail-url="{% url 'empresa_detail' empresa.id %}">
                     <td>
                         <div class="d-flex align-items-center">
                             <div class="avatar bg-info text-white me-3">
@@ -289,3 +291,15 @@
   </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'crm/empresas_table.js' %}"></script>
+<script src="{% static 'crm/empresas_filtros.js' %}"></script>
+
+{% endblock %}
+
+<style>
+    .clickable-row { cursor: pointer; transition: background-color 0.2s; }
+    .clickable-row:hover { background-color: #f8f9fa !important; }
+    .clickable-row .btn { z-index: 1000; position: relative; }
+</style>

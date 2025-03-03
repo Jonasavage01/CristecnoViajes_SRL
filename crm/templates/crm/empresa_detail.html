@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalle de Empresa - {{ empresa.nombre_comercial }}{% endblock %}
+
+{% block content %}
+<div id="urls" 
+     data-empresa-detail="{% url 'empresa_detail' 0 %}"
+     style="display: none;"></div>
+<div class="container-fluid px-0 px-lg-4 py-4">
+    <div class="client-detail-card card mx-lg-4 border-0 shadow-lg">
+        <!-- Header con pestañas -->
+        <div class="card-header bg-gradient-primary text-white border-0 pb-0 rounded-top-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                <div class="mb-3 mb-md-0">
+                    <h1 class="h2 mb-1 fw-bold">{{ empresa.nombre_comercial }}</h1>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="status-badge badge rounded-pill bg-white text-dark shadow-sm py-2">
+                            <i class="bi bi-circle-fill text-{{ empresa.get_estado_color }} me-2"></i>
+                            {{ empresa.get_estado_display }}
+                        </span>
+                        <small class="text-white-80">RNC: {{ empresa.rnc }}</small>
+                    </div>
+                </div>
+                <div class="header-actions d-flex gap-2">
+                    <a href="#" 
+                       class="btn btn-light btn-hover-scale btn-actions edit-client"
+                       data-bs-toggle="modal"
+                       data-bs-target="#empresaEditModal"
+                       data-url="{% url 'empresa_edit' empresa.pk %}"
+                       title="Editar empresa">
+                        <i class="bi bi-pencil-square"></i>
+                    </a>
+                    <a href="{% url 'empresas' %}" 
+                       class="btn btn-light btn-hover-scale btn-actions"
+                       data-bs-toggle="tooltip"
+                       title="Volver al listado">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <ul class="nav nav-tabs mt-4 border-0" id="clientTabs">
+                <li class="nav-item">
+                    <button class="nav-link text-white active" data-bs-toggle="tab" 
+                            data-bs-target="#infoTab">
+                        <i class="bi bi-info-circle me-2"></i>Información
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link text-white-80" data-bs-toggle="tab" 
+                            data-bs-target="#docsTab">
+                        <i class="bi bi-file-earmark-arrow-up me-2"></i>Documentos
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link text-white-80" data-bs-toggle="tab" 
+                            data-bs-target="#notesTab">
+                        <i class="bi bi-chat-left-text me-2"></i>Notas
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Contenido de pestañas -->
+        <div class="card-body px-0">
+            <div class="tab-content">
+                <!-- Pestaña Información -->
+                <div class="tab-pane fade show active" id="infoTab">
+                    <div class="row g-4 px-3 px-lg-4">
+                        <!-- Sección Información General -->
+                        <div class="col-12 col-lg-6">
+                            <div class="section-card card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light bg-gradient border-0 py-3">
+                                    <h5 class="mb-0 d-flex align-items-center text-primary">
+                                        <i class="bi bi-building me-3 fs-4"></i>
+                                        Información General
+                                    </h5>
+                                </div>
+                                <div class="card-body pt-4">
+                                    <dl class="row mb-0">
+                                        <dt class="col-md-5 data-label fw-500">Razón Social</dt>
+                                        <dd class="col-md-7 mb-3">{{ empresa.razon_social }}</dd>
+                                        
+                                        <dt class="col-md-5 data-label fw-500">RNC</dt>
+                                        <dd class="col-md-7 mb-3">
+                                            <code>{{ empresa.rnc }}</code>
+                                            {% if empresa.documento %}
+                                            <i class="bi bi-paperclip ms-2 text-muted" 
+                                               data-bs-toggle="tooltip" 
+                                               title="Documento RNC adjunto"></i>
+                                            {% endif %}
+                                        </dd>
+                                        
+                                        <dt class="col-md-5 data-label fw-500">Fecha Registro</dt>
+                                        <dd class="col-md-7 mb-3">{{ empresa.fecha_registro|date:"d/m/Y H:i" }}</dd>
+                                        
+                                        <dt class="col-md-5 data-label fw-500">Última Actividad</dt>
+                                        <dd class="col-md-7 mb-3">{{ empresa.ultima_actividad|date:"d/m/Y H:i" }}</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección Datos de Contacto -->
+                        <div class="col-12 col-lg-6">
+                            <div class="section-card card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light bg-gradient border-0 py-3">
+                                    <h5 class="mb-0 d-flex align-items-center text-primary">
+                                        <i class="bi bi-person-lines-fill me-3 fs-4"></i>
+                                        Datos de Contacto
+                                    </h5>
+                                </div>
+                                <div class="card-body pt-4">
+                                    <dl class="row mb-0">
+                                        <dt class="col-md-5 data-label fw-500">Representante</dt>
+                                        <dd class="col-md-7 mb-3">{{ empresa.representante }}</dd>
+                                        
+                                        <dt class="col-md-5 data-label fw-500">Cargo</dt>
+                                        <dd class="col-md-7 mb-3">{{ empresa.cargo_representante }}</dd>
+                                        
+                                        <dt class="col-md-5 data-label fw-500">Email</dt>
+                                        <dd class="col-md-7 mb-3">
+                                            <a href="mailto:{{ empresa.direccion_electronica }}" 
+                                               class="text-decoration-none link-primary">
+                                                <i class="bi bi-envelope me-2"></i>
+                                                {{ empresa.direccion_electronica }}
+                                            </a>
+                                        </dd>
+                                        
+                                        <dt class="col-md-5 data-label fw-500">Teléfono</dt>
+                                        <dd class="col-md-7 mb-3">
+                                            <div class="d-flex align-items-center gap-2 w-100">
+                                                <a href="tel:{{ empresa.telefono|cut:' '|cut:'+' }}" 
+                                                   class="text-decoration-none link-primary">
+                                                    <i class="bi bi-phone me-2"></i>
+                                                    {{ empresa.telefono }}
+                                                </a>
+                                                <button class="btn btn-sm btn-outline-secondary btn-copy ms-auto" 
+                                                        data-copy="{{ empresa.telefono }}"
+                                                        data-bs-toggle="tooltip"
+                                                        title="Copiar al portapapeles">
+                                                    <i class="bi bi-clipboard"></i>
+                                                </button>
+                                            </div>
+                                        </dd>
+                                        
+                                        {% if empresa.telefono2 %}
+                                        <dt class="col-md-5 data-label fw-500">Teléfono Secundario</dt>
+                                        <dd class="col-md-7 mb-3">{{ empresa.telefono2 }}</dd>
+                                        {% endif %}
+                                        
+                                        <dt class="col-md-5 data-label fw-500">Sitio Web</dt>
+                                        <dd class="col-md-7 mb-3">
+                                            {% if empresa.sitio_web %}
+                                            <a href="{{ empresa.sitio_web }}" target="_blank" 
+                                               class="text-decoration-none link-primary">
+                                                <i class="bi bi-globe me-2"></i>
+                                                {{ empresa.sitio_web|truncatechars:30 }}
+                                            </a>
+                                            {% else %}
+                                            <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección Dirección -->
+                        <div class="col-12">
+                            <div class="section-card card border-0 shadow-sm">
+                                <div class="card-header bg-light bg-gradient border-0 py-3">
+                                    <h5 class="mb-0 d-flex align-items-center text-primary">
+                                        <i class="bi bi-geo-alt me-3 fs-4"></i>
+                                        Dirección Física
+                                    </h5>
+                                </div>
+                                <div class="card-body pt-4">
+                                    <p class="mb-0 text-muted">{{ empresa.direccion_fisica|linebreaksbr }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña Documentos -->
+                <div class="tab-pane fade" id="docsTab">
+                    <div class="row px-3 px-lg-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light bg-gradient border-0 py-3">
+                                    <h5 class="mb-0 text-primary">
+                                        <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                                        Gestión de Documentos
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="documentUploadForm" method="post" 
+                                          enctype="multipart/form-data"
+                                          class="needs-validation" novalidate
+                                          action="{% url 'upload_documento_empresa' empresa.pk %}">
+                                        {% csrf_token %}
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label for="tipo_documento" class="form-label">Tipo de Documento</label>
+                                                <select name="tipo" id="tipo_documento" 
+                                                        class="form-select form-select-sm" required>
+                                                    {% for tipo in empresa.documentos_empresa.model.TIPO_CHOICES %}
+                                                    <option value="{{ tipo.0 }}">{{ tipo.1 }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <label for="fileInput" class="form-label">Seleccionar Archivo</label>
+                                                <div class="input-group">
+                                                    <input type="file" name="archivo" id="fileInput"
+                                                           class="form-control form-control-sm" required 
+                                                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                                    <button type="submit" class="btn btn-primary btn-sm">
+                                                        <i class="bi bi-upload me-2"></i>Subir
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+
+                                    <hr class="my-4">
+
+                                    <div id="documentsContainer" class="row g-3">
+                                        {% for documento in documentos %}
+                                        <div class="col-md-4">
+                                            <div class="document-card card border-0 shadow-sm h-100">
+                                                <div class="card-body">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <i class="bi {{ documento.icon_class }} fs-2"></i>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-1 text-truncate">{{ documento.nombre_archivo }}</h6>
+                                                            <small class="text-muted">
+                                                                {{ documento.get_tipo_display }} · 
+                                                                {{ documento.fecha_subida|date:"d/m/Y" }}
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer bg-transparent border-0 d-flex gap-2">
+                                                    <a href="{{ documento.archivo.url }}" 
+                                                       target="_blank"
+                                                       class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <form method="post" 
+                                                          action="{% url 'delete_documento_empresa' documento.pk %}">
+                                                        {% csrf_token %}
+                                                        <button type="submit" 
+                                                                class="btn btn-sm btn-outline-danger delete-document">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% empty %}
+                                        <div class="col-12 text-center py-4">
+                                            <i class="bi bi-cloud-arrow-up display-4 text-muted"></i>
+                                            <p class="text-muted mt-2">No hay documentos adjuntos</p>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña Notas -->
+                <div class="tab-pane fade" id="notesTab">
+                    <div class="row px-3 px-lg-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light bg-gradient border-0 py-3">
+                                    <h5 class="mb-0 text-primary">
+                                        <i class="bi bi-chat-left-text me-2"></i>
+                                        Historial de Notas
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="newNoteForm" method="post" 
+                                          action="{% url 'add_note_empresa' empresa.pk %}"
+                                          class="mb-4">
+                                        {% csrf_token %}
+                                        <div class="input-group">
+                                            {{ nota_form.contenido }}
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                <i class="bi bi-send"></i>
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    <div class="notes-timeline" id="notesContainer">
+                                        {% for nota in notas %}
+                                        <div class="note-item mb-3">
+                                            <div class="card border-0 shadow-sm">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <div>
+                                                            <small class="text-muted">
+                                                                <i class="bi bi-clock me-1"></i>
+                                                                {{ nota.fecha_creacion|date:"d/m/Y H:i" }}
+                                                            </small>
+                                                            {% if nota.autor %}
+                                                            <small class="text-muted ms-2">
+                                                                <i class="bi bi-person me-1"></i>
+                                                                {{ nota.autor.get_full_name }}
+                                                            </small>
+                                                            {% endif %}
+                                                        </div>
+                                                        <form method="post" 
+                                                              action="{% url 'delete_nota_empresa' nota.pk %}">
+                                                            {% csrf_token %}
+                                                            <button type="submit" 
+                                                                    class="btn btn-link text-danger btn-sm">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                    <p class="mb-0 text-muted">{{ nota.contenido }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% empty %}
+                                        <div class="empty-state text-center py-4">
+                                            <i class="bi bi-journal-x display-4 text-muted"></i>
+                                            <h5 class="mt-3 text-muted">No hay notas registradas</h5>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "partials/crm/empresa_form_modal.html" %}
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'crm/empresa_detail.js' %}"></script>
+
+{% endblock %}
