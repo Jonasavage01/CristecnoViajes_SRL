@@ -1,12 +1,10 @@
 /* ========== CRM.CSS ========== */
-/* Componentes específicos de la lista de clientes */
 
-/* === Variables locales === */
-:root {
-    --table-min-width: 900px;
-    --avatar-size: 40px;
-    --scrollbar-width: 6px;
-}
+
+
+
+
+
 
 /* === Elementos principales === */
 .client-list {
