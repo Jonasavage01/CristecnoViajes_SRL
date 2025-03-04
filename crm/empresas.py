@@ -7,14 +7,32 @@ from django.db import IntegrityError
 from django.utils import timezone
 from django.http import JsonResponse
 import logging
+from django.http import JsonResponse, Http404
 from django.urls import reverse_lazy
 from django.views.generic.edit import UpdateView
 from django.forms.models import model_to_dict
 from django.urls import reverse
 from django.template.loader import render_to_string 
-from django.views.generic import DetailView, CreateView,DeleteView
+from django.views.generic import DetailView, CreateView,DeleteView, View
 from django.shortcuts import get_object_or_404
 from .models import NotaEmpresa, DocumentoEmpresa
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.http import HttpResponse, HttpResponseServerError
+from django.utils.text import slugify
+from weasyprint import HTML
+from django.views.decorators.http import require_http_methods
+import logging
+from django.views.decorators.http import require_http_methods
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_http_methods
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
+from django.views.generic import DeleteView
+from django.http import JsonResponse
+from django.contrib import messages
+import logging
+
 
 from .models import Empresa
 from .empresas_forms import EmpresaForm, NotaEmpresaForm
@@ -313,67 +331,277 @@ class EmpresaDetailView(DetailView):
         })
         return context
 
-class NotaEmpresaCreateView(CreateView):
-    model = NotaEmpresa
-    fields = ['contenido']
-    
-    def form_valid(self, form):
-        empresa = get_object_or_404(Empresa, pk=self.kwargs['pk'])
-        form.instance.empresa = empresa
-        form.instance.autor = self.request.user
-        response = super().form_valid(form)
-        
-        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'nota': {
-                    'contenido': form.instance.contenido,
-                    'fecha': form.instance.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
-                    'autor': form.instance.autor.get_full_name() if form.instance.autor else "Anónimo"
-                }
-            })
-            
-        return redirect('empresa_detail', pk=empresa.pk)
-
-    def get_success_url(self):
-        return reverse('empresa_detail', kwargs={'pk': self.kwargs['pk']})
-
 class DocumentoEmpresaUploadView(CreateView):
     form_class = DocumentoEmpresaForm
     template_name = "crm/empresa_detail.html"
 
     def form_valid(self, form):
-        empresa = get_object_or_404(Empresa, pk=self.kwargs['pk'])
-        documento = form.save(commit=False)
-        documento.empresa = empresa
-        documento.subido_por = self.request.user
-        documento.save()
-        
-        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+        try:
+            empresa = get_object_or_404(Empresa, pk=self.kwargs['pk'])
+            documento = form.save(commit=False)
+            documento.empresa = empresa
+            documento.subido_por = self.request.user if self.request.user.is_authenticated else None
+            
+            # Validación adicional manual
+            self.full_clean_documento(documento)
+            
+            documento.save()
+            
+            return self.handle_success_response(documento, empresa)
+            
+        except ValidationError as e:
+            return self.handle_validation_error(form, e)
+        except Exception as e:
+            logger.error(f"Error subiendo documento: {str(e)}", exc_info=True)
+            return self.handle_server_error()
+
+    def full_clean_documento(self, documento):
+        # Validación manual de modelo antes de guardar
+        documento.full_clean(exclude=['empresa', 'subido_por'])
+
+    def handle_success_response(self, documento, empresa):
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': True,
                 'documento': {
                     'nombre': documento.nombre_archivo,
                     'tipo': documento.get_tipo_display(),
                     'fecha': documento.fecha_subida.strftime("%d/%m/%Y %H:%M"),
-                    'url': documento.archivo.url
+                    'url': documento.archivo.url,
+                    'extension': documento.extension,  # Añadir esta línea
+                    'subido_por': documento.subido_por.get_full_name() if documento.subido_por else 'Anónimo',
+                    'id': documento.id,
+                    'empresa_id': empresa.id
                 }
             })
-            
         return redirect('empresa_detail', pk=empresa.pk)
 
+    def handle_validation_error(self, form, error):
+        form.add_error(None, error)
+        return self.form_invalid(form)
+
+    def handle_server_error(self):
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'errors': ['Error interno al procesar el documento']
+            }, status=500)
+        raise
+
     def form_invalid(self, form):
-        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
                 'errors': form.errors.get_json_data()
             }, status=400)
         return super().form_invalid(form)
 
+class NotaEmpresaCreateView(CreateView):
+    form_class = NotaEmpresaForm
+    template_name = "crm/empresa_detail.html"
+
+    def form_valid(self, form):
+        try:
+            empresa = get_object_or_404(Empresa, pk=self.kwargs['pk'])
+            form.instance.empresa = empresa
+            form.instance.autor = self.request.user if self.request.user.is_authenticated else None
+            
+            # Validación adicional del contenido
+            self.validate_nota_content(form.cleaned_data['contenido'])
+            
+            form.save()
+            return self.handle_success_response(form.instance, empresa)
+            
+        except ValidationError as e:
+            return self.handle_validation_error(form, e)
+        except Exception as e:
+            logger.error(f"Error creando nota: {str(e)}", exc_info=True)
+            return self.handle_server_error()
+
+    def validate_nota_content(self, contenido):
+        if len(contenido.strip()) < 10:
+            raise ValidationError("La nota debe tener al menos 10 caracteres")
+
+    def handle_success_response(self, nota, empresa):
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'nota': {
+                    'contenido': nota.contenido,
+                    'fecha': nota.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+                    'autor': nota.autor.get_full_name() if nota.autor else "Anónimo",
+                    'id': nota.id,
+                    'empresa_id': empresa.id
+                }
+            })
+        return redirect('empresa_detail', pk=empresa.pk)
+
+    def handle_server_error(self):
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'errors': ['Error interno al guardar la nota']
+            }, status=500)
+        raise
+
+    def form_invalid(self, form):
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors.get_json_data()
+            }, status=400)
+        return super().form_invalid(form)
+
+# En views.py
 class DeleteDocumentoEmpresaView(DeleteView):
     model = DocumentoEmpresa
-    success_url = reverse_lazy('empresas')
-    
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(DocumentoEmpresa, pk=self.kwargs['doc_pk'])
+
+    def get_success_url(self):
+        return reverse_lazy('empresa_detail', kwargs={'pk': self.kwargs['pk']})
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_message = "Documento eliminado exitosamente"
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            self.object.delete()
+            return JsonResponse({'success': True, 'message': success_message})
+        return super().delete(request, *args, **kwargs)
+
+
 class DeleteNotaEmpresaView(DeleteView):
     model = NotaEmpresa
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(NotaEmpresa, pk=self.kwargs['nota_pk'])
+
+    def get_success_url(self):
+        return reverse_lazy('empresa_detail', kwargs={'pk': self.kwargs['pk']})
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_message = "Nota eliminada exitosamente"
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            self.object.delete()
+            return JsonResponse({'success': True, 'message': success_message})
+        return super().delete(request, *args, **kwargs)
+
+
+
+class EmpresaPDFView(DetailView):
+    model = Empresa
+    template_name = 'crm/empresa_pdf.html'
+    context_object_name = 'empresa'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        empresa = self.object
+        
+        try:
+            notas = empresa.notas_empresa.all().order_by('-fecha_creacion').select_related('autor').only(
+                'contenido', 'fecha_creacion', 'autor__username'
+            )
+
+            context['secciones'] = [
+                {
+                    'titulo': 'Información General',
+                    'campos': [
+                        ('Nombre Comercial', empresa.nombre_comercial),
+                        ('Razón Social', empresa.razon_social),
+                        ('RNC', empresa.rnc),
+                        ('Fecha Registro', empresa.fecha_registro.strftime("%d/%m/%Y %H:%M")),
+                    ]
+                },
+                {
+                    'titulo': 'Contacto',
+                    'campos': [
+                        ('Email', empresa.direccion_electronica),
+                        ('Teléfono Principal', empresa.telefono),
+                        ('Teléfono Secundario', empresa.telefono2 if empresa.telefono2 else 'N/A'),
+                        ('Sitio Web', empresa.sitio_web if empresa.sitio_web else 'N/A'),
+                        ('Dirección Física', empresa.direccion_fisica),
+                    ]
+                },
+                {
+                    'titulo': 'Representante Legal',
+                    'campos': [
+                        ('Nombre', empresa.representante),
+                        ('Cargo', empresa.cargo_representante),
+                    ]
+                },
+                {
+                    'titulo': 'Sistema',
+                    'campos': [
+                        ('Estado', empresa.get_estado_display()),
+                        ('Fecha Registro', empresa.fecha_registro.strftime("%d/%m/%Y %H:%M")),
+                        ('Última Actividad', empresa.ultima_actividad.strftime("%d/%m/%Y %H:%M") if empresa.ultima_actividad else 'N/A'),
+                    ]
+                }
+            ]
+            
+            context['notas'] = notas
+            context['generation_date'] = timezone.now().strftime("%d/%m/%Y %H:%M")
+            return context
+
+        except Exception as e:
+            logger.error(f"Error generando contexto PDF: {str(e)}", exc_info=True)
+            raise
+
+    def get(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            empresa = self.object  # <-- AÑADIR ESTA LÍNEA
+            context = self.get_context_data()
+        
+            html_string = render_to_string(self.template_name, context)
+        
+            html = HTML(
+                string=html_string,
+                base_url=request.build_absolute_uri('/'),
+                encoding='utf-8'
+            )
+        
+            pdf_file = html.write_pdf(timeout=30)
+        
+            nombre_slug = slugify(empresa.nombre_comercial)
+            filename = f"Empresa_{empresa.pk}_{nombre_slug}.pdf"
+        
+            response = HttpResponse(pdf_file, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        except Exception as e:
+            logger.error(f"Error generando PDF: {str(e)}", exc_info=True)
+            return HttpResponseServerError("Error generando el documento. Por favor intente más tarde.")
+
+
+class EmpresaDeleteView(View):  # Cambiar de DeleteView a View
     success_url = reverse_lazy('empresas')
+    
+    @method_decorator(require_http_methods(["POST"]))
+    def post(self, request, *args, **kwargs):
+        try:
+            empresa = get_object_or_404(Empresa, id=kwargs.get('pk'))
+            empresa_nombre = empresa.nombre_comercial
+            empresa.delete()  # Esto ejecutará el delete() del modelo
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Empresa "{empresa_nombre}" eliminada exitosamente'
+            })
+
+        except Http404:
+            return JsonResponse({
+                'success': False,
+                'message': 'La empresa no existe'
+            }, status=404)
+            
+        except Exception as e:
+            logger.error(f"Error eliminando empresa: {str(e)}", exc_info=True)
+            return JsonResponse({
+                'success': False,
+                'message': f'Error del servidor: {str(e)}'
+            }, status=500)

@@ -231,25 +231,32 @@
                                data-bs-toggle="tooltip" 
                                title="Última actividad: {{ empresa.ultima_actividad|date:'d/m/Y H:i' }}"></i>
                         </span>
-                    </td>
-                    <td class="text-end">
-                        <div class="d-flex gap-2 justify-content-end">
-                            <a href="#" 
-   class="btn btn-sm btn-outline-info edit-empresa" 
-   title="Editar"
-   data-url="{% url 'empresa_edit' empresa.id %}"
-   data-pk="{{ empresa.id }}">
-    <i class="bi bi-pencil"></i>
-</a>
-                            <a href="#" 
-                               class="btn btn-sm btn-outline-danger delete-empresa" 
-                               title="Eliminar"
-                               data-bs-toggle="tooltip"
-                               
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        </div>
-                    </td>
+                        <td class="text-end">
+                            <div class="d-flex gap-2 justify-content-end">
+                                <!-- Botón Editar -->
+                                <a href="#" 
+                                   class="btn btn-sm btn-outline-info edit-empresa" 
+                                   title="Editar"
+                                   data-url="{% url 'empresa_edit' empresa.id %}"
+                                   data-pk="{{ empresa.id }}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                
+                                <!-- Botón Eliminar Actualizado -->
+                                <button type="button" 
+                                class="btn btn-sm btn-outline-danger delete-empresa" 
+                                title="Eliminar"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteEmpresaModal"
+                                data-empresa-id="{{ empresa.id }}"
+                                data-empresa-name="{{ empresa.nombre_comercial }}"
+                                data-documentos-count="{{ empresa.documentos_empresa.count }}"
+                                data-notas-count="{{ empresa.notas_empresa.count }}"
+                                data-delete-url="{% url 'empresa_delete' empresa.id %}"> <!-- Nueva línea -->
+                            <i class="bi bi-trash"></i>
+                        </button>
+                            </div>
+                        </td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -271,22 +278,71 @@
 {% include "partials/crm/empresa_form_modal.html" %} <!-- Modal para crear -->
 
 
-<!-- Modal de Confirmación para Eliminación (reutilizado) -->
-<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" 
-     aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
+<!-- Modal de Eliminación de Empresa -->
+<div class="modal fade" id="deleteEmpresaModal" tabindex="-1" 
+     aria-labelledby="deleteEmpresaModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
-       <div class="modal-header">
-         <h5 class="modal-title">Confirmar eliminación</h5>
-         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-       </div>
-       <div class="modal-body">
-         ¿Está seguro de eliminar esta empresa permanentemente?
-       </div>
-       <div class="modal-footer">
-         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-         <a href="#" class="btn btn-danger" id="confirmDeleteButton">Eliminar</a>
-       </div>
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-building-x me-2"></i>Eliminar Empresa
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger d-flex align-items-center mb-4">
+          <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+          <div>
+            <h5 class="alert-heading mb-2">¡Acción irreversible!</h5>
+            <p class="mb-0">Se eliminará permanentemente la empresa: <strong id="empresaDeleteName"></strong></p>
+          </div>
+        </div>
+        
+        <ul class="list-group list-group-flush mb-4">
+          <li class="list-group-item d-flex align-items-center">
+            <i class="bi bi-building-x text-danger me-2"></i>
+            Todos los datos de la empresa
+          </li>
+          <li class="list-group-item d-flex align-items-center">
+            <i class="bi bi-file-earmark-break-fill text-danger me-2"></i>
+            <span id="documentosCount">0 documentos adjuntos</span>
+          </li>
+          <li class="list-group-item d-flex align-items-center">
+            <i class="bi bi-chat-left-text-fill text-danger me-2"></i>
+            <span id="notasCount">0 notas registradas</span>
+          </li>
+          <li class="list-group-item d-flex align-items-center">
+            <i class="bi bi-folder-x-fill text-danger me-2"></i>
+            Directorio de archivos en el servidor
+          </li>
+        </ul>
+        
+        <div class="alert alert-warning">
+          <i class="bi bi-clock-history me-2"></i>
+          Última actividad: <span id="ultimaActividad"></span>
+        </div>
+      </div>
+      
+      <div class="modal-footer bg-light">
+        <form id="deleteEmpresaForm" method="post">
+        {% csrf_token %} 
+        <input type="hidden" name="empresa_id" id="deleteEmpresaId"> 
+        <div id="deleteEmpresaError" class="alert alert-danger d-none w-100 mb-3" role="alert">
+          <i class="bi bi-x-circle-fill me-2"></i>
+          <span id="errorEmpresaMessage"></span>
+        </div>
+        
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-lg me-2"></i>Cancelar
+        </button>
+        <button type="submit" class="btn btn-danger" id="confirmEmpresaDelete">
+            <span class="submit-text">
+                <i class="bi bi-trash3-fill me-2"></i>Eliminar Definitivamente
+            </span>
+            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+        </button>
+    </form>
+      </div>
     </div>
   </div>
 </div>

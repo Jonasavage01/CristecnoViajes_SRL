@@ -15,6 +15,7 @@ from django import forms
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 from .models import Empresa, NotaEmpresa
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -411,23 +412,27 @@ class DocumentoEmpresaForm(forms.ModelForm):
             if archivo.size > 5 * 1024 * 1024:  # 5MB
                 raise forms.ValidationError('El archivo excede 5MB')
             
-            # Validación de tipo de archivo
-            ext = os.path.splitext(archivo.name)[1][1:].lower()
-            if ext not in ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']:
+            # Validación y normalización de extensión
+            name, ext = os.path.splitext(archivo.name)
+            ext = ext.lower()
+            allowed_extensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+            
+            if ext not in allowed_extensions:
                 raise forms.ValidationError('Formato de archivo no permitido')
-                
+            
+            # Generar nombre único con extensión normalizada
+            unique_name = f"{name}_{uuid.uuid4().hex[:6]}{ext}"
+            archivo.name = unique_name
+            
         return archivo
 
-    def save(self, commit=True, empresa=None, user=None):
-        instance = super().save(commit=False)
-        if empresa:
-            instance.empresa = empresa
-        if user:
-            instance.subido_por = user
-        if commit:
-            instance.save()
-        return instance  # Corregido: se removió el ':' adicional
-    
+    def clean(self):
+        cleaned_data = super().clean()
+        # Asegurar que el campo subido_por sea manejado correctamente
+        if 'subido_por' in self.errors:
+            del self.errors['subido_por']
+        return cleaned_data
+
 class NotaEmpresaForm(forms.ModelForm):
     class Meta:
         model = NotaEmpresa
@@ -436,6 +441,19 @@ class NotaEmpresaForm(forms.ModelForm):
             'contenido': forms.Textarea(attrs={
                 'rows': 3,
                 'class': 'form-control',
-                'placeholder': 'Escribe una nueva nota...'
+                'placeholder': 'Escribe una nueva nota...',
+                'minlength': '10'
             })
         }
+        error_messages = {
+            'contenido': {
+                'required': 'El contenido de la nota es obligatorio',
+                'min_length': 'La nota debe tener al menos 10 caracteres'
+            }
+        }
+
+    def clean_contenido(self):
+        contenido = self.cleaned_data.get('contenido')
+        if contenido and len(contenido.strip()) < 10:
+            raise forms.ValidationError("La nota debe contener al menos 10 caracteres válidos")
+        return contenido.strip()

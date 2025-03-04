@@ -20,6 +20,9 @@ from django.core.validators import FileExtensionValidator
 
 # Third-party package imports
 from django_countries.fields import CountryField
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -240,21 +243,21 @@ class Empresa(models.Model):
     nombre_comercial = models.CharField('Nombre Comercial', max_length=200)
     razon_social = models.CharField('Razón Social', max_length=200)
     rnc = models.CharField(
-        'RNC', 
-        max_length=20, 
+        'RNC',
+        max_length=20,
         unique=True,
         help_text='Registro Nacional de Contribuyente'
     )
     direccion_fisica = models.TextField('Dirección Física')
     direccion_electronica = models.EmailField('Dirección Electrónica', unique=True)
     telefono = models.CharField(
-        'Teléfono Principal', 
+        'Teléfono Principal',
         max_length=20,
         help_text='Formato internacional: +18091234567'
     )
     telefono2 = models.CharField(
-        'Teléfono Secundario', 
-        max_length=20, 
+        'Teléfono Secundario',
+        max_length=20,
         blank=True,
         help_text='Formato internacional: +18091234567 (Opcional)'
     )
@@ -267,7 +270,7 @@ class Empresa(models.Model):
         'Estado',
         max_length=20,
         choices=ESTADO_CHOICES,
-        default='activo' 
+        default='activo'
     )
 
     documento = models.FileField(
@@ -283,35 +286,62 @@ class Empresa(models.Model):
         ordering = ['-fecha_registro']
         indexes = [
             models.Index(fields=['nombre_comercial']),
-        models.Index(fields=['rnc']),
-        models.Index(fields=['direccion_electronica']),
-        models.Index(fields=['estado', 'fecha_registro']),
+            models.Index(fields=['rnc']),
+            models.Index(fields=['direccion_electronica']),
+            models.Index(fields=['estado', 'fecha_registro']),
         ]
 
     def clean(self):
-    # Solo validar email
+        # Solo validar email
         if self.direccion_electronica.upper() == 'N/A':
             raise ValidationError({'direccion_electronica': 'El email no puede ser N/A'})
 
     def get_estado_color(self):
         color_map = {
-        'activo': 'success',   # Verde
-        'inactivo': 'secondary', # Gris
-        'potencial': 'warning',   # Amarillo/naranja
-    }
+            'activo': 'success',   # Verde
+            'inactivo': 'secondary', # Gris
+            'potencial': 'warning',   # Amarillo/naranja
+        }
         return color_map.get(self.estado, 'light')
+
+    def save(self, *args, **kwargs):
+        """Normalización automática del RNC al guardar"""
+        if self.rnc:
+            self.rnc = self.rnc.replace('-', '').replace(' ', '')
+        self.direccion_electronica = self.direccion_electronica.strip().lower()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        try:
+            # Eliminar archivo principal de la empresa
+            if self.documento:
+                documento_path = self.documento.path
+                if os.path.isfile(documento_path):
+                    os.remove(documento_path)
+
+            # Eliminar directorio de documentos
+            document_dir = os.path.join(
+                settings.MEDIA_ROOT,
+                'empresas/documentos',
+                f'empresa_{self.id}'
+            )
+            if os.path.exists(document_dir):
+                shutil.rmtree(document_dir)
+
+        except Exception as e:
+            logger.error(f"Error eliminando archivos de empresa: {str(e)}")
+
+        finally:
+            # Eliminar el objeto de la base de datos
+            super().delete(*args, **kwargs)
+
 
 def documento_empresa_upload_to(instance, filename):
     original_name = get_valid_filename(filename)
     name, ext = os.path.splitext(original_name)
     unique_name = f"{name}_{uuid.uuid4().hex[:6]}{ext}"
     return f"empresas/documentos/empresa_{instance.empresa.id}/{unique_name}"
-def save(self, *args, **kwargs):
-        """Normalización automática del RNC al guardar"""
-        if self.rnc:
-            self.rnc = self.rnc.replace('-', '').replace(' ', '')
-        self.direccion_electronica = self.direccion_electronica.strip().lower()
-        super().save(*args, **kwargs)
+
 
 class DocumentoEmpresa(models.Model):
     TIPO_CHOICES = [
@@ -341,12 +371,12 @@ class DocumentoEmpresa(models.Model):
     )
     
     subido_por = models.ForeignKey(
-        User, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True,
-        verbose_name='Subido por'
-    )
+    User, 
+    on_delete=models.SET_NULL, 
+    null=True,
+    blank=True,
+    verbose_name='Subido por'
+)
     
     archivo = models.FileField(
         upload_to=documento_empresa_upload_to,
@@ -364,23 +394,24 @@ class DocumentoEmpresa(models.Model):
 
     @property
     def extension(self):
-        return os.path.splitext(self.archivo.name)[1][1:].upper()
+        return os.path.splitext(self.archivo.name)[1][1:].lower()
     
     @property
     def nombre_archivo(self):
         return os.path.basename(self.archivo.name)
     
     @property
+
     def icon_class(self):
         icon_map = {
-            'PDF': 'bi-file-earmark-pdf text-danger',
-            'DOC': 'bi-file-earmark-word text-primary',
-            'DOCX': 'bi-file-earmark-word text-primary',
-            'JPG': 'bi-file-image text-success',
-            'JPEG': 'bi-file-image text-success',
-            'PNG': 'bi-file-image text-success',
+            'pdf': 'bi-file-earmark-pdf text-danger',
+            'doc': 'bi-file-earmark-word text-primary',
+            'docx': 'bi-file-earmark-word text-primary',
+            'jpg': 'bi-file-image text-success',
+            'jpeg': 'bi-file-image text-success',
+            'png': 'bi-file-image text-success'
         }
-        return icon_map.get(self.extension, 'bi-file-earmark text-secondary')
+        return icon_map.get(self.extension.lower(), 'bi-file-earmark text-secondary')
 
     class Meta:
         verbose_name = 'Documento de empresa'
@@ -394,6 +425,7 @@ class NotaEmpresa(models.Model):
     empresa = models.ForeignKey(Empresa, related_name='notas_empresa', on_delete=models.CASCADE)
     contenido = models.TextField('Contenido')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    # En NotaEmpresa
     autor = models.ForeignKey(
         User, 
         on_delete=models.SET_NULL, 

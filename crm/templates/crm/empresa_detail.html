@@ -31,12 +31,30 @@
                        title="Editar empresa">
                         <i class="bi bi-pencil-square"></i>
                     </a>
+                    <a href="{% url 'empresa_pdf' empresa.pk %}" 
+                    class="btn btn-light btn-hover-scale btn-actions"
+                    data-bs-toggle="tooltip"
+                    title="Exportar a PDF">
+                     <i class="bi bi-file-earmark-pdf"></i>
+                 </a>
+
                     <a href="{% url 'empresas' %}" 
                        class="btn btn-light btn-hover-scale btn-actions"
                        data-bs-toggle="tooltip"
                        title="Volver al listado">
                         <i class="bi bi-arrow-left"></i>
                     </a>
+                    <form method="post" action="{% url 'empresa_delete' empresa.pk %}">
+                        {% csrf_token %}
+                        <button type="button" 
+                                class="btn btn-danger btn-hover-scale delete-empresa"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteEmpresaModal"
+                                data-empresa-id="{{ empresa.pk }}"
+                                data-empresa-name="{{ empresa.nombre_comercial }}">
+                            <i class="bi bi-trash"></i> Eliminar Empresa
+                        </button>
+                    </form>
                 </div>
             </div>
             
@@ -184,95 +202,111 @@
                     </div>
                 </div>
 
-                <!-- Pestaña Documentos -->
-                <div class="tab-pane fade" id="docsTab">
-                    <div class="row px-3 px-lg-4">
-                        <div class="col-12">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-header bg-light bg-gradient border-0 py-3">
-                                    <h5 class="mb-0 text-primary">
-                                        <i class="bi bi-file-earmark-arrow-up me-2"></i>
-                                        Gestión de Documentos
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <form id="documentUploadForm" method="post" 
-                                          enctype="multipart/form-data"
-                                          class="needs-validation" novalidate
-                                          action="{% url 'upload_documento_empresa' empresa.pk %}">
-                                        {% csrf_token %}
-                                        <div class="row g-3">
-                                            <div class="col-md-4">
-                                                <label for="tipo_documento" class="form-label">Tipo de Documento</label>
-                                                <select name="tipo" id="tipo_documento" 
-                                                        class="form-select form-select-sm" required>
-                                                    {% for tipo in empresa.documentos_empresa.model.TIPO_CHOICES %}
-                                                    <option value="{{ tipo.0 }}">{{ tipo.1 }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                            <div class="col-md-8">
-                                                <label for="fileInput" class="form-label">Seleccionar Archivo</label>
-                                                <div class="input-group">
-                                                    <input type="file" name="archivo" id="fileInput"
-                                                           class="form-control form-control-sm" required 
-                                                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-                                                    <button type="submit" class="btn btn-primary btn-sm">
-                                                        <i class="bi bi-upload me-2"></i>Subir
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </form>
-
-                                    <hr class="my-4">
-
-                                    <div id="documentsContainer" class="row g-3">
-                                        {% for documento in documentos %}
-                                        <div class="col-md-4">
-                                            <div class="document-card card border-0 shadow-sm h-100">
-                                                <div class="card-body">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <i class="bi {{ documento.icon_class }} fs-2"></i>
-                                                        <div class="flex-grow-1">
-                                                            <h6 class="mb-1 text-truncate">{{ documento.nombre_archivo }}</h6>
-                                                            <small class="text-muted">
-                                                                {{ documento.get_tipo_display }} · 
-                                                                {{ documento.fecha_subida|date:"d/m/Y" }}
-                                                            </small>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="card-footer bg-transparent border-0 d-flex gap-2">
-                                                    <a href="{{ documento.archivo.url }}" 
-                                                       target="_blank"
-                                                       class="btn btn-sm btn-outline-primary">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
-                                                    <form method="post" 
-                                                          action="{% url 'delete_documento_empresa' documento.pk %}">
-                                                        {% csrf_token %}
-                                                        <button type="submit" 
-                                                                class="btn btn-sm btn-outline-danger delete-document">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% empty %}
-                                        <div class="col-12 text-center py-4">
-                                            <i class="bi bi-cloud-arrow-up display-4 text-muted"></i>
-                                            <p class="text-muted mt-2">No hay documentos adjuntos</p>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
+             <!-- Pestaña Documentos -->
+<div class="tab-pane fade" id="docsTab">
+    <div class="row px-3 px-lg-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light bg-gradient border-0 py-3">
+                    <h5 class="mb-0 text-primary">
+                        <i class="bi bi-file-earmark-arrow-up me-2"></i>
+                        Gestión de Documentos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="documentUploadForm" method="post" 
+                          enctype="multipart/form-data"
+                          class="needs-validation" novalidate
+                          action="{% url 'upload_documento_empresa' empresa.pk %}">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="tipo_documento" class="form-label">Tipo de Documento</label>
+                                <select name="tipo" id="tipo_documento" 
+                                        class="form-select form-select-sm" required>
+                                    {% for tipo in empresa.documentos_empresa.model.TIPO_CHOICES %}
+                                    <option value="{{ tipo.0 }}">{{ tipo.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label for="fileInput" class="form-label">Seleccionar Archivo</label>
+                                <div class="input-group">
+                                    <input type="file" name="archivo" id="fileInput"
+                                           class="form-control form-control-sm" required 
+                                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-upload me-2"></i>Subir
+                                    </button>
                                 </div>
                             </div>
                         </div>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <div id="documentsContainer" class="row g-3">
+                        {% for documento in documentos %}
+                        <div class="col-md-4">
+                            <div class="document-card card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    {% if documento.extension in 'jpg,jpeg,png' %}
+                                    <div class="document-preview">
+                                        <img src="{{ documento.archivo.url }}" 
+                                             class="img-fluid rounded"
+                                             alt="Preview {{ documento.nombre_archivo }}"
+                                             loading="lazy">
+                                    </div>
+                                    {% else %}
+                                    <div class="document-icon-container">
+                                        <i class="bi {{ documento.icon_class }} document-icon"></i>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1 text-truncate">{{ documento.nombre_archivo }}</h6>
+                                            <small class="text-muted">
+                                                {{ documento.get_tipo_display }} · 
+                                                {{ documento.fecha_subida|date:"d/m/Y" }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 d-flex gap-2">
+                                    <a href="{{ documento.archivo.url }}" 
+                                       target="_blank"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ documento.archivo.url }}" 
+                                       download
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <form method="post" 
+                                          action="{% url 'delete_documento_empresa' pk=empresa.pk doc_pk=documento.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit" 
+                                                class="btn btn-sm btn-outline-danger delete-document">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-center py-4">
+                            <i class="bi bi-cloud-arrow-up display-4 text-muted"></i>
+                            <p class="text-muted mt-2">No hay documentos adjuntos</p>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
-
+            </div>
+        </div>
+    </div>
+</div>
                 <!-- Pestaña Notas -->
                 <div class="tab-pane fade" id="notesTab">
                     <div class="row px-3 px-lg-4">
@@ -316,13 +350,12 @@
                                                             {% endif %}
                                                         </div>
                                                         <form method="post" 
-                                                              action="{% url 'delete_nota_empresa' nota.pk %}">
-                                                            {% csrf_token %}
-                                                            <button type="submit" 
-                                                                    class="btn btn-link text-danger btn-sm">
-                                                                <i class="bi bi-trash"></i>
-                                                            </button>
-                                                        </form>
+      action="{% url 'delete_nota_empresa' pk=empresa.pk nota_pk=nota.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-link text-danger btn-sm">
+        <i class="bi bi-trash"></i>
+    </button>
+</form>
                                                     </div>
                                                     <p class="mb-0 text-muted">{{ nota.contenido }}</p>
                                                 </div>
@@ -351,6 +384,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'crm/empresa_detail.js' %}"></script>
 
+<script src="{% static 'crm/empresa_detail.js' %}"></script>
 {% endblock %}

@@ -161,13 +161,17 @@
  <!-- Scripts base -->
  <script src="{% static 'crm/alerts.js' %}"></script>
 
+
 {# Bloque para scripts adicionales en templates hijos #}
 {% block extra_js %}{% endblock %}
 <!-- Agregar esto antes de cerrar el body -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3">
-    <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-body"></div>
+
+<div id="liveToast" class="toast position-fixed bottom-0 end-0 m-3" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-body d-flex align-items-center">
+        <i class="bi me-2 toast-icon"></i>
+        <span class="toast-message"></span>
     </div>
 </div>
+
 </body>
 </html>

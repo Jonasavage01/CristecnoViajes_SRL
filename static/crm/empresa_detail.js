@@ -8,7 +8,14 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             submitNoteForm(this);
         });
+        document.querySelectorAll('.preview-document').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                handleDocumentPreview(this);
+            });
+        });
     }
+
 
     // Manejo de subida de documentos
     const docForm = document.getElementById('documentUploadForm');
@@ -46,7 +53,12 @@ function submitNoteForm(form) {
             'X-CSRFToken': getCookie('csrftoken'),
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => { throw new Error(text) });
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             addNewNote(data.nota);
@@ -56,21 +68,31 @@ function submitNoteForm(form) {
             showFormErrors(form, data.errors);
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error al guardar la nota: ' + error.message, 'danger');
+    });
 }
 
 function submitDocForm(form) {
     const formData = new FormData(form);
-    const progressBar = createProgressBar();
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken')); // Añadir esto
+    
+    const progressBar = createProgressBar(form);
     
     fetch(form.action, {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest' // Mantener este header
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => { throw new Error(text) });
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             addNewDocument(data.documento);
@@ -83,8 +105,141 @@ function submitDocForm(form) {
     })
     .catch(error => {
         console.error('Error:', error);
+        showToast('Error al subir el documento: ' + error.message, 'danger');
         progressBar.remove();
     });
+}
+
+function addNewNote(notaData) {
+    const notesContainer = document.getElementById('notesContainer');
+    const emptyState = notesContainer.querySelector('.empty-state');
+    
+    if (emptyState) emptyState.remove();
+
+    const noteHtml = `
+        <div class="note-item mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                ${notaData.fecha}
+                            </small>
+                            <small class="text-muted ms-2">
+                                <i class="bi bi-person me-1"></i>
+                                ${notaData.autor || 'Anónimo'}
+                            </small>
+                        </div>
+                        <form method="post" action="/empresas/${notaData.empresa_id}/eliminar-nota/${notaData.id}/">
+                            <input type="hidden" name="csrfmiddlewaretoken" value="${getCookie('csrftoken')}">
+                            <button type="submit" class="btn btn-link text-danger btn-sm delete-note">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <p class="mb-0 text-muted">${notaData.contenido}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    notesContainer.insertAdjacentHTML('afterbegin', noteHtml);
+    initTooltips();
+    setupDeleteButtons();
+}
+
+function addNewDocument(docData) {
+    const docsContainer = document.getElementById('documentsContainer');
+    const emptyState = docsContainer.querySelector('.empty-state');
+    
+    if (emptyState) emptyState.remove();
+
+    const previewHtml = docData.extension.match(/(jpg|jpeg|png)/) ? 
+        `<div class="document-preview">
+            <img src="${docData.url}" class="img-fluid rounded" alt="Preview" loading="lazy">
+         </div>` : 
+        `<div class="document-icon-container">
+            <i class="bi ${getDocumentIcon(docData.url)} document-icon"></i>
+         </div>`;
+
+    const docHtml = `
+        <div class="col-md-4">
+            <div class="document-card card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    ${previewHtml}
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 text-truncate">${docData.nombre}</h6>
+                            <small class="text-muted">
+                                ${docData.tipo} · ${docData.fecha}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex gap-2">
+                    <a href="${docData.url}" 
+                       target="_blank"
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    
+                    <a href="${docData.url}" 
+                       download
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-download"></i>
+                    </a>
+                    
+                    <form method="post" action="/empresas/${docData.empresa_id}/eliminar-documento/${docData.id}/">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${getCookie('csrftoken')}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger delete-document">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    docsContainer.insertAdjacentHTML('afterbegin', docHtml);
+    initTooltips();
+    setupDeleteButtons();
+}
+
+// =============== MEJORAS ADICIONALES ===============
+
+function showFormErrors(form, errors) {
+    // Limpiar errores previos
+    form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+
+    // Mostrar nuevos errores
+    Object.entries(errors).forEach(([field, messages]) => {
+        const input = form.querySelector(`[name="${field}"]`);
+        if (input) {
+            input.classList.add('is-invalid');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'invalid-feedback';
+            errorDiv.textContent = messages.join(' ');
+            input.parentNode.appendChild(errorDiv);
+        }
+    });
+}
+
+function createProgressBar(form) {
+    const progress = document.createElement('div');
+    progress.className = 'progress mt-3';
+    progress.innerHTML = `
+        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+             role="progressbar" 
+             style="width: 0%"
+             aria-valuenow="0" 
+             aria-valuemin="0" 
+             aria-valuemax="100">
+        </div>
+    `;
+    form.parentNode.insertBefore(progress, form.nextSibling); // Usar el formulario recibido
+    return progress;
 }
 
 // =============== FUNCIONES AUXILIARES ===============
@@ -134,94 +289,36 @@ function submitDeleteRequest(form) {
         body: new FormData(form),
         headers: {
             'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
     .then(response => {
-        if (response.ok) {
-            form.closest('.document-card, .note-item').remove();
-            showToast('Eliminado exitosamente', 'success');
-            checkEmptyStates();
+        if (!response.ok) throw new Error('Error en la respuesta del servidor');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Animación de eliminación
+            const element = form.closest('.document-card, .note-item');
+            element.style.transition = 'all 0.3s ease';
+            element.style.opacity = '0';
+            element.style.transform = 'translateX(-100px)';
+            
+            setTimeout(() => {
+                element.remove();
+                checkEmptyStates();
+            }, 300);
+            
+            showToast(data.message, 'success');
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error al eliminar: ' + error.message, 'danger');
+    });
 }
 
-function addNewNote(notaData) {
-    const notesContainer = document.getElementById('notesContainer');
-    const emptyState = notesContainer.querySelector('.empty-state');
-    
-    if (emptyState) emptyState.remove();
 
-    const noteHtml = `
-        <div class="note-item mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                            <small class="text-muted">
-                                <i class="bi bi-clock me-1"></i>
-                                ${notaData.fecha}
-                            </small>
-                            <small class="text-muted ms-2">
-                                <i class="bi bi-person me-1"></i>
-                                ${notaData.autor}
-                            </small>
-                        </div>
-                        <form method="post" action="/empresas/delete-nota/${notaData.id}/">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-link text-danger btn-sm">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
-                    </div>
-                    <p class="mb-0 text-muted">${notaData.contenido}</p>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    notesContainer.insertAdjacentHTML('afterbegin', noteHtml);
-}
-
-function addNewDocument(docData) {
-    const docsContainer = document.getElementById('documentsContainer');
-    const emptyState = docsContainer.querySelector('.empty-state');
-    
-    if (emptyState) emptyState.remove();
-
-    const docHtml = `
-        <div class="col-md-4">
-            <div class="document-card card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center gap-3">
-                        <i class="bi ${getDocumentIcon(docData.url)} fs-2"></i>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-1 text-truncate">${docData.nombre}</h6>
-                            <small class="text-muted">
-                                ${docData.tipo} · ${docData.fecha}
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer bg-transparent border-0 d-flex gap-2">
-                    <a href="${docData.url}" 
-                       target="_blank"
-                       class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-eye"></i>
-                    </a>
-                    <form method="post" action="/empresas/delete-documento/${docData.id}/">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-danger delete-document">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    docsContainer.insertAdjacentHTML('afterbegin', docHtml);
-}
 
 // =============== UTILIDADES ===============
 
@@ -242,16 +339,26 @@ function setupCopyButtons() {
 }
 
 function showToast(message, type = 'success') {
-    const toast = new bootstrap.Toast(document.getElementById('liveToast'));
-    const toastBody = document.querySelector('.toast-body');
+    const toastEl = document.getElementById('liveToast');
+    const toast = new bootstrap.Toast(toastEl);
+    const iconMap = {
+        success: 'bi-check-circle-fill',
+        danger: 'bi-x-circle-fill',
+        warning: 'bi-exclamation-circle-fill'
+    };
+
+    // Resetear clases
+    toastEl.className = 'toast position-fixed bottom-0 end-0 m-3';
+    toastEl.classList.add(`text-bg-${type}`);
     
-    toastBody.textContent = message;
-    document.getElementById('liveToast').classList.add(`text-bg-${type}`);
+    // Configurar contenido
+    const icon = toastEl.querySelector('.toast-icon');
+    icon.className = `bi ${iconMap[type] || 'bi-info-circle-fill'} me-2`;
+    
+    toastEl.querySelector('.toast-message').textContent = message;
+    
+    // Mostrar con animación
     toast.show();
-    
-    setTimeout(() => {
-        document.getElementById('liveToast').classList.remove(`text-bg-${type}`);
-    }, 3000);
 }
 
 function getCookie(name) {
@@ -271,22 +378,40 @@ function getCookie(name) {
 
 // Añadir en empresa_detail.js
 function getDocumentIcon(url) {
-    const ext = url.split('.').pop().toUpperCase();
+    const ext = url.split('.').pop().toLowerCase();
     const iconMap = {
-        'PDF': 'bi-file-earmark-pdf text-danger',
-        'DOC': 'bi-file-earmark-word text-primary',
-        'DOCX': 'bi-file-earmark-word text-primary',
-        'JPG': 'bi-file-image text-success',
-        'JPEG': 'bi-file-image text-success',
-        'PNG': 'bi-file-image text-success'
+        'pdf': 'bi-file-earmark-pdf text-danger',
+        'doc': 'bi-file-earmark-word text-primary',
+        'docx': 'bi-file-earmark-word text-primary',
+        'jpg': 'bi-file-image text-success',
+        'jpeg': 'bi-file-image text-success',
+        'png': 'bi-file-image text-success'
     };
     return iconMap[ext] || 'bi-file-earmark text-secondary';
 }
 
-function createProgressBar() {
-    // Lógica para barra de progreso de subida
-}
 
 function checkEmptyStates() {
-    // Verificar si quedan documentos/notas y mostrar estado vacío
+    const checkContainer = (containerId, emptyHtml) => {
+        const container = document.getElementById(containerId);
+        if (container.children.length === 0) {
+            container.insertAdjacentHTML('beforeend', emptyHtml);
+        }
+    };
+
+    // Para documentos
+    checkContainer('documentsContainer', `
+        <div class="col-12 text-center py-4">
+            <i class="bi bi-cloud-arrow-up display-4 text-muted"></i>
+            <p class="text-muted mt-2">No hay documentos adjuntos</p>
+        </div>
+    `);
+
+    // Para notas
+    checkContainer('notesContainer', `
+        <div class="empty-state text-center py-4">
+            <i class="bi bi-journal-x display-4 text-muted"></i>
+            <h5 class="mt-3 text-muted">No hay notas registradas</h5>
+        </div>
+    `);
 }

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ empresa.nombre_comercial }} - CristecnoViajes</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+            @top-center {
+                content: "";
+                background: linear-gradient(45deg, #2c3e50, #3498db);
+                height: 20px;
+            }
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e67e22;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1.2cm;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 24pt;
+            margin-bottom: 5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 15px;
+            background: #e8f4ff;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 1cm;
+        }
+
+        .section-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            color: var(--secondary-color);
+            font-size: 14pt;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            font-size: 18pt;
+            color: var(--accent-color);
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+
+        .data-row:hover {
+            background: #f1f5f9;
+        }
+
+        .data-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            min-width: 45%;
+        }
+
+        .notes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .notes-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px;
+            font-weight: 600;
+        }
+
+        .notes-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .notes-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .generation-info {
+            text-align: right;
+            font-size: 9pt;
+            color: #666;
+            margin-top: 1cm;
+        }
+        
+        /* Mejoras específicas para empresas */
+        .rnc-badge {
+            background: #f3e8ff;
+            color: #6b46c1;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        .web-link {
+            color: var(--secondary-color);
+            text-decoration: none;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ empresa.nombre_comercial }}</h1>
+        <div class="status-badge">
+            <i class="bi bi-building"></i> {{ empresa.get_estado_display }}
+        </div>
+        <p>
+            <span class="rnc-badge">RNC: {{ empresa.rnc }}</span> | 
+            ID: {{ empresa.pk }} | 
+            Generado: {% now "d/m/Y H:i" %}
+        </p>
+    </div>
+
+    <div class="grid-container">
+        {% for seccion in secciones %}
+        <div class="section-card">
+            <h2 class="section-title">
+                {% if seccion.titulo == 'Información General' %}
+                <i class="bi bi-building"></i>
+                {% elif seccion.titulo == 'Contacto' %}
+                <i class="bi bi-envelope-at"></i>
+                {% elif seccion.titulo == 'Representante Legal' %}
+                <i class="bi bi-person-badge"></i>
+                {% elif seccion.titulo == 'Sistema' %}
+                <i class="bi bi-gear"></i>
+                {% endif %}
+                {{ seccion.titulo }}
+            </h2>
+            {% for campo in seccion.campos %}
+            <div class="data-row">
+                <span class="data-label">{{ campo.0 }}</span>
+                <span>
+                    {% if campo.0 == 'Sitio Web' and campo.1 != 'N/A' %}
+                    <a href="{{ campo.1 }}" class="web-link" target="_blank">
+                        <i class="bi bi-box-arrow-up-right"></i> {{ campo.1|truncatechars:30 }}
+                    </a>
+                    {% else %}
+                    {{ campo.1|default:"N/A" }}
+                    {% endif %}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if notas %}
+    <div class="section-card">
+        <h2 class="section-title">
+            <i class="bi bi-journal-text"></i>
+            Historial de Notas
+        </h2>
+        <table class="notes-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Autor</th>
+                    <th>Contenido</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for nota in notas %}
+                <tr>
+                    <td>{{ nota.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        <i class="bi bi-person-circle"></i>
+                        {{ nota.autor.username|default:"Sistema" }}
+                    </td>
+                    <td>{{ nota.contenido }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="generation-info">
+        Documento generado por CristecnoViajes SRL - Sistema CRM
+    </div>
+</body>
+</html>

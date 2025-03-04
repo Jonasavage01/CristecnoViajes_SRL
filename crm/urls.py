@@ -11,7 +11,7 @@ from .views import (
     ClientePDFView,
     CRMView, ClienteDeleteView,
 )
-from .empresas import EmpresasView, EmpresaUpdateView,EmpresaDetailView, NotaEmpresaCreateView,DocumentoEmpresaUploadView,DeleteDocumentoEmpresaView,DeleteNotaEmpresaView
+from .empresas import EmpresasView, EmpresaUpdateView,EmpresaDetailView, NotaEmpresaCreateView,DocumentoEmpresaUploadView,DeleteDocumentoEmpresaView,DeleteNotaEmpresaView, EmpresaPDFView, EmpresaDeleteView
 
 # Definición de rutas
 urlpatterns = [
@@ -24,8 +24,14 @@ urlpatterns = [
     path('empresas/<int:pk>/', EmpresaDetailView.as_view(), name='empresa_detail'),
     path('empresas/<int:pk>/add_note/', NotaEmpresaCreateView.as_view(), name='add_note_empresa'),
     path('empresas/<int:pk>/subir-documento/', DocumentoEmpresaUploadView.as_view(), name='upload_documento_empresa'),
-    path('empresas/<int:pk>/eliminar-documento/<int:doc_pk>/', DeleteDocumentoEmpresaView.as_view(), name='delete_documento_empresa'),
+     path(
+        'crm/empresas/<int:pk>/eliminar-documento/<int:doc_pk>/',
+        DeleteDocumentoEmpresaView.as_view(),
+        name='delete_documento_empresa'
+    ),
     path('empresas/<int:pk>/eliminar-nota/<int:nota_pk>/', DeleteNotaEmpresaView.as_view(), name='delete_nota_empresa'),
+     path('empresa/<int:pk>/pdf/', EmpresaPDFView.as_view(), name='empresa_pdf'),
+    path('empresas/<int:pk>/eliminar/', EmpresaDeleteView.as_view(), name='empresa_delete'),
 
     # Gestión de clientes
     path('clientes/<int:pk>/edit/', ClienteUpdateView.as_view(), name='cliente_edit'),
