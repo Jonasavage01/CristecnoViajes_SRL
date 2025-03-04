@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_countries',  # App de terceros
      'django_cleanup.apps.CleanupConfig',
+     'openpyxl',
 
     # Apps locales:
     'crm',

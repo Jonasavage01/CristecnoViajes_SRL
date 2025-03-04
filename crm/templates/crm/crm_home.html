@@ -27,7 +27,9 @@
 {% block content %}
 <div id="urls" 
      data-cliente-detail="{% url 'cliente_detail' 0 %}"
-     style="display: none;"></div>
+     data-export-clientes="{% url 'exportar_clientes' 'csv' %}"
+     style="display: none;">
+</div>
 
 <!-- Encabezado Mejorado Responsive -->
 <div class="card-header bg-white py-3">
@@ -45,7 +47,38 @@
                 </span>
             </div>
         </div>
-        
+
+
+<div class="mt-2 mt-md-0 d-flex gap-2">
+    <div class="dropdown">
+        <button class="btn btn-success btn-hover-scale py-2 px-3" 
+                type="button" 
+                id="exportDropdown" 
+                data-bs-toggle="dropdown" 
+                aria-expanded="false">
+            <i class="bi bi-download me-1 me-md-2"></i>
+            <span>Exportar</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
+            <li>
+                <a class="dropdown-item export-link" 
+                   href="#" 
+                   data-format="csv">
+                    <i class="bi bi-filetype-csv me-2"></i>CSV
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item export-link" 
+                   href="#" 
+                   data-format="excel">
+                    <i class="bi bi-filetype-xlsx me-2"></i>Excel
+                </a>
+            </li>
+        </ul>
+    </div>
+
+
+
         <!-- Botón Derecha -->
         <div class="mt-2 mt-md-0">
             <button class="btn btn-primary btn-hover-scale py-2 px-3 w-100 w-md-auto" 
@@ -321,4 +354,5 @@
 {% block extra_js %}
 <script src="{% static 'crm/formValidation.js' %}"></script>
  <script src="{% static 'crm/clientes.js' %}"></script>
+ <script src="{% static 'crm/export.js' %}"></script>
 {% endblock %}

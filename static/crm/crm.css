@@ -1,0 +1,207 @@
+/* ========== CRM.CSS ========== */
+/* Componentes específicos de la lista de clientes */
+
+/* === Variables locales === */
+:root {
+    --table-min-width: 900px;
+    --avatar-size: 40px;
+    --scrollbar-width: 6px;
+}
+
+/* === Elementos principales === */
+.client-list {
+    & .card-header {
+        background: linear-gradient(45deg, #f8f9fa, #ffffff);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        
+        .btn-hover-scale {
+            transition: transform 0.2s ease;
+            
+            &:hover {
+                transform: scale(1.02);
+                box-shadow: var(--shadow-sm);
+            }
+        }
+    }
+}
+
+/* === Tabla responsive === */
+.table-container {
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    margin-top: 1.5rem;
+    position: relative;
+    
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        
+        &::-webkit-scrollbar {
+            height: var(--scrollbar-width);
+            background: var(--light-bg);
+        }
+        
+        &::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+        
+        table {
+            min-width: var(--table-min-width);
+            
+            thead {
+                background: var(--primary-color);
+                color: var(--text-light);
+                
+                th {
+                    position: sticky;
+                    top: 0;
+                    z-index: 2;
+                    white-space: nowrap;
+                    padding: 1rem 1.25rem;
+                    
+                    &:first-child {
+                        left: 0;
+                        z-index: 3;
+                    }
+                }
+            }
+            
+            tbody {
+                tr {
+                    transition: var(--transition);
+                    
+                    &:hover {
+                        background-color: #f8faff;
+                        box-shadow: var(--shadow-sm);
+                    }
+                    
+                    td {
+                        vertical-align: middle;
+                        background: var(--text-light);
+                        
+                        &:first-child {
+                            position: sticky;
+                            left: 0;
+                            z-index: 1;
+                            box-shadow: 2px 0 8px rgba(0,0,0,0.03);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* === Elementos de la tabla === */
+.avatar {
+    width: var(--avatar-size);
+    height: var(--avatar-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 500;
+    font-size: 1.1rem;
+}
+
+/* === Filtros avanzados === */
+.filter-section {
+    .input-group {
+        border: 1px solid #e9ecef;
+        border-radius: var(--border-radius);
+        transition: var(--transition);
+        
+        &:focus-within {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+        }
+    }
+    
+    .date-range-group {
+        gap: 0.25rem;
+        
+        .input-group-text {
+            padding: 0 0.25rem;
+        }
+    }
+}
+
+/* === Modales específicos === */
+#deleteConfirmationModal {
+    .modal-content {
+        border: 2px solid var(--danger-color);
+        
+        .modal-header {
+            background: var(--danger-color);
+        }
+        
+        .list-group-item {
+            transition: var(--transition);
+            
+            &:hover {
+                background-color: rgba(var(--danger-color-rgb), 0.05);
+            }
+        }
+    }
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+    :root {
+        --table-min-width: 800px;
+        --avatar-size: 36px;
+    }
+    
+    .client-list {
+        .card-header {
+            h4 { font-size: 1.35rem; }
+            
+            .badge {
+                font-size: 0.9rem;
+                padding: 0.5rem 1rem;
+            }
+        }
+    }
+    
+    table {
+        th, td {
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+        }
+    }
+}
+
+@media (max-width: 576px) {
+    :root {
+        --avatar-size: 32px;
+        --scrollbar-width: 4px;
+    }
+    
+    .client-list {
+        .card-header {
+            h4 { font-size: 1.25rem; }
+            
+            .badge {
+                flex-direction: column;
+                gap: 0.25rem;
+                padding: 0.4rem 0.8rem;
+            }
+        }
+    }
+    
+    .text-truncate {
+        max-width: 150px !important;
+    }
+    
+    .filter-section {
+        .date-range-group {
+            flex-wrap: wrap;
+            
+            .input-group {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+        }
+    }
+}

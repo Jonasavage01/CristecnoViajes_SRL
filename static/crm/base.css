@@ -1,0 +1,482 @@
+/* ========== Variables Globales ========== */
+:root {
+    /* Colores */
+    --sidebar-bg: #1a2332;
+    --hover-bg: rgba(255,255,255,0.05);
+    --text-light: #ffffff;
+    --primary-color: #2A5C82;
+    --secondary-color: #3BAFDA;
+    --light-bg: #F8FAFC;
+    --dark-text: #2C3E50;
+    --muted-text: #7F8C8D;
+    
+    /* Tamaños */
+    --sidebar-width: 280px;
+    --border-radius: 0.75rem;
+    
+/* 15. Sistema de sombras consistente */
+
+    --shadow-xs: 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    --shadow-xl: 0 15px 35px rgba(0,0,0,0.15);
+
+    --space-unit: 1rem;
+    --space-xs: calc(0.5 * var(--space-unit));
+    --space-sm: calc(0.75 * var(--space-unit));
+    --space-md: var(--space-unit);
+    --space-lg: calc(1.5 * var(--space-unit));
+    --space-xl: calc(2 * var(--space-unit));
+}
+    
+/* ========== MEJORAS GENERALES ========== */
+/* 1. Tipografía consistente */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    color: var(--dark-text);
+    margin-bottom: 1.5rem;
+}
+
+h1 { font-size: 2.25rem; line-height: 1.2; }
+h2 { font-size: 1.875rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+
+/* ========== Estilos Base ========== */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    color: #212529;
+    line-height: 1.6;
+    padding-bottom: 80px;
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 20px;
+}
+
+/* ========== Componente Sidebar ========== */
+.sidebar {
+    background: var(--sidebar-bg);
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    padding: 1.5rem 0;
+    box-shadow: 3px 0 20px rgba(0,0,0,0.15);
+    transition: var(--transition);
+    overflow-y: auto;
+
+    .sidebar-header {
+        padding: 0 1.5rem 1.5rem;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        text-align: center;
+        
+        h2 {
+            color: var(--text-light);
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+    }
+
+    .nav-link {
+        color: #a0aec0;
+        padding: 0.85rem 2rem;
+        margin: 0.25rem 1rem;
+        border-radius: var(--border-radius);
+        display: flex;
+        align-items: center;
+        position: relative;
+        transition: var(--transition);
+        
+        &:hover {
+            background: var(--hover-bg);
+            color: var(--text-light);
+            padding-left: 2.5rem;
+        }
+        
+        &.active {
+            background: var(--primary-color);
+            color: var(--text-light);
+            font-weight: 500;
+            
+            &::after {
+                content: '';
+                position: absolute;
+                right: -24px;
+                top: 50%;
+                transform: translateY(-50%);
+                border: 12px solid transparent;
+                border-right-color: var(--light-bg);
+            }
+        }
+
+        .bi {
+            font-size: 1.2rem;
+            width: 24px;
+            margin-right: 1rem;
+        }
+    }
+}
+
+/* ========== Contenido Principal ========== */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 2rem;
+    min-height: 100vh;
+    transition: margin-left var(--transition);
+    
+    .card {
+        border: none;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+        background: var(--text-light);
+        
+        &:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-3px);
+        }
+    }
+}
+
+/* ========== Navbar Móvil ========== */
+@media (max-width: 767.98px) {
+    .sidebar.d-md-none {
+        top: auto;
+        bottom: 0;
+        width: 100% !important;
+        height: auto;
+        min-height: 60px;
+        padding: 0.25rem 0.5rem;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        flex-direction: row;
+        overflow-x: auto;
+        
+        .nav {
+            width: 100%;
+            justify-content: space-around;
+            gap: 0.1rem;
+        }
+
+        .nav-link {
+            flex-direction: column;
+            padding: 0.35rem !important;
+            margin: 0 !important;
+            min-width: 54px;
+            font-size: 0.7rem !important;
+            
+            .bi {
+                font-size: 1.2rem !important;
+                margin: 0 0 2px 0;
+            }
+        }
+
+        .dropdown-menu {
+            bottom: 100%;
+            top: auto !important;
+            margin-bottom: 5px;
+        }
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+        padding: 1.5rem;
+        padding-bottom: 80px;
+    }
+}
+
+/* ========== Mejoras Visuales ========== */
+.nav-link {
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: var(--secondary-color);
+        transition: width var(--transition);
+    }
+    
+    &:hover::after {
+        width: 100%;
+    }
+}
+
+
+/* 11. Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--light-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 10px;
+}
+
+/* ========== Ajustes Responsivos ========== */
+@media (min-width: 768px) {
+    body {
+        padding-bottom: 0;
+    }
+    
+    .main-content {
+        padding: 2.5rem;
+    }
+}
+
+@media (min-width: 1600px) {
+    .sidebar {
+        --sidebar-width: 320px;
+    }
+    
+    .main-content {
+        padding: 3rem 4rem;
+    }
+}
+
+/* ========== MEJORAS GENERALES ========== */
+/* 1. Tipografía consistente */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    color: var(--dark-text);
+    margin-bottom: 1.5rem;
+}
+
+h1 { font-size: 2.25rem; line-height: 1.2; }
+h2 { font-size: 1.875rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+
+
+
+/* 3. Mejoras en botones */
+.btn {
+    font-weight: 500;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    &-primary {
+        background: linear-gradient(135deg, var(--primary-color), #1f4a6e);
+        border: none;
+        
+        &:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+    }
+    
+    &-hover-scale {
+        transition: transform 0.2s ease;
+        
+        &:hover {
+            transform: scale(1.05);
+        }
+    }
+}
+
+/* 4. Mejoras en formularios */
+.form-control {
+    border-radius: calc(var(--border-radius) * 0.75);
+    border: 1px solid #e9ecef;
+    transition: var(--transition);
+    
+    &:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(var(--primary-color), 0.1);
+    }
+}
+
+.select2-container {
+    .select2-selection {
+        border-radius: calc(var(--border-radius) * 0.75) !important;
+        min-height: 42px;
+    }
+}
+
+/* 5. Sistema de tarjetas mejorado */
+.card {
+    overflow: hidden;
+    position: relative;
+    
+    &-header {
+        background: linear-gradient(45deg, #f8f9fa, #ffffff);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        padding: var(--space-md) var(--space-lg);
+    }
+    
+    &-footer {
+        background: var(--light-bg);
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+}
+
+/* 6. Sistema de notificaciones/toast */
+.toast {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    
+    &-body {
+        padding: var(--space-md);
+        
+        .toast-icon {
+            font-size: 1.5rem;
+        }
+    }
+}
+
+/* 7. Mejoras en dropdowns */
+.dropdown-menu {
+    border: none;
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--border-radius);
+    margin-top: var(--space-xs);
+    padding: var(--space-xs);
+    
+    .dropdown-item {
+        border-radius: calc(var(--border-radius) * 0.5);
+        padding: var(--space-sm) var(--space-md);
+        transition: var(--transition);
+        
+        &:hover {
+            background: var(--light-bg);
+        }
+    }
+}
+
+/* 8. Sistema de alertas mejorado */
+.alert {
+    border: none;
+    border-radius: var(--border-radius);
+    padding: var(--space-md);
+    
+    &-danger {
+        background: linear-gradient(135deg, #fee2e2, #fff);
+        color: #991b1b;
+    }
+}
+
+/* 9. Mejoras en la tabla móvil */
+@media (max-width: 767.98px) {
+    .table-responsive {
+        margin-left: -1rem;
+        margin-right: -1rem;
+        width: calc(100% + 2rem);
+        
+        &::after {
+            content: '';
+            display: block;
+            width: 1rem;
+            flex: 0 0 1rem;
+        }
+    }
+}
+
+/* 10. Efectos hover para elementos interactivos */
+.interactive {
+    transition: var(--transition);
+    cursor: pointer;
+    
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+}
+
+/* 11. Sistema de carga/estados */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius);
+    z-index: 10;
+}
+
+/* 12. Mejoras en los modales */
+.modal-content {
+    border: none;
+    border-radius: calc(var(--border-radius) * 1.5);
+    overflow: hidden;
+    
+    .modal-header {
+        background: var(--light-bg);
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        padding: var(--space-lg);
+    }
+    
+    .modal-footer {
+        background: var(--light-bg);
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+}
+
+/* 13. Sistema de avatares consistente */
+.avatar {
+    &-xs { width: 28px; height: 28px; font-size: 0.75rem; }
+    &-sm { width: 36px; height: 36px; font-size: 0.9rem; }
+    &-md { width: 48px; height: 48px; font-size: 1.1rem; }
+    &-lg { width: 64px; height: 64px; font-size: 1.5rem; }
+}
+
+/* 14. Mejoras en la paginación */
+.pagination {
+    .page-item {
+        margin: 0 0.25rem;
+        
+        .page-link {
+            border-radius: var(--border-radius);
+            border: none;
+            min-width: 38px;
+            text-align: center;
+            transition: var(--transition);
+            
+            &:hover {
+                background: var(--light-bg);
+            }
+        }
+        
+        &.active .page-link {
+            background: var(--primary-color);
+            color: white;
+        }
+    }
+}
+
+
+
+/* 16. Optimización para móviles */
+@media (max-width: 575.98px) {
+    body {
+        font-size: 0.925rem;
+    }
+    
+    .main-content {
+        padding: 1rem !important;
+    }
+    
+    .btn {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+}

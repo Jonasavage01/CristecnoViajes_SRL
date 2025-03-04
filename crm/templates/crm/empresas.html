@@ -26,7 +26,9 @@
 {% endblock %}
 
 {% block content %}
-
+<div id="urls" 
+     data-export-empresas="{% url 'exportar_empresas' 'csv' %}"
+     style="display: none;"></div>
 <!-- Encabezado Mejorado Responsive -->
 <div class="card-header bg-white py-3">
     <div class="d-flex flex-column flex-md-row justify-content-center justify-content-md-between align-items-center gap-2 text-center text-md-start">
@@ -44,6 +46,27 @@
             </div>
         </div>
         
+        <div class="dropdown mt-2 mt-md-0">
+            <button class="btn btn-success btn-hover-scale py-2 px-3 w-100 w-md-auto" 
+                    type="button" 
+                    data-bs-toggle="dropdown">
+                <i class="bi bi-download me-1 me-md-2"></i>
+                <span>Exportar</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item export-empresa-link" href="#" data-format="csv">
+                        <i class="bi bi-filetype-csv me-2"></i> CSV
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item export-empresa-link" href="#" data-format="excel">
+                        <i class="bi bi-file-spreadsheet me-2"></i> Excel
+                    </a>
+                </li>
+            </ul>
+        </div>
+
         <!-- Botón Derecha -->
         <div class="mt-2 mt-md-0">
             <button class="btn btn-info btn-hover-scale py-2 px-3 w-100 w-md-auto" 
@@ -352,6 +375,7 @@
     <!-- Scripts específicos de empresas -->
     <script src="{% static 'crm/empresas.js' %}"></script>
     <script src="{% static 'crm/empresas_table.js' %}"></script>
+    <script src="{% static 'crm/export.js' %}"></script>
 {% endblock %}
 
 <style>

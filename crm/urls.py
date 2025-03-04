@@ -10,8 +10,9 @@ from .views import (
     DocumentDeleteView,
     ClientePDFView,
     CRMView, ClienteDeleteView,
+    ExportClientesView
 )
-from .empresas import EmpresasView, EmpresaUpdateView,EmpresaDetailView, NotaEmpresaCreateView,DocumentoEmpresaUploadView,DeleteDocumentoEmpresaView,DeleteNotaEmpresaView, EmpresaPDFView, EmpresaDeleteView
+from .empresas import EmpresasView, EmpresaUpdateView,EmpresaDetailView, NotaEmpresaCreateView,DocumentoEmpresaUploadView,DeleteDocumentoEmpresaView,DeleteNotaEmpresaView, EmpresaPDFView, EmpresaDeleteView, ExportEmpresasView
 
 # Definición de rutas
 urlpatterns = [
@@ -30,13 +31,15 @@ urlpatterns = [
         name='delete_documento_empresa'
     ),
     path('empresas/<int:pk>/eliminar-nota/<int:nota_pk>/', DeleteNotaEmpresaView.as_view(), name='delete_nota_empresa'),
-     path('empresa/<int:pk>/pdf/', EmpresaPDFView.as_view(), name='empresa_pdf'),
+    path('empresa/<int:pk>/pdf/', EmpresaPDFView.as_view(), name='empresa_pdf'),
     path('empresas/<int:pk>/eliminar/', EmpresaDeleteView.as_view(), name='empresa_delete'),
+     path('empresas/exportar/<str:formato>/', ExportEmpresasView.as_view(), name='exportar_empresas'),
 
     # Gestión de clientes
     path('clientes/<int:pk>/edit/', ClienteUpdateView.as_view(), name='cliente_edit'),
     path('clientes/<int:pk>/eliminar/', ClienteDeleteView.as_view(), name='cliente_delete'),
     path('clientes/<int:pk>/add_note/', NoteCreateView.as_view(), name='add_note'),
+    path('clientes/exportar/<str:formato>/', ExportClientesView.as_view(), name='exportar_clientes'),
 
     # Gestión de documentos
     path('clientes/<int:pk>/subir-documento/', DocumentUploadView.as_view(), name='upload_document'),

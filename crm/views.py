@@ -5,6 +5,11 @@ import uuid
 from tempfile import NamedTemporaryFile
 from django.utils.text import slugify, get_valid_filename
 from django.template.loader import render_to_string 
+from django.views import View
+from .models import Cliente
+from .export_utils import exportar_clientes
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
 
 # Django core imports
 from django.conf import settings
@@ -44,11 +49,45 @@ from .forms import ClienteForm, ClienteEditForm, DocumentoForm
 
 # Project-specific imports: Filters
 from .filters import ClienteFilter
+from django.db import models
 
 # Logger configuration
 logger = logging.getLogger(__name__)
 
 
+
+class ExportClientesView(View):
+    def get_queryset(self):
+        queryset = Cliente.objects.all()
+        
+        # Aplicar filtros
+        search_query = self.request.GET.get('q')
+        if search_query:
+            queryset = queryset.filter(
+                models.Q(nombre__icontains=search_query) |
+                models.Q(apellido__icontains=search_query) |
+                models.Q(cedula_pasaporte__icontains=search_query) |
+                models.Q(email__icontains=search_query)
+            )
+        
+        fecha_desde = self.request.GET.get('fecha_creacion_desde')
+        if fecha_desde:
+            queryset = queryset.filter(fecha_creacion__gte=fecha_desde)
+        
+        fecha_hasta = self.request.GET.get('fecha_creacion_hasta')
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_creacion__lte=fecha_hasta)
+        
+        estado = self.request.GET.get('estado')
+        if estado:
+            queryset = queryset.filter(estado=estado)
+            
+        return queryset.order_by('-fecha_creacion')
+
+    def get(self, request, *args, **kwargs):
+        formato = kwargs.get('formato', 'csv')
+        queryset = self.get_queryset()
+        return exportar_clientes(queryset, formato)
 
 class ClienteDeleteView(DeleteView):
     model = Cliente

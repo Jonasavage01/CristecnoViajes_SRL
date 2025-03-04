@@ -32,6 +32,12 @@ from django.views.generic import DeleteView
 from django.http import JsonResponse
 from django.contrib import messages
 import logging
+from django.views import View
+from django.db import models
+from .models import Empresa
+from .export_utils import exportar_empresas  # Nueva función a crear
+from django.utils import timezone as django_timezone 
+
 
 
 from .models import Empresa
@@ -42,6 +48,40 @@ from .empresas_forms import EmpresaEditForm, DocumentoEmpresaForm
 
 logger = logging.getLogger(__name__)
 
+
+
+class ExportEmpresasView(View):
+    def get_queryset(self):
+        queryset = Empresa.objects.all()
+        
+        # Aplicar filtros (similar a Clientes)
+        search_query = self.request.GET.get('q')
+        if search_query:
+            queryset = queryset.filter(
+                models.Q(nombre_comercial__icontains=search_query) |
+                models.Q(razon_social__icontains=search_query) |
+                models.Q(rnc__icontains=search_query) |
+                models.Q(direccion_electronica__icontains=search_query)
+            )
+        
+        fecha_desde = self.request.GET.get('fecha_registro_desde')
+        if fecha_desde:
+            queryset = queryset.filter(fecha_registro__gte=fecha_desde)
+        
+        fecha_hasta = self.request.GET.get('fecha_registro_hasta')
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_registro__lte=fecha_hasta)
+        
+        estado = self.request.GET.get('estado')
+        if estado:
+            queryset = queryset.filter(estado=estado)
+            
+        return queryset.order_by('-fecha_registro')
+
+    def get(self, request, *args, **kwargs):
+        formato = kwargs.get('formato', 'csv')
+        queryset = self.get_queryset()
+        return exportar_empresas(queryset, formato)  # Función en export_utils
 
 class EmpresasView(ListView):
     model = Empresa
