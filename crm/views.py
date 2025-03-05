@@ -11,6 +11,7 @@ from .export_utils import exportar_clientes
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 
+
 # Django core imports
 from django.conf import settings
 from django.contrib import messages
@@ -51,12 +52,15 @@ from .forms import ClienteForm, ClienteEditForm, DocumentoForm
 from .filters import ClienteFilter
 from django.db import models
 
+from django.views.generic import ListView
+from .mixins import AuthRequiredMixin  # <-- Importar el mixin
+
 # Logger configuration
 logger = logging.getLogger(__name__)
 
 
 
-class ExportClientesView(View):
+class ExportClientesView(AuthRequiredMixin,View):
     def get_queryset(self):
         queryset = Cliente.objects.all()
         
@@ -89,10 +93,11 @@ class ExportClientesView(View):
         queryset = self.get_queryset()
         return exportar_clientes(queryset, formato)
 
-class ClienteDeleteView(DeleteView):
+class ClienteDeleteView(AuthRequiredMixin,DeleteView):
     model = Cliente
     template_name = "crm/cliente_confirm_delete.html"
     success_url = reverse_lazy('crm_home')
+    allowed_roles = ['admin', 'clientes']
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -118,12 +123,13 @@ class ClienteDeleteView(DeleteView):
             messages.error(request, error_msg)
             return redirect(self.get_success_url())
 
-class CRMView(ListView):
+class CRMView(AuthRequiredMixin, ListView):
     model = Cliente
     template_name = "crm/crm_home.html"
     context_object_name = 'clientes'
     paginate_by = 15
     ordering = ['-fecha_creacion']
+    allowed_roles = ['admin', 'clientes']
 
     def get_queryset(self):
         try:
@@ -264,10 +270,11 @@ class CRMView(ListView):
 
 
 
-class ClienteDetailView(DetailView):
+class ClienteDetailView(AuthRequiredMixin,DetailView):
     model = Cliente
     template_name = "crm/cliente_detail.html"
     context_object_name = 'cliente'
+    allowed_roles = ['admin', 'clientes']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -352,10 +359,11 @@ class ClienteDetailView(DetailView):
 
 
 @method_decorator(xframe_options_sameorigin, name='dispatch')
-class ClienteUpdateView(UpdateView):
+class ClienteUpdateView(AuthRequiredMixin,UpdateView):
     model = Cliente
     form_class = ClienteEditForm
     template_name = "partials/crm/cliente_edit_form.html"
+    allowed_roles = ['admin', 'clientes']
     
     def get_success_url(self):
         return reverse_lazy('cliente_detail', kwargs={'pk': self.object.pk})
@@ -442,9 +450,10 @@ class ClienteUpdateView(UpdateView):
         return errors
 
 
-class DocumentUploadView(FormView):
+class DocumentUploadView(AuthRequiredMixin,FormView):
     form_class = DocumentoForm
     template_name = 'clientes/documentos_form.html'
+    allowed_roles = ['admin', 'clientes']
     
     def form_valid(self, form):
         cliente = Cliente.objects.get(pk=self.kwargs['pk'])
@@ -485,10 +494,11 @@ class DocumentUploadView(FormView):
         kwargs['instance'] = DocumentoCliente()
         return kwargs
 
-class NotesUpdateView(View):
+class NotesUpdateView(AuthRequiredMixin,View):
     def post(self, request, pk):
         cliente = get_object_or_404(Cliente, pk=pk)
         notas = request.POST.get('notas', '').strip()
+        allowed_roles = ['admin', 'clientes']
         
         if len(notas) > 1000:
             return JsonResponse({
@@ -506,10 +516,11 @@ class NotesUpdateView(View):
             'notas_content': notas or 'No hay notas registradas'
         })
 
-class NoteCreateView(View):
+class NoteCreateView(AuthRequiredMixin,View):
     def post(self, request, pk):
         cliente = get_object_or_404(Cliente, pk=pk)
         contenido = request.POST.get('contenido', '').strip()
+        allowed_roles = ['admin', 'clientes']
         
         if len(contenido) > 1000:
             return JsonResponse({'success': False, 'error': 'Máximo 1000 caracteres'}, status=400)
@@ -538,7 +549,8 @@ class NoteCreateView(View):
             logger.error(f"Error creando nota: {str(e)}", exc_info=True)
             return JsonResponse({'success': False, 'error': 'Error del servidor'}, status=500)
 
-class DeleteNoteView(View):
+class DeleteNoteView(AuthRequiredMixin,View):
+    allowed_roles = ['admin', 'clientes']
     def delete(self, request, cliente_pk, note_pk):  # Cambiar nombres de parámetros
         try:
             note = NotaCliente.objects.get(id=note_pk, cliente_id=cliente_pk)
@@ -547,7 +559,7 @@ class DeleteNoteView(View):
         except NotaCliente.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Nota no encontrada'}, status=404)
 
-class DocumentDeleteView(DeleteView):
+class DocumentDeleteView(AuthRequiredMixin,DeleteView):
     model = DocumentoCliente
     
     def delete(self, request, *args, **kwargs):
@@ -555,10 +567,11 @@ class DocumentDeleteView(DeleteView):
         return JsonResponse({'success': True})
     
 
-class ClientePDFView(DetailView):
+class ClientePDFView(AuthRequiredMixin,DetailView):
     model = Cliente
     template_name = 'crm/cliente_pdf.html'
     context_object_name = 'cliente'
+    allowed_roles = ['admin', 'clientes']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

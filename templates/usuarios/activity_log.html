@@ -1,0 +1,93 @@
+{% extends 'usuarios/config_panel.html' %}
+{% load static i18n %}
+
+{% block config_content %}
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+        <h5 class="mb-0">{% trans "Historial de Actividad" %}</h5>
+        <form method="get" class="w-50">
+            <div class="input-group">
+                <input type="text" 
+                       name="q" 
+                       class="form-control" 
+                       placeholder="{% trans 'Buscar en actividad...' %}" 
+                       value="{{ search_query }}">
+                <button type="submit" class="btn btn-outline-secondary">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>{% trans "Usuario" %}</th>
+                        <th>{% trans "Tipo" %}</th>
+                        <th>{% trans "Fecha/Hora" %}</th>
+                        <th>IP</th>
+                        <th>{% trans "Dispositivo" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-circle me-2"></i>
+                                {{ log.user.username }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if log.activity_type == 'login' %}success{% else %}danger{% endif %}">
+                                {{ log.get_activity_type_display }}
+                            </span>
+                        </td>
+                        <td>{{ log.timestamp|date:"SHORT_DATETIME_FORMAT" }}</td>
+                        <td><code>{{ log.ip_address }}</code></td>
+                        <td class="text-muted small">{{ log.user_agent|truncatechars:50 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">
+                            <i class="bi bi-activity fs-4 text-muted"></i>
+                            <p class="mt-2">{% trans "No se encontraron registros" %}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if is_paginated %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}&q={{ search_query }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

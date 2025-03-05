@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block title %}{% trans "Configuración del Sistema" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row g-4">
+        <!-- Panel lateral de navegación -->
+        <div class="col-lg-3">
+            <div class="card shadow-sm border-0 h-100">
+                <!-- Información del usuario -->
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-person-circle fs-4 text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fw-medium small">{{ current_user.username }}</div>
+                            <div class="text-muted text-xs">{{ current_user.get_rol_display }}</div>
+                            <a href="{% url 'logout' %}" 
+   class="text-danger text-xs d-block mt-1 logout-link"
+   data-confirm="{% trans '¿Está seguro que desea cerrar la sesión?' %}">
+    <i class="bi bi-box-arrow-right me-1"></i>{% trans "Cerrar sesión" %}
+</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Menú de navegación -->
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'config_panel' %}" 
+                       class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 {% if request.resolver_match.url_name == 'config_panel' %}bg-light text-primary{% endif %}">
+                        <i class="bi bi-info-circle me-2 fs-5" style="width: 24px;"></i>
+                        <span class="small">{% trans "Resumen" %}</span>
+                    </a>
+                    <a href="{% url 'user_list' %}" 
+                       class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 {% if 'user' in request.resolver_match.url_name %}bg-light text-primary{% endif %}">
+                        <i class="bi bi-people me-2 fs-5" style="width: 24px;"></i>
+                        <div class="d-flex justify-content-between w-100">
+                            <span class="small">{% trans "Usuarios" %}</span>
+                            <span class="badge bg-primary rounded-pill">{{ total_users }}</span>
+                        </div>
+                    </a>
+                    <a href="{% url 'activity_log' %}" 
+                       class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 {% if request.resolver_match.url_name == 'activity_log' %}bg-light text-primary{% endif %}">
+                        <i class="bi bi-clock-history me-2 fs-5" style="width: 24px;"></i>
+                        <span class="small">{% trans "Actividad" %}</span>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3">
+                        <i class="bi bi-shield-lock me-2 fs-5" style="width: 24px;"></i>
+                        <div class="d-flex justify-content-between w-100">
+                            <span class="small">{% trans "Permisos" %}</span>
+                            <span class="badge bg-secondary rounded-pill small">{% trans "Próximamente" %}</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="col-lg-9">
+            <div class="card shadow-sm border-0 h-100">
+                <!-- Encabezado -->
+                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                    <div>
+                        <h5 class="mb-0 text-dark">{% trans "Resumen del Sistema" %}</h5>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0 mt-2 small">
+                                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">{% trans "Inicio" %}</a></li>
+                                <li class="breadcrumb-item active">{% trans "Configuración" %}</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <i class="bi bi-gear fs-4 text-muted"></i>
+                </div>
+
+                <div class="card-body">
+                    {% block config_content %}
+                    <div class="row g-4">
+                        <!-- Estadísticas principales -->
+                        <div class="col-12">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-light-primary text-primary rounded p-2 me-3">
+                                                    <i class="bi bi-people fs-3"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1 text-muted">{% trans "Usuarios Registrados" %}</h6>
+                                                    <h2 class="mb-0">{{ total_users }}</h2>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <span class="badge bg-light text-dark small">
+                                                    <i class="bi bi-check2-circle me-1"></i>
+                                                    {% blocktrans with active=active_users %}
+                                                    Activos: {{ active }}
+                                                    {% endblocktrans %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Inicializar mensajes de Django para SweetAlert2
+window.djangoMessages = {
+    success: [],
+    error: [],
+    warning: [],
+    info: []
+};
+
+{% for message in messages %}
+    {% if message.tags in "success,error,warning,info" %}
+        window.djangoMessages['{{ message.tags }}'].push('{{ message|escapejs }}');
+    {% endif %}
+{% endfor %}
+// Manejar logout con confirmación y AJAX POST
+document.querySelectorAll('.logout-link').forEach(link => {
+    link.addEventListener('click', async (e) => {
+        e.preventDefault();
+        
+        const { isConfirmed } = await Swal.fire({
+            title: '{% trans "Cerrar sesión" %}',
+            text: '{% trans "¿Está seguro que desea cerrar la sesión?" %}',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: '{% trans "Sí, cerrar sesión" %}',
+            cancelButtonText: '{% trans "Cancelar" %}',
+            reverseButtons: true
+        });
+
+        if (isConfirmed) {
+            try {
+                const response = await fetch("{% url 'logout' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken(),
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    window.location.href = "{% url 'login' %}";
+                } else {
+                    const errorData = await response.json();
+                    showErrorAlert(errorData.message || '{% trans "Error al cerrar sesión" %}');
+                }
+            } catch (error) {
+                showErrorAlert('{% trans "Error de conexión con el servidor" %}');
+            }
+        }
+    });
+});
+</script>
+<script src="{% static 'usuarios/users.js' %}"></script>
+{% endblock %}

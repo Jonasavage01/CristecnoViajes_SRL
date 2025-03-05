@@ -38,6 +38,10 @@ from .models import Empresa
 from .export_utils import exportar_empresas  # Nueva función a crear
 from django.utils import timezone as django_timezone 
 
+from django.views.generic import ListView
+from .mixins import AuthRequiredMixin  # <-- Importar el mixin
+
+
 
 
 from .models import Empresa
@@ -50,7 +54,8 @@ logger = logging.getLogger(__name__)
 
 
 
-class ExportEmpresasView(View):
+class ExportEmpresasView(AuthRequiredMixin,View):
+    allowed_roles = ['admin', 'clientes']
     def get_queryset(self):
         queryset = Empresa.objects.all()
         
@@ -83,7 +88,8 @@ class ExportEmpresasView(View):
         queryset = self.get_queryset()
         return exportar_empresas(queryset, formato)  # Función en export_utils
 
-class EmpresasView(ListView):
+class EmpresasView(AuthRequiredMixin,ListView):
+    allowed_roles = ['admin', 'clientes']
     model = Empresa
     template_name = "crm/empresas.html"
     context_object_name = 'empresas'
@@ -240,7 +246,8 @@ class EmpresasView(ListView):
             return self._handle_generic_error(e, is_ajax)
         
 
-class EmpresaUpdateView(UpdateView):
+class EmpresaUpdateView(AuthRequiredMixin,UpdateView):
+    allowed_roles = ['admin', 'clientes']
     model = Empresa
     form_class = EmpresaEditForm
     template_name = "partials/crm/empresa_edit_form.html"
@@ -354,7 +361,8 @@ class EmpresaUpdateView(UpdateView):
         return errors
     
 
-class EmpresaDetailView(DetailView):
+class EmpresaDetailView(AuthRequiredMixin,DetailView):
+    allowed_roles = ['admin', 'clientes']
     model = Empresa
     template_name = "crm/empresa_detail.html"
     context_object_name = 'empresa'
@@ -371,7 +379,8 @@ class EmpresaDetailView(DetailView):
         })
         return context
 
-class DocumentoEmpresaUploadView(CreateView):
+class DocumentoEmpresaUploadView(AuthRequiredMixin,CreateView):
+    allowed_roles = ['admin', 'clientes']
     form_class = DocumentoEmpresaForm
     template_name = "crm/empresa_detail.html"
 
@@ -436,7 +445,8 @@ class DocumentoEmpresaUploadView(CreateView):
             }, status=400)
         return super().form_invalid(form)
 
-class NotaEmpresaCreateView(CreateView):
+class NotaEmpresaCreateView(AuthRequiredMixin,CreateView):
+    allowed_roles = ['admin', 'clientes']
     form_class = NotaEmpresaForm
     template_name = "crm/empresa_detail.html"
 
@@ -493,7 +503,8 @@ class NotaEmpresaCreateView(CreateView):
         return super().form_invalid(form)
 
 # En views.py
-class DeleteDocumentoEmpresaView(DeleteView):
+class DeleteDocumentoEmpresaView(AuthRequiredMixin,DeleteView):
+    allowed_roles = ['admin', 'clientes']
     model = DocumentoEmpresa
 
     def get_object(self, queryset=None):
@@ -512,7 +523,8 @@ class DeleteDocumentoEmpresaView(DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-class DeleteNotaEmpresaView(DeleteView):
+class DeleteNotaEmpresaView(AuthRequiredMixin,DeleteView):
+    allowed_roles = ['admin', 'clientes']
     model = NotaEmpresa
 
     def get_object(self, queryset=None):
@@ -532,7 +544,8 @@ class DeleteNotaEmpresaView(DeleteView):
 
 
 
-class EmpresaPDFView(DetailView):
+class EmpresaPDFView(AuthRequiredMixin,DetailView):
+    allowed_roles = ['admin', 'clientes']
     model = Empresa
     template_name = 'crm/empresa_pdf.html'
     context_object_name = 'empresa'
@@ -618,8 +631,9 @@ class EmpresaPDFView(DetailView):
             return HttpResponseServerError("Error generando el documento. Por favor intente más tarde.")
 
 
-class EmpresaDeleteView(View):  # Cambiar de DeleteView a View
+class EmpresaDeleteView(AuthRequiredMixin,View):  # Cambiar de DeleteView a View
     success_url = reverse_lazy('empresas')
+    allowed_roles = ['admin', 'clientes']
     
     @method_decorator(require_http_methods(["POST"]))
     def post(self, request, *args, **kwargs):

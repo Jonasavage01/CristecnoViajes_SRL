@@ -31,66 +31,63 @@
      style="display: none;">
 </div>
 
-<!-- Encabezado Mejorado Responsive -->
-<div class="card-header bg-white py-3">
-    <div class="d-flex flex-column flex-md-row justify-content-center justify-content-md-between align-items-center gap-2 text-center text-md-start">
-        <!-- Contenido Izquierdo -->
-        <div class="d-flex flex-column align-items-center align-items-md-start">
-            <div class="d-flex align-items-center gap-2 mb-2">
+<!-- clients_header.html -->
+<div class="card-header bg-light border-bottom py-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+        <!-- Encabezado Izquierdo -->
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-primary bg-opacity-10 p-2 rounded-3">
                 <i class="bi bi-people-fill fs-4 text-primary"></i>
-                <h4 class="mb-0">Gestión de Clientes</h4>
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-primary-opacity-10 text-primary fs-6 py-2">
-                    <i class="bi bi-person-badge me-1"></i>
-                    {{ page_obj.paginator.count }} registrados
-                </span>
+            <div>
+                <h5 class="mb-0 fw-bold text-primary">Clientes</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge text-bg-light text-muted fs-7">
+                        <i class="bi bi-database me-1"></i>
+                        {{ page_obj.paginator.count }} registros
+                    </span>
+                </div>
             </div>
         </div>
 
-
-<div class="mt-2 mt-md-0 d-flex gap-2">
-    <div class="dropdown">
-        <button class="btn btn-success btn-hover-scale py-2 px-3" 
-                type="button" 
-                id="exportDropdown" 
-                data-bs-toggle="dropdown" 
-                aria-expanded="false">
-            <i class="bi bi-download me-1 me-md-2"></i>
-            <span>Exportar</span>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
-            <li>
-                <a class="dropdown-item export-link" 
-                   href="#" 
-                   data-format="csv">
-                    <i class="bi bi-filetype-csv me-2"></i>CSV
-                </a>
-            </li>
-            <li>
-                <a class="dropdown-item export-link" 
-                   href="#" 
-                   data-format="excel">
-                    <i class="bi bi-filetype-xlsx me-2"></i>Excel
-                </a>
-            </li>
-        </ul>
-    </div>
-
-
-
-        <!-- Botón Derecha -->
-        <div class="mt-2 mt-md-0">
-            <button class="btn btn-primary btn-hover-scale py-2 px-3 w-100 w-md-auto" 
+        <!-- Controles Derecha -->
+        <div class="mt-2 mt-md-0 d-flex gap-2">
+            <div class="dropdown">
+                <button class="btn btn-success btn-hover-scale py-2 px-3" 
+                        type="button" 
+                        id="exportDropdown" 
+                        data-bs-toggle="dropdown" 
+                        aria-expanded="false">
+                    <i class="bi bi-download me-1 me-md-2"></i>
+                    <span>Exportar</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
+                    <li>
+                        <a class="dropdown-item export-link" 
+                           href="#" 
+                           data-format="csv">
+                            <i class="bi bi-filetype-csv me-2"></i>CSV
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item export-link" 
+                           href="#" 
+                           data-format="excel">
+                            <i class="bi bi-filetype-xlsx me-2"></i>Excel
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <button class="btn btn-sm btn-primary d-flex align-items-center gap-2 py-2" 
                     data-bs-toggle="modal" 
                     data-bs-target="#clienteModal">
-                <i class="bi bi-plus-lg me-1 me-md-2"></i>
-                <span>Nuevo Cliente</span>
+                <i class="bi bi-plus-lg"></i>
+                <span>Nuevo</span>
             </button>
         </div>
     </div>
 </div>
-
 
  <!-- Filtros Avanzados Mejorados -->
 <div class="card-body border-bottom bg-light">

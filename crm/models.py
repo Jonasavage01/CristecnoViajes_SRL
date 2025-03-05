@@ -5,6 +5,7 @@ import datetime
 import shutil
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.conf import settings 
 
 # Django database imports
 from django.db import models
@@ -159,7 +160,7 @@ class DocumentoCliente(models.Model):
     )
     
     subido_por = models.ForeignKey(
-        'auth.User', 
+        settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
@@ -218,7 +219,7 @@ class NotaCliente(models.Model):
     contenido = models.TextField('Contenido')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     autor = models.ForeignKey(
-        User, 
+        settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
         null=True,
         blank=True  # Permite que el campo sea opcional
@@ -371,7 +372,7 @@ class DocumentoEmpresa(models.Model):
     )
     
     subido_por = models.ForeignKey(
-    User, 
+    settings.AUTH_USER_MODEL, 
     on_delete=models.SET_NULL, 
     null=True,
     blank=True,
@@ -427,7 +428,7 @@ class NotaEmpresa(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     # En NotaEmpresa
     autor = models.ForeignKey(
-        User, 
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL, 
         null=True,
         blank=True

@@ -25,7 +25,7 @@ urlpatterns = [
     path('empresas/<int:pk>/', EmpresaDetailView.as_view(), name='empresa_detail'),
     path('empresas/<int:pk>/add_note/', NotaEmpresaCreateView.as_view(), name='add_note_empresa'),
     path('empresas/<int:pk>/subir-documento/', DocumentoEmpresaUploadView.as_view(), name='upload_documento_empresa'),
-     path(
+    path(
         'crm/empresas/<int:pk>/eliminar-documento/<int:doc_pk>/',
         DeleteDocumentoEmpresaView.as_view(),
         name='delete_documento_empresa'

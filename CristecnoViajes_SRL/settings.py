@@ -5,19 +5,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 ###############################################################################
-# Variables de entorno y configuración básica
-###############################################################################
-# Si deseas usar variables de entorno (por ejemplo, con python-environ), puedes
-# configurar un archivo .env en el directorio BASE_DIR y cargarlo aquí.
-# Ejemplo (requiere instalar django-environ):
-#
-# import environ
-# env = environ.Env(DEBUG=(bool, False))
-# environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
-#
-# Para este ejemplo usaremos os.environ.get con valores por defecto.
 
-# SECRET_KEY: ¡mantén esta clave en secreto en producción!
 SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
     'django-insecure-j&cn%x-g7wn0w5%zqd&9qo^&w+oxls2*9&ef3i5p4)sk2^iire'
@@ -46,6 +34,10 @@ INSTALLED_APPS = [
 
     # Apps locales:
     'crm',
+    'usuarios.apps.UsuariosConfig', 
+    'dashboard.apps.DashboardConfig',
+    
+    
 ]
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'  # Cambiar de 'DENY' a 'SAMEORIGIN'
@@ -125,17 +117,18 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internacionalización
 ###############################################################################
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
-USE_I18N = True
+# Configurar zona horaria correcta
+TIME_ZONE = 'America/Santo_Domingo'
 USE_TZ = True
+USE_I18N = True
+
 
 ###############################################################################
 # Archivos estáticos y media
 ###############################################################################
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
-# En producción, define STATIC_ROOT para recopilar todos los archivos estáticos:
-# STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -178,17 +171,7 @@ LOGGING = {
 ###############################################################################
 # Durante el desarrollo, se pueden enviar los correos a la consola.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# Para producción, configura un backend SMTP con los datos reales:
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-# EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
-###############################################################################
-# Configuraciones de Seguridad (producción)
-###############################################################################
 if not DEBUG:
     # Redirigir todas las peticiones a HTTPS
     SECURE_SSL_REDIRECT = True
@@ -214,3 +197,13 @@ CSRF_TRUSTED_ORIGINS = [
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
+AUTH_USER_MODEL = 'usuarios.UsuarioPersonalizado'
+LOGIN_URL = 'usuarios:login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = '/usuarios/login/'
+
+SESSION_COOKIE_AGE = 3600  # 1 hora
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_SAVE_EVERY_REQUEST = True  # Renovar la sesión con cada request

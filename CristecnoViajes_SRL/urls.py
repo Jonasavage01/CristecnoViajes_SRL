@@ -6,9 +6,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # Redirige la raíz ("/") a "/crm/"
-    path('', RedirectView.as_view(url='crm/', permanent=False)),
-    path('crm/', include('crm.urls')),  # Aquí se agrupa el módulo CRM
+    path('', include('dashboard.urls')),  # Dashboard como raíz
+    path('crm/', include('crm.urls')),
+    path('usuarios/', include('usuarios.urls')),
 ]
 
 # Agrega la ruta para servir archivos multimedia en desarrollo

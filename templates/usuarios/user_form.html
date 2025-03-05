@@ -1,0 +1,79 @@
+{% extends 'usuarios/config_panel.html' %}
+{% load static i18n %}
+
+{% block config_content %}
+<div class="card shadow">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">{% trans "Crear Nuevo Usuario" %}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">{% trans "Nombre de usuario" %}</label>
+                    {{ form.username }}
+                    <div class="form-text">{% trans "Requerido. 150 caracteres o menos. Letras, dígitos y @/./+/-/_ solamente." %}</div>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">{% trans "Correo electrónico" %}</label>
+                    {{ form.email }}
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">{% trans "Contraseña" %}</label>
+                    {{ form.password1 }}
+                    <div class="form-text">
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle"></i> {% trans "Mínimo 8 caracteres" %}</li>
+                            <li><i class="bi bi-check-circle"></i> {% trans "No puede ser completamente numérica" %}</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">{% trans "Confirmar contraseña" %}</label>
+                    {{ form.password2 }}
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">{% trans "Rol del usuario" %}</label>
+                    {{ form.rol }}
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">{% trans "Teléfono" %}</label>
+                    {{ form.telefono }}
+                </div>
+                
+                <div class="col-12">
+                    <div class="form-check">
+                        {{ form.is_staff }}
+                        <label class="form-check-label">{% trans "Acceso al panel administrativo" %}</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'user_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>{% trans "Cancelar" %}
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-2"></i>{% trans "Guardar Usuario" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

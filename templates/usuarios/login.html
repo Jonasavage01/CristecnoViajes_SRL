@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block content %}
+<style>
+    .login-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .auth-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .auth-header {
+        background: linear-gradient(45deg, #2c3e50, #3498db);
+        padding: 2.5rem;
+        text-align: center;
+    }
+    
+    .auth-icon {
+        font-size: 2.5rem;
+        background: rgba(255,255,255,0.1);
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        padding: 12px 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
+        border-color: #3498db;
+    }
+    
+    .btn-login {
+        background: #3498db;
+        border: none;
+        padding: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-login:hover {
+        background: #2980b9;
+        transform: translateY(-1px);
+    }
+    
+    .password-reset-link {
+        color: #7f8c8d;
+        transition: color 0.3s ease;
+    }
+    
+    .password-reset-link:hover {
+        color: #3498db;
+        text-decoration: none;
+    }
+</style>
+
+<div class="login-container d-flex align-items-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <div class="auth-icon text-white">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h2 class="text-white mb-0">{% trans "Acceso Seguro" %}</h2>
+                        <p class="text-white-50 mt-2">{% trans "Cristecnoviajes SRL" %}</p>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        {% if form.errors %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle me-2"></i>
+                            {% trans "Credenciales incorrectas. Por favor verifique sus datos." %}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endif %}
+                        
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            <div class="mb-4">
+                                <label for="id_username" class="form-label">{% trans "Usuario" %}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-person-circle"></i>
+                                    </span>
+                                    {{ form.username }}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="id_password" class="form-label">{% trans "Contraseña" %}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-lock"></i>
+                                    </span>
+                                    {{ form.password }}
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-login w-100 text-white">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>
+                                {% trans "Iniciar Sesión" %}
+                            </button>
+                        </form>
+                        
+                        <div class="text-center mt-4">
+                            <a href="#" class="password-reset-link" onclick="showWhatsAppSupport()">
+                                <i class="bi bi-question-circle me-2"></i>
+                                {% trans "¿Olvidó su contraseña?" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+function showWhatsAppSupport() {
+    const phoneNumber = '+18498625049';
+    const message = encodeURIComponent(
+        'Hola equipo de soporte,\n\n' +
+        'Necesito ayuda para recuperar el acceso a mi cuenta.\n' +
+        'Nombre de usuario: [Por favor indique su usuario]\n' +
+        'Detalles adicionales: [Proporcione información relevante]'
+    );
+    
+    Swal.fire({
+        title: '{% trans "Soporte por WhatsApp" %}',
+        html: `{% trans "<p>Será redirigido a WhatsApp para recibir asistencia.</p><p>¿Desea continuar?</p>" %}`,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: '{% trans "Abrir WhatsApp" %}',
+        cancelButtonText: '{% trans "Cancelar" %}',
+        customClass: {
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-secondary'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+        }
+    });
+}
+</script>
+{% endblock %}

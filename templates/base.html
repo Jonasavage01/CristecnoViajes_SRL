@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static i18n %}
 {% load static %}
 <html lang="es">
 <head>
@@ -30,7 +31,7 @@
             </div>
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/">
+                    <a class="nav-link" href="{% url 'dashboard' %}">
                         <i class="bi bi-speedometer2"></i>
                         <span class="menu-text">Dashboard</span>
                     </a>
@@ -78,9 +79,13 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/config/">
+                    <a href="{% url 'config_panel' %}" 
+                       class="nav-link"
+                       data-bs-toggle="tooltip" 
+                       data-bs-placement="right" 
+                       title="{% trans 'Configuración del sistema' %}">
                         <i class="bi bi-gear"></i>
-                        <span class="menu-text">Configuración</span>
+                        <span class="menu-text">{% trans "Configuración" %}</span>
                     </a>
                 </li>
             </ul>
@@ -146,9 +151,13 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link py-1" href="/config/">
+                <a href="{% url 'config_panel' %}" 
+                   class="nav-link py-1"
+                   data-bs-toggle="tooltip" 
+                   data-bs-placement="top" 
+                   title="{% trans 'Configuración del sistema' %}">
                     <i class="bi bi-gear d-block"></i>
-                    <span class="menu-text">Config</span>
+                    <span class="menu-text">{% trans "Config" %}</span>
                 </a>
             </li>
         </ul>
