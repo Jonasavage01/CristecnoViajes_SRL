@@ -259,15 +259,16 @@ function setupDeleteButtons() {
     document.querySelectorAll('.delete-document, .delete-note').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
-            showDeleteConfirmation(this);
+            const isDocument = this.classList.contains('delete-document');
+            const itemId = this.closest('[data-item-id]')?.dataset.itemId;
+            const deleteUrl = this.closest('form')?.action || this.dataset.deleteUrl;
+            
+            showDeleteConfirmation(isDocument, itemId, deleteUrl);
         });
     });
 }
 
-function showDeleteConfirmation(button) {
-    const form = button.closest('form');
-    const isDocument = form.action.includes('documento');
-    
+function showDeleteConfirmation(isDocument, itemId, deleteUrl) {
     Swal.fire({
         title: '¿Confirmar eliminación?',
         text: `Esta acción eliminará ${isDocument ? 'el documento' : 'la nota'} permanentemente`,
@@ -278,15 +279,18 @@ function showDeleteConfirmation(button) {
         confirmButtonText: 'Sí, eliminar'
     }).then((result) => {
         if (result.isConfirmed) {
-            submitDeleteRequest(form);
+            submitDeleteRequest(deleteUrl, itemId, isDocument);
         }
     });
 }
 
-function submitDeleteRequest(form) {
-    fetch(form.action, {
+function submitDeleteRequest(url, itemId, isDocument) {
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+    fetch(url, {
         method: 'POST',
-        body: new FormData(form),
+        body: formData,
         headers: {
             'X-CSRFToken': getCookie('csrftoken'),
             'X-Requested-With': 'XMLHttpRequest'
@@ -298,18 +302,16 @@ function submitDeleteRequest(form) {
     })
     .then(data => {
         if (data.success) {
-            // Animación de eliminación
-            const element = form.closest('.document-card, .note-item');
-            element.style.transition = 'all 0.3s ease';
-            element.style.opacity = '0';
-            element.style.transform = 'translateX(-100px)';
+            const selector = isDocument ? 
+                `[data-item-id="doc-${data.doc_id}"]` : 
+                `[data-item-id="note-${data.note_id}"]`;
             
-            setTimeout(() => {
-                element.remove();
-                checkEmptyStates();
-            }, 300);
-            
+            const element = document.querySelector(selector);
+            if (element) {
+                animateRemoval(element);
+            }
             showToast(data.message, 'success');
+            checkEmptyStates();
         }
     })
     .catch(error => {
@@ -317,7 +319,6 @@ function submitDeleteRequest(form) {
         showToast('Error al eliminar: ' + error.message, 'danger');
     });
 }
-
 
 
 // =============== UTILIDADES ===============

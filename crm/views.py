@@ -549,22 +549,43 @@ class NoteCreateView(AuthRequiredMixin,View):
             logger.error(f"Error creando nota: {str(e)}", exc_info=True)
             return JsonResponse({'success': False, 'error': 'Error del servidor'}, status=500)
 
-class DeleteNoteView(AuthRequiredMixin,View):
+
+class DeleteNoteView(AuthRequiredMixin, View):
     allowed_roles = ['admin', 'clientes']
-    def delete(self, request, cliente_pk, note_pk):  # Cambiar nombres de parámetros
+    
+    def delete(self, request, cliente_pk, note_pk):
         try:
             note = NotaCliente.objects.get(id=note_pk, cliente_id=cliente_pk)
             note.delete()
-            return JsonResponse({'success': True})
+            return JsonResponse({
+                'success': True,
+                'message': 'Nota eliminada correctamente',
+                'note_id': note_pk
+            })
         except NotaCliente.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Nota no encontrada'}, status=404)
+            return JsonResponse({
+                'success': False,
+                'error': 'Nota no encontrada'
+            }, status=404)
 
-class DocumentDeleteView(AuthRequiredMixin,DeleteView):
+class DocumentDeleteView(AuthRequiredMixin, DeleteView):
     model = DocumentoCliente
     
     def delete(self, request, *args, **kwargs):
-        self.get_object().delete()
-        return JsonResponse({'success': True})
+        try:
+            self.object = self.get_object()
+            doc_id = self.object.id
+            self.object.delete()
+            return JsonResponse({
+                'success': True,
+                'message': 'Documento eliminado correctamente',
+                'doc_id': doc_id
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
     
 
 class ClientePDFView(AuthRequiredMixin,DetailView):
