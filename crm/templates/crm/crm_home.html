@@ -1,19 +1,12 @@
 {% extends "base.html" %}
+{% load static i18n %}
 {% load static %}
 
 {% block title %}CRM - Clientes{% endblock %}
 
 {% block extra_head %}
     <style>
-        .avatar {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-weight: 500;
-        }
+    
         .badge {
             font-size: 0.85em;
             padding: 0.5em 0.75em;
@@ -32,248 +25,289 @@
 </div>
 
 <!-- clients_header.html -->
-<div class="card-header bg-light border-bottom py-3">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-        <!-- Encabezado Izquierdo -->
-        <div class="d-flex align-items-center gap-2">
-            <div class="bg-primary bg-opacity-10 p-2 rounded-3">
-                <i class="bi bi-people-fill fs-4 text-primary"></i>
+
+<div class="card-header bg-white border-bottom py-3 px-3 shadow-sm">
+    <div class="d-flex align-items-center gap-3 w-100">
+      <!-- Title Section -->
+      <div class="d-flex align-items-center gap-3">
+        <div class="bg-primary bg-opacity-10 p-3 rounded-3">
+          <i class="bi bi-people-fill fs-4 text-primary"></i>
+        </div>
+        <div>
+          <h2 class="h5 mb-0 fw-bold text-dark">{% trans "Clientes" %}</h2>
+          <span class="text-muted fs-7">
+            <i class="bi bi-database me-1"></i>
+            {{ page_obj.paginator.count }} {% trans "registros" %}
+          </span>
+        </div>
+      </div>
+  
+      <!-- Actions Section (Alineado a la derecha) -->
+      <div class="d-flex gap-2 ms-auto">
+        <!-- Export Dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary btn-hover-scale d-flex align-items-center gap-2 py-2 px-3"
+                  type="button"
+                  data-bs-toggle="dropdown">
+            <i class="bi bi-download"></i>
+            <span>{% trans "Exportar" %}</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow">
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2 export-link"
+                 href="#"
+                 data-format="csv">
+                <i class="bi bi-filetype-csv fs-5"></i>
+                <span>CSV</span>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2 export-link"
+                 href="#"
+                 data-format="excel">
+                <i class="bi bi-file-spreadsheet fs-5"></i>
+                <span>Excel</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+  
+        <!-- New Client Button -->
+        <button class="btn btn-primary btn-hover-scale d-flex align-items-center gap-2 py-2 px-3"
+                data-bs-toggle="modal"
+                data-bs-target="#clienteModal">
+          <i class="bi bi-plus-lg"></i>
+          <span>{% trans "Nuevo" %}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+ <!-- Filtros Clientes - Versión Minimalista -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center" id="filterForm">
+            <!-- Botón Limpiar -->
+            {% if has_filters %}
+            <div class="col-auto order-1">
+                <a href="?{% if request.GET.page %}page={{ request.GET.page }}{% endif %}" 
+                   class="btn btn-link btn-sm text-danger px-1"
+                   data-bs-toggle="tooltip"
+                   title="Limpiar todos los filtros">
+                    <i class="bi bi-eraser me-1"></i>
+                </a>
             </div>
-            <div>
-                <h5 class="mb-0 fw-bold text-primary">Clientes</h5>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge text-bg-light text-muted fs-7">
-                        <i class="bi bi-database me-1"></i>
-                        {{ page_obj.paginator.count }} registros
-                    </span>
+            {% endif %}
+
+            <!-- Búsqueda -->
+            <div class="col order-2 order-md-3">
+                <div class="input-group input-group-sm border rounded-pill">
+                    <input type="search" 
+                           name="q" 
+                           class="form-control form-control-sm border-0 bg-transparent"
+                           placeholder="Nombre, cédula o email..."
+                           value="{{ request.GET.q }}"
+                           aria-label="Buscar">
+                    <button class="btn btn-sm border-0 text-muted pe-2">
+                        <i class="bi bi-search"></i>
+                    </button>
                 </div>
             </div>
-        </div>
 
-        <!-- Controles Derecha -->
-        <div class="mt-2 mt-md-0 d-flex gap-2">
-            <div class="dropdown">
-                <button class="btn btn-success btn-hover-scale py-2 px-3" 
-                        type="button" 
-                        id="exportDropdown" 
-                        data-bs-toggle="dropdown" 
-                        aria-expanded="false">
-                    <i class="bi bi-download me-1 me-md-2"></i>
-                    <span>Exportar</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
-                    <li>
-                        <a class="dropdown-item export-link" 
-                           href="#" 
-                           data-format="csv">
-                            <i class="bi bi-filetype-csv me-2"></i>CSV
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item export-link" 
-                           href="#" 
-                           data-format="excel">
-                            <i class="bi bi-filetype-xlsx me-2"></i>Excel
-                        </a>
-                    </li>
-                </ul>
+            <!-- Rango de Fechas -->
+            <div class="col-12 col-md order-4 order-md-4">
+                <div class="input-group input-group-sm border rounded-pill px-2">
+                    <i class="bi bi-calendar-range text-muted my-auto me-1"></i>
+                    <input type="date" 
+                           name="fecha_creacion_desde" 
+                           class="form-control form-control-sm border-0 bg-transparent"
+                           value="{{ request.GET.fecha_creacion_desde }}"
+                           aria-label="Fecha inicial">
+                    <span class="text-muted my-auto">–</span>
+                    <input type="date" 
+                           name="fecha_creacion_hasta" 
+                           class="form-control form-control-sm border-0 bg-transparent"
+                           value="{{ request.GET.fecha_creacion_hasta }}"
+                           aria-label="Fecha final">
+                </div>
             </div>
-            
-            <button class="btn btn-sm btn-primary d-flex align-items-center gap-2 py-2" 
-                    data-bs-toggle="modal" 
-                    data-bs-target="#clienteModal">
-                <i class="bi bi-plus-lg"></i>
-                <span>Nuevo</span>
-            </button>
+
+            <!-- Estado -->
+            <div class="col-md-auto order-5 order-md-5">
+                <select class="form-select form-select-sm border rounded-pill" 
+                        name="estado" 
+                        aria-label="Estado">
+                    <option value="">Todos</option>
+                    {% for estado in estados %}
+                    <option value="{{ estado.0 }}" 
+                        {% if request.GET.estado == estado.0 %}selected{% endif %}>
+                        {{ estado.1 }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Producto (placeholder) -->
+            <div class="col-md-auto order-6 order-md-6">
+                <select class="form-select form-select-sm border rounded-pill" 
+                        disabled 
+                        aria-label="Productos">
+                    <option value="">Productos</option>
+                    <option>Vuelos</option>
+                    <option>Hoteles</option>
+                    <option>Paquetes</option>
+                </select>
+            </div>
+
+            <!-- Botón Aplicar -->
+            <div class="col-auto order-3 order-md-7">
+                <button type="submit" 
+                        class="btn btn-sm btn-primary rounded-pill px-3"
+                        data-bs-toggle="tooltip"
+                        title="Aplicar filtros">
+                    <i class="bi bi-funnel-fill"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Indicador de Filtros Activos -->
+    {% if has_filters %}
+    <div class="card-footer bg-transparent pt-0 px-3 pb-2">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <small class="text-muted me-2">
+                <i class="bi bi-funnel"></i> Filtros:
+            </small>
+            {% if request.GET.q %}
+            <span class="badge border text-body">
+                "{{ request.GET.q }}"
+            </span>
+            {% endif %}
+            {% if request.GET.estado %}
+            <span class="badge border text-body">
+                {{ request.GET.estado }}
+            </span>
+            {% endif %}
+            {% if request.GET.fecha_creacion_desde %}
+            <span class="badge border text-body">
+                {{ request.GET.fecha_creacion_desde }}
+            </span>
+            {% endif %}
+            {% if request.GET.fecha_creacion_hasta %}
+            <span class="badge border text-body">
+                {{ request.GET.fecha_creacion_hasta }}
+            </span>
+            {% endif %}
         </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Mensajes -->
+{% if messages %}
+<div class="mt-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+        
+       <!-- Tabla de Clientes -->
+<div class="table-responsive-container">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th style="width: 25%">Cliente</th>
+                    <th style="width: 20%">Contacto</th>
+                    <th style="width: 15%">Cédula</th>
+                    <th style="width: 15%">Estado</th>
+                    <th style="width: 15%">Fecha Creación</th>
+                    <th style="width: 10%" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in clientes %}
+                <tr class="position-relative clickable-row" 
+                    data-client-id="{{ cliente.id }}"
+                    data-client-url="{% url 'cliente_detail' cliente.pk %}"
+                    role="button"
+                    tabindex="0">
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar bg-primary text-white me-3">
+                                {{ cliente.nombre|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <div class="fw-bold">
+                                    {{ cliente.nombre }} {{ cliente.apellido }}
+                                </div>
+                                <small class="text-muted">
+                                    {{ cliente.nacionalidad.name }}
+                                    {% if cliente.get_edad != "N/A" %}
+                                        • {{ cliente.get_edad }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="text-truncate" style="max-width: 200px;">
+                            {{ cliente.email|default:"N/A" }}
+                        </div>
+                        <small class="text-muted text-truncate d-block" style="max-width: 200px;">
+                            {{ cliente.telefono|default:"N/A" }}
+                        </small>
+                    </td>
+                    <td>
+                        <code>{{ cliente.cedula_pasaporte }}</code>
+                    </td>
+                    <td>
+                        <span class="badge bg-{{ cliente.get_estado_color }} rounded-pill">
+                            {{ cliente.get_estado_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {{ cliente.fecha_creacion|date:"d/m/Y H:i" }}
+                    </td>
+                    <td class="text-end">
+                        <div class="d-flex gap-2 justify-content-end actions-container">
+                            <a href="#" 
+                               class="btn btn-sm btn-outline-primary edit-client" 
+                               title="Editar"
+                               data-bs-toggle="modal"
+                               data-bs-target="#clienteEditModal"
+                               data-url="{% url 'cliente_edit' cliente.id %}"
+                               data-pk="{{ cliente.id }}">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="#" 
+                               class="btn btn-sm btn-outline-danger delete-client" 
+                               title="Eliminar"
+                               data-bs-toggle="modal"
+                               data-bs-target="#deleteConfirmationModal"
+                               data-href="{% url 'cliente_delete' cliente.id %}">
+                               <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <i class="bi bi-people display-6 text-muted mb-3"></i>
+                        <p class="text-muted">No se encontraron clientes</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
- <!-- Filtros Avanzados Mejorados -->
-<div class="card-body border-bottom bg-light">
-    <form method="get" class="row g-3 align-items-end" id="filterForm">
-        <!-- Botón Limpiar Filtros y Contador -->
-        {% if has_filters %}
-        <div class="col-auto">
-            <a href="?{% if request.GET.page %}page={{ request.GET.page }}{% endif %}" 
-               class="btn btn-outline-danger" 
-               id="clearFilters"
-               data-bs-toggle="tooltip" 
-               title="Remover todos los filtros">
-                <i class="bi bi-x-lg me-1"></i>Limpiar
-            </a>
-        </div>
-        {% endif %}
-
-        <!-- Barra de Búsqueda -->
-        <div class="col-12 col-md-3">
-            <div class="input-group">
-                <span class="input-group-text bg-white">
-                    <i class="bi bi-search text-secondary"></i>
-                </span>
-                <input type="search" 
-                       name="q" 
-                       class="form-control"
-                       placeholder="Nombre, cédula o email..."
-                       value="{{ request.GET.q }}"
-                       aria-label="Buscar clientes">
-            </div>
-        </div>
-
-        <!-- Rango de Fechas -->
-        <div class="col-12 col-md-4">
-            <div class="row g-2">
-                <div class="col-6">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white">
-                            <i class="bi bi-calendar text-secondary"></i>
-                        </span>
-                        <input type="date" 
-                               name="fecha_creacion_desde" 
-                               class="form-control"
-                               value="{{ request.GET.fecha_creacion_desde }}"
-                               aria-label="Fecha inicial">
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white">-</span>
-                        <input type="date" 
-                               name="fecha_creacion_hasta" 
-                               class="form-control"
-                               value="{{ request.GET.fecha_creacion_hasta }}"
-                               aria-label="Fecha final">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Filtro por Estado -->
-        <div class="col-12 col-md-3">
-            <select class="form-select" name="estado" aria-label="Filtrar por estado">
-                <option value="">Todos los estados...</option>
-                {% for estado in estados %}
-                <option value="{{ estado.0 }}" 
-                    {% if request.GET.estado == estado.0 %}selected{% endif %}>
-                    {{ estado.1 }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Botón de Acción -->
-        <div class="col-12 col-md-1">
-            <button type="submit" 
-                    class="btn btn-primary w-100" 
-                    name="apply_filters"
-                    id="applyFilters"
-                    data-bs-toggle="tooltip"
-                    title="Aplicar filtros">
-                <i class="bi bi-funnel"></i>
-            </button>
-        </div>
-
-        <!-- Filtro de Producto (placeholder) -->
-        <div class="col-12 col-md-2">
-            <select class="form-select" disabled aria-label="Filtro de productos (próximamente)">
-                <option value="">Productos (próximamente)...</option>
-                <option>Vuelos</option>
-                <option>Hoteles</option>
-                <option>Paquetes</option>
-            </select>
-        </div>
-    </form>
-</div>
-        
-        <!-- Tabla de Clientes -->
-        <div class="table-responsive-container">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <tr>
-                        <th style="width: 25%">Cliente</th>
-                        <th style="width: 20%">Contacto</th>
-                        <th style="width: 15%">Cédula</th>
-                        <th style="width: 15%">Estado</th>
-                        <th style="width: 15%">Fecha Creación</th>
-                        <th style="width: 10%" class="text-end">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                  {% for cliente in clientes %}
-                    <tr class="position-relative" data-client-id="{{ cliente.id }}">
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar bg-primary text-white me-3">
-                                    {{ cliente.nombre|slice:":1"|upper }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold">
-                                        <a href="{% url 'cliente_detail' cliente.pk %}" class="text-decoration-none link-primary">
-                                            {{ cliente.nombre }} {{ cliente.apellido }}
-                                        </a>
-                                    </div>
-                                    <small class="text-muted">
-                                        {{ cliente.nacionalidad.name }}
-                                        {% if cliente.get_edad != "N/A" %}
-                                            • {{ cliente.get_edad }}
-                                        {% endif %}
-                                    </small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="text-truncate" style="max-width: 200px;">
-                                {{ cliente.email|default:"N/A" }}
-                            </div>
-                            <small class="text-muted text-truncate d-block" style="max-width: 200px;">
-                                {{ cliente.telefono|default:"N/A" }}
-                            </small>
-                        </td>
-                        <td>
-                            <code>{{ cliente.cedula_pasaporte }}</code>
-                        </td>
-                        <td>
-                            <span class="badge bg-{{ cliente.get_estado_color }} rounded-pill">
-                                {{ cliente.get_estado_display }}
-                            </span>
-                        </td>
-                        <td>
-                            {{ cliente.fecha_creacion|date:"d/m/Y H:i" }}
-                        </td>
-                        <td class="text-end">
-                            <div class="d-flex gap-2 justify-content-end">
-                                <a href="#" 
-                                   class="btn btn-sm btn-outline-primary edit-client" 
-                                   title="Editar"
-                                   data-bs-toggle="modal"
-                                   data-bs-target="#clienteEditModal"
-                                   data-url="{% url 'cliente_edit' cliente.id %}"
-                                   data-pk="{{ cliente.id }}">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                               <a href="#" 
-   class="btn btn-sm btn-outline-danger delete-client" 
-   title="Eliminar"
-   data-bs-toggle="modal"
-   data-bs-target="#deleteConfirmationModal"
-   data-href="{% url 'cliente_delete' cliente.id %}">
-   <i class="bi bi-trash"></i>
-</a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <i class="bi bi-people display-6 text-muted mb-3"></i>
-                            <p class="text-muted">No se encontraron clientes</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        
         
         <!-- Paginación -->
         {% include 'partials/_pagination.html' %}

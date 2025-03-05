@@ -1,5 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ========== [CONSTANTES Y FUNCIONES UTILITARIAS] ==========
+    const handleRowClick = () => {
+        document.querySelectorAll('.clickable-row').forEach(row => {
+            // Manejar clics
+            row.addEventListener('click', (e) => {
+                // Ignorar clicks en elementos interactivos
+                if (e.target.closest('a, button, .actions-container')) {
+                    return;
+                }
+                
+                // Obtener URL y navegar
+                const url = row.dataset.clientUrl;
+                if (url) window.location.href = url;
+            });
+
+            // Manejar teclado (accesibilidad)
+            row.addEventListener('keydown', (e) => {
+                if (['Enter', ' '].includes(e.key)) {
+                    e.preventDefault();
+                    const url = row.dataset.clientUrl;
+                    if (url) window.location.href = url;
+                }
+            });
+        });
+    };
     const ALERT_TIMEOUT = 3000;
     const DEBOUNCE_DELAY = 300;
     
@@ -208,12 +232,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ========== [INICIALIZACIÓN DE COMPONENTES] ==========
+    const initComponents = () => {
+        handleRowClick(); // Añadir esta línea
     // Tooltips
     new bootstrap.Tooltip(document.body, {
         selector: '[data-bs-toggle="tooltip"]',
         boundary: 'window'
+        
     });
+};
 
+initComponents();
     // Limpieza de modal al cerrar
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('hidden.bs.modal', () => {

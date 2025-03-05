@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static i18n %}
 {% load static %}
 
 {% block title %}CRM - Empresas{% endblock %}
@@ -32,157 +33,177 @@
 
 
 <!-- companies_header.html -->
-<div class="card-header bg-light border-bottom py-3">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-        <!-- Encabezado Izquierdo -->
-        <div class="d-flex align-items-center gap-2">
-            <div class="bg-info bg-opacity-10 p-2 rounded-3">
-                <i class="bi bi-building fs-4 text-info"></i>
-            </div>
-            <div>
-                <h5 class="mb-0 fw-bold text-info">Empresas</h5>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge text-bg-light text-muted fs-7">
-                        <i class="bi bi-database me-1"></i>
-                        {{ page_obj.paginator.count }} registros
-                    </span>
-                </div>
-            </div>
-        </div>
 
-        <div class="dropdown mt-2 mt-md-0">
-            <button class="btn btn-success btn-hover-scale py-2 px-3 w-100 w-md-auto" 
-                    type="button" 
-                    data-bs-toggle="dropdown">
-                <i class="bi bi-download me-1 me-md-2"></i>
-                <span>Exportar</span>
-            </button>
-            <ul class="dropdown-menu">
-                <li>
-                    <a class="dropdown-item export-empresa-link" href="#" data-format="csv">
-                        <i class="bi bi-filetype-csv me-2"></i> CSV
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item export-empresa-link" href="#" data-format="excel">
-                        <i class="bi bi-file-spreadsheet me-2"></i> Excel
-                    </a>
-                </li>
-            </ul>
+<div class="card-header bg-white border-bottom py-3 px-3 shadow-sm">
+    <div class="d-flex align-items-center gap-3 w-100">
+      <!-- Title Section -->
+      <div class="d-flex align-items-center gap-3">
+        <div class="bg-info bg-opacity-10 p-3 rounded-3">
+          <i class="bi bi-building fs-4 text-info"></i>
         </div>
-            
-            <button class="btn btn-sm btn-info d-flex align-items-center gap-2 py-2" 
-                    data-bs-toggle="modal" 
-                    data-bs-target="#empresaModal">
-                <i class="bi bi-plus-lg"></i>
-                <span>Nueva</span>
-            </button>
+        <div>
+          <h2 class="h5 mb-0 fw-bold text-dark">Empresas</h2>
+          <span class="text-muted fs-7">
+            <i class="bi bi-database me-1"></i>
+            {{ page_obj.paginator.count }} registros
+          </span>
         </div>
+      </div>
+  
+      <!-- Actions Section -->
+      <div class="d-flex gap-2 ms-auto">
+        <!-- Export Dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary btn-hover-scale d-flex align-items-center gap-2 py-2 px-3"
+                  type="button"
+                  data-bs-toggle="dropdown">
+            <i class="bi bi-download"></i>
+            <span>Exportar</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow">
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2 export-empresa-link"
+                 href="#"
+                 data-format="csv">
+                <i class="bi bi-filetype-csv fs-5"></i>
+                <span>CSV</span>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2 export-empresa-link"
+                 href="#"
+                 data-format="excel">
+                <i class="bi bi-file-spreadsheet fs-5"></i>
+                <span>Excel</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+  
+        <!-- New Company Button -->
+        <button class="btn btn-info btn-hover-scale d-flex align-items-center gap-2 py-2 px-3"
+                data-bs-toggle="modal"
+                data-bs-target="#empresaModal">
+          <i class="bi bi-plus-lg"></i>
+          <span>Nueva</span>
+        </button>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- Filtros Avanzados Mejorados -->
-<div class="card-body border-bottom bg-light">
-    <form method="get" class="row g-3 align-items-end" id="filterForm">
-        <!-- Botón Limpiar Filtros -->
-        {% if has_filters %}
-        <div class="col-auto">
-            <a href="?{% if request.GET.page %}page={{ request.GET.page }}{% endif %}" 
-               class="btn btn-outline-danger" 
-               id="clearFilters"
-               data-bs-toggle="tooltip" 
-               title="Remover todos los filtros">
-                <i class="bi bi-x-lg me-1"></i>Limpiar
-            </a>
-        </div>
-        {% endif %}
+<!-- Filtros Empresas - Versión Minimalista -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center" id="filterForm">
+           <!-- Botón Limpiar -->
+           {% if has_filters %}
+           <div class="col-auto order-1">
+               <a href="?{% if request.GET.page %}page={{ request.GET.page }}{% endif %}" 
+                  class="btn btn-link btn-sm text-danger px-1"
+                  data-bs-toggle="tooltip"
+                  title="Limpiar todos los filtros">
+                   <i class="bi bi-eraser me-1"></i>
+               </a>
+           </div>
+           {% endif %}
 
-        <!-- Barra de Búsqueda -->
-        <div class="col-12 col-md-4">
-            <div class="input-group">
-                <span class="input-group-text bg-white">
-                    <i class="bi bi-search text-secondary"></i>
-                </span>
-                <input type="search" 
-                       name="q" 
-                       class="form-control"
-                       placeholder="Nombre comercial, RNC..."
-                       value="{{ request.GET.q }}"
-                       aria-label="Buscar empresas">
-            </div>
-        </div>
-
-        <!-- Rango de Fechas -->
-        <div class="col-12 col-md-4">
-            <div class="row g-2">
-                <div class="col-6">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white">
-                            <i class="bi bi-calendar text-secondary"></i>
-                        </span>
-                        <input type="date" 
-                               name="fecha_registro_desde" 
-                               class="form-control"
-                               value="{{ request.GET.fecha_registro_desde }}"
-                               aria-label="Fecha inicial">
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white">-</span>
-                        <input type="date" 
-                               name="fecha_registro_hasta" 
-                               class="form-control"
-                               value="{{ request.GET.fecha_registro_hasta }}"
-                               aria-label="Fecha final">
-                    </div>
+            <!-- Búsqueda -->
+            <div class="col order-2 order-md-3">
+                <div class="input-group input-group-sm border rounded-pill">
+                    <input type="search" 
+                           name="q" 
+                           class="form-control form-control-sm border-0 bg-transparent"
+                           placeholder="Nombre comercial, RNC..."
+                           value="{{ request.GET.q }}"
+                           aria-label="Buscar">
+                    <button class="btn btn-sm border-0 text-muted pe-2">
+                        <i class="bi bi-search"></i>
+                    </button>
                 </div>
             </div>
-        </div>
 
-        <!-- Filtro por Estado (si aplica) -->
-        <div class="col-12 col-md-3">
-            <select class="form-select" name="estado" aria-label="Filtrar por estado">
-                <option value="">Todos los estados...</option>
-                {% for estado in estados %}  <!-- Cambiar estados_empresa por estados -->
-<option value="{{ estado.0 }}" {% if request.GET.estado == estado.0 %}selected{% endif %}>
-    {{ estado.1 }}
-</option>
-{% endfor %}
-            </select>
-        </div>
+            <!-- Rango de Fechas -->
+            <div class="col-12 col-md order-4 order-md-4">
+                <div class="input-group input-group-sm border rounded-pill px-2">
+                    <i class="bi bi-calendar-range text-muted my-auto me-1"></i>
+                    <input type="date" 
+                           name="fecha_registro_desde" 
+                           class="form-control form-control-sm border-0 bg-transparent"
+                           value="{{ request.GET.fecha_registro_desde }}"
+                           aria-label="Fecha inicial">
+                    <span class="text-muted my-auto">–</span>
+                    <input type="date" 
+                           name="fecha_registro_hasta" 
+                           class="form-control form-control-sm border-0 bg-transparent"
+                           value="{{ request.GET.fecha_registro_hasta }}"
+                           aria-label="Fecha final">
+                </div>
+            </div>
 
-        <!-- Botón de Acción -->
-        <div class="col-12 col-md-1">
-            <button type="submit" 
-                    class="btn btn-info w-100" 
-                    name="apply_filters"
-                    id="applyFilters"
-                    data-bs-toggle="tooltip"
-                    title="Aplicar filtros">
-                <i class="bi bi-funnel"></i>
-            </button>
-        </div>
-    </form>
-</div>
-<!-- Añadir indicador de filtros activos -->
-<div class="card-header bg-light py-2">
+            <!-- Estado -->
+            <div class="col-md-auto order-5 order-md-5">
+                <select class="form-select form-select-sm border rounded-pill" 
+                        name="estado" 
+                        aria-label="Estado">
+                    <option value="">Todos</option>
+                    {% for estado in estados %}
+                    <option value="{{ estado.0 }}" 
+                        {% if request.GET.estado == estado.0 %}selected{% endif %}>
+                        {{ estado.1 }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Botón Aplicar -->
+            <div class="col-auto order-3 order-md-6">
+                <button type="submit" 
+                        class="btn btn-sm btn-primary rounded-pill px-3"
+                        data-bs-toggle="tooltip"
+                        title="Aplicar filtros">
+                    <i class="bi bi-funnel-fill"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Indicador de Filtros Activos -->
     {% if has_filters %}
-    <div class="alert alert-info alert-dismissible mb-0 py-2 fade show" role="alert">
-        <i class="bi bi-funnel me-2"></i>
-        Filtros aplicados: 
-        {% if request.GET.q %}<span class="badge bg-info">Búsqueda: "{{ request.GET.q }}"</span>{% endif %}
-        {% if request.GET.estado %}<span class="badge bg-info">Estado: {{ request.GET.estado }}</span>{% endif %}
-        {% if request.GET.fecha_registro_desde %}<span class="badge bg-info">Desde: {{ request.GET.fecha_registro_desde }}</span>{% endif %}
-        {% if request.GET.fecha_registro_hasta %}<span class="badge bg-info">Hasta: {{ request.GET.fecha_registro_hasta }}</span>{% endif %}
-        <a href="?" class="btn-close" aria-label="Close"></a>
+    <div class="card-footer bg-transparent pt-0 px-3 pb-2">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <small class="text-muted me-2">
+                <i class="bi bi-funnel"></i> Filtros:
+            </small>
+            {% if request.GET.q %}
+            <span class="badge border text-body">
+                "{{ request.GET.q }}"
+            </span>
+            {% endif %}
+            {% if request.GET.estado %}
+            <span class="badge border text-body">
+                {{ request.GET.estado }}
+            </span>
+            {% endif %}
+            {% if request.GET.fecha_registro_desde %}
+            <span class="badge border text-body">
+                {{ request.GET.fecha_registro_desde }}
+            </span>
+            {% endif %}
+            {% if request.GET.fecha_registro_hasta %}
+            <span class="badge border text-body">
+                {{ request.GET.fecha_registro_hasta }}
+            </span>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 </div>
+
+<!-- Mensajes -->
 {% if messages %}
-<div class="container mt-3">
+<div class="mt-3">
     {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3">
         {{ message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -190,19 +211,19 @@
 </div>
 {% endif %}
 
-<!-- Tabla de Empresas -->
-<div class="table-responsive-container">
+<!-- Sección de Empresas -->
+<div class="table-responsive-container mb-5">
     <div class="table-responsive">
         <table class="table table-hover align-middle" id="empresasTable"> 
             <thead class="table-light">
                 <tr>
-                    <th style="width: 20%">Empresa</th> <!-- Reducir ancho -->
-                    <th style="width: 12%">RNC</th> <!-- Reducir ancho -->
-                    <th style="width: 18%">Contacto</th> <!-- Reducir ancho -->
-                    <th style="width: 12%">Teléfono</th> <!-- Reducir ancho -->
-                    <th style="width: 12%">Registro</th> <!-- Reducir ancho -->
-                    <th style="width: 10%">Estado</th> <!-- Nueva columna -->
-                    <th style="width: 16%" class="text-end">Acciones</th> <!-- Ajustar ancho -->
+                    <th style="width: 20%">Empresa</th>
+                    <th style="width: 12%">RNC</th>
+                    <th style="width: 18%">Contacto</th>
+                    <th style="width: 12%">Teléfono</th>
+                    <th style="width: 12%">Registro</th>
+                    <th style="width: 10%">Estado</th>
+                    <th style="width: 16%" class="text-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -217,9 +238,7 @@
                             </div>
                             <div>
                                 <div class="fw-bold">
-                                    
-                                        {{ empresa.nombre_comercial }}
-                                    </a>
+                                    {{ empresa.nombre_comercial }}
                                 </div>
                                 <small class="text-muted">
                                     {{ empresa.razon_social|truncatechars:30 }}
@@ -256,19 +275,17 @@
                                data-bs-toggle="tooltip" 
                                title="Última actividad: {{ empresa.ultima_actividad|date:'d/m/Y H:i' }}"></i>
                         </span>
-                        <td class="text-end">
-                            <div class="d-flex gap-2 justify-content-end">
-                                <!-- Botón Editar -->
-                                <a href="#" 
-                                   class="btn btn-sm btn-outline-info edit-empresa" 
-                                   title="Editar"
-                                   data-url="{% url 'empresa_edit' empresa.id %}"
-                                   data-pk="{{ empresa.id }}">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                
-                                <!-- Botón Eliminar Actualizado -->
-                                <button type="button" 
+                    </td>
+                    <td class="text-end">
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="#" 
+                               class="btn btn-sm btn-outline-info edit-empresa" 
+                               title="Editar"
+                               data-url="{% url 'empresa_edit' empresa.id %}"
+                               data-pk="{{ empresa.id }}">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button type="button" 
                                 class="btn btn-sm btn-outline-danger delete-empresa" 
                                 title="Eliminar"
                                 data-bs-toggle="modal"
@@ -277,15 +294,15 @@
                                 data-empresa-name="{{ empresa.nombre_comercial }}"
                                 data-documentos-count="{{ empresa.documentos_empresa.count }}"
                                 data-notas-count="{{ empresa.notas_empresa.count }}"
-                                data-delete-url="{% url 'empresa_delete' empresa.id %}"> <!-- Nueva línea -->
-                            <i class="bi bi-trash"></i>
-                        </button>
-                            </div>
-                        </td>
+                                data-delete-url="{% url 'empresa_delete' empresa.id %}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center py-5">
+                    <td colspan="7" class="text-center py-5">
                         <i class="bi bi-building display-6 text-muted mb-3"></i>
                         <p class="text-muted">No se encontraron empresas</p>
                     </td>
@@ -380,8 +397,3 @@
     <script src="{% static 'crm/export.js' %}"></script>
 {% endblock %}
 
-<style>
-    .clickable-row { cursor: pointer; transition: background-color 0.2s; }
-    .clickable-row:hover { background-color: #f8f9fa !important; }
-    .clickable-row .btn { z-index: 1000; position: relative; }
-</style>
