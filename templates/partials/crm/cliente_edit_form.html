@@ -271,41 +271,7 @@
             </div>
         </div>
 
-        <!-- Información Adicional -->
-        <div class="mb-4">
-            <div class="d-flex align-items-center mb-4 gap-3">
-                <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-                    <i class="bi bi-info-square fs-5 text-white"></i>
-                </div>
-                <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Información Adicional</h5>
-            </div>
-            <div class="row g-4">
-                <div class="col-12">
-                    <div class="mb-4 position-relative">
-                        <label for="{{ form.documento.id_for_label }}" class="form-label">
-                            <i class="bi bi-cloud-upload me-2"></i>{{ form.documento.label }}
-                        </label>
-                        {{ form.documento }}
-                        {% if form.documento.errors %}
-                            <div class="invalid-feedback">{{ form.documento.errors|first }}</div>
-                        {% endif %}
-                        <small class="form-text text-muted mt-1">{{ form.documento.help_text }}</small>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <div class="mb-4 position-relative">
-                        <label for="{{ form.notas.id_for_label }}" class="form-label">
-                            {{ form.notas.label }}
-                        </label>
-                        {{ form.notas }}
-                        {% if form.notas.errors %}
-                            <div class="invalid-feedback">{{ form.notas.errors|first }}</div>
-                        {% endif %}
-                        <small class="form-text text-muted mt-1">Observaciones relevantes sobre el cliente</small>
-                    </div>
-                </div>
-            </div>
-        </div>
+       
 
         <div class="modal-footer border-top border-secondary px-4 pb-4 pt-3">
            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">

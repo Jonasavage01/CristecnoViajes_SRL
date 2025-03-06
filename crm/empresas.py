@@ -161,12 +161,13 @@ class EmpresasView(AuthRequiredMixin,ListView):
             # Renderizar tabla actualizada
             self.object_list = self.get_queryset()
             context = self.get_context_data()
-            table_html = render_to_string('partials/crm/empresas_table.html', context, self.request)
+            
             
             return JsonResponse({
                 'success': True,
                 'message': 'Empresa creada exitosamente!',
-                'table_html': table_html,  # Clave crítica para actualización
+                'redirect_url': reverse('empresa_detail', args=[empresa_id]),
+                
                 'empresa_data': {
                     'id': empresa.id,
                     'nombre_comercial': empresa.nombre_comercial,

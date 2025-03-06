@@ -24,13 +24,13 @@
                 </div>
                 <div class="header-actions d-flex gap-2">
                     <a href="#" 
-                       class="btn btn-light btn-hover-scale btn-actions edit-client"
-                       data-bs-toggle="modal"
-                       data-bs-target="#empresaEditModal"
-                       data-url="{% url 'empresa_edit' empresa.pk %}"
-                       title="Editar empresa">
-                        <i class="bi bi-pencil-square"></i>
-                    </a>
+                    class="btn btn-light btn-hover-scale btn-actions edit-empresa"
+                    title="Editar"
+                    data-url="{% url 'empresa_edit' empresa.id %}"
+                    data-pk="{{ empresa.id }}">
+                     <i class="bi bi-pencil"></i>
+                 </a>
+
                     <a href="{% url 'empresa_pdf' empresa.pk %}" 
                     class="btn btn-light btn-hover-scale btn-actions"
                     data-bs-toggle="tooltip"
@@ -401,6 +401,6 @@
 {% endblock %}
 
 {% block extra_js %}
-
+<script src="{% static 'crm/empresas.js' %}"></script>
 <script src="{% static 'crm/empresa_detail.js' %}"></script>
 {% endblock %}

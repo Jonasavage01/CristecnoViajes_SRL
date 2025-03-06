@@ -50,7 +50,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleSuccess(data) {
         showSuccessAlert(data.message, 3000);
         empresaModal.hide();
-        
+        if (data.redirect_url) {
+            setTimeout(() => {  // Pequeño delay para asegurar que el modal se cierre
+                window.location.href = data.redirect_url;
+            }, 500);
+        }
+
         // Actualizar tabla
         const empresasTable = document.getElementById('empresasTable');
         if (data.table_html && empresasTable) {
