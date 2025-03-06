@@ -1,286 +1,356 @@
+
 {% load static %}
+<div class="modal-content">
+    <div class="modal-header modal-edit-header">
+        <h5 class="modal-edit-title">
+            <i class="bi bi-pencil-square me-2 text-primary"></i>Editar Cliente
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    </div>
 
-<div class="modal-header py-3">
-    <h5 class="modal-title fw-semibold">
-        <i class="bi bi-person-plus me-2"></i>Editar Cliente
-    </h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-</div>
-
- <!-- Línea decorativa superior -->
- <div class="position-absolute top-0 start-0 end-0" style="height: 3px; background: linear-gradient(90deg, #4a9fff, #2d70cc);"></div>
-
- <form id="clienteEditForm" 
- method="post" 
- enctype="multipart/form-data" 
- novalidate
- action="{% url 'cliente_edit' object.pk %}"
- data-client-id="{{ object.id }}"> <!-- Agregar este atributo -->
+    <form id="clienteEditForm" method="post" enctype="multipart/form-data" novalidate action="{% url 'cliente_edit' object.pk %}" data-client-id="{{ object.id }}">
         {% csrf_token %}
         <input type="hidden" name="_method" value="PUT">
         
-        <!-- Línea decorativa superior -->
-        <div class="position-absolute top-0 start-0 end-0" style="height: 3px; background: linear-gradient(90deg, #4a9fff, #2d70cc);"></div>
-
-       
-                    <!-- Estado del Lead -->
-<div class="mb-5">
-    <div class="d-flex align-items-center mb-4 gap-3">
-        <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-            <i class="bi bi-activity fs-5 text-white"></i>
-        </div>
-        <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Estado del Lead</h5>
-    </div>
-    <div class="row g-4">
-        <div class="col-12 col-md-6">
-            <div class="mb-4 position-relative">
-                <label for="{{ form.estado.id_for_label }}" class="form-label">
-                    {{ form.estado.label }}<span class="text-danger">*</span>
-                </label>
-                {{ form.estado }}
-                {% if form.estado.errors %}
-                    <div class="invalid-feedback">{{ form.estado.errors|first }}</div>
-                {% else %}
-                    <div class="invalid-feedback" style="display: none;"></div>
-                {% endif %}
-                <small class="form-text text-muted mt-1">
-                    Opciones: Activo, Inactivo, Potencial
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-                   <!-- Datos Personales -->
-<div class="mb-5">
-    <div class="d-flex align-items-center mb-4 gap-3">
-        <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-            <i class="bi bi-person-lines-fill fs-5 text-white"></i>
-        </div>
-        <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Datos Personales</h5>
-    </div>
-    <div class="row g-4">
-        <!-- Nombre -->
-        <div class="col-12 col-md-6">
-            <div class="mb-4 position-relative">
-                <label for="{{ form.nombre.id_for_label }}" class="form-label">
-                    Nombre<span class="text-danger">*</span>
-                </label>
-                {{ form.nombre }}
-                {% if form.nombre.errors %}
-                    <div class="invalid-feedback">{{ form.nombre.errors|first }}</div>
-                {% else %}
-                    <div class="invalid-feedback" style="display: none;"></div>
-                {% endif %}
-                <small class="text-muted form-required-message" style="display: {% if form.nombre.value %}none{% else %}block{% endif %};">
-                    Este campo es obligatorio
-                </small>
-            </div>
-        </div>
-
-        <!-- Apellido -->
-        <div class="col-12 col-md-6">
-            <div class="mb-4 position-relative">
-                <label for="{{ form.apellido.id_for_label }}" class="form-label">
-                    Apellido<span class="text-danger">*</span>
-                </label>
-                {{ form.apellido }}
-                {% if form.apellido.errors %}
-                    <div class="invalid-feedback">{{ form.apellido.errors|first }}</div>
-                {% else %}
-                    <div class="invalid-feedback" style="display: none;"></div>
-                {% endif %}
-                <small class="text-muted form-required-message" style="display: {% if form.apellido.value %}none{% else %}block{% endif %};">
-                    Este campo es obligatorio
-                </small>
-            </div>
-        </div>
-
-        <!-- Cédula/Pasaporte -->
-        <div class="col-12 col-md-6">
-            <div class="mb-4 position-relative">
-                <label for="{{ form.cedula_pasaporte.id_for_label }}" class="form-label">
-                    {{ form.cedula_pasaporte.label }}<span class="text-danger">*</span>
-                </label>
-                {{ form.cedula_pasaporte }}
-                {% if form.cedula_pasaporte.help_text %}
-                    <small class="form-text text-muted mt-1">{{ form.cedula_pasaporte.help_text }}</small>
-                {% endif %}
-                {% if form.cedula_pasaporte.errors %}
-                    <div class="invalid-feedback">{{ form.cedula_pasaporte.errors|first }}</div>
-                {% else %}
-                    <div class="invalid-feedback" style="display: none;"></div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Fecha de Nacimiento con N/A -->
-        <div class="col-12 col-md-6">
-            <div class="mb-4 position-relative">
-                <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">
-                    {{ form.fecha_nacimiento.label }}
-                </label>
-                <div class="input-group">
-                    {{ form.fecha_nacimiento }}
-                    <button type="button" class="btn btn-outline-info" 
-                            onclick="document.getElementById('{{ form.fecha_nacimiento.id_for_label }}').value = ''">
-                        <i class="bi bi-x-circle"></i> N/A
-                    </button>
-                </div>
-                {% if form.fecha_nacimiento.errors %}
-                    <div class="invalid-feedback">{{ form.fecha_nacimiento.errors|first }}</div>
-                {% else %}
-                    <div class="invalid-feedback" style="display: none;"></div>
-                {% endif %}
-                <small class="form-text text-muted mt-1">Formato: DD/MM/AAAA</small>
-            </div>
-        </div>
-
-        <!-- Nacionalidad -->
-        <div class="col-12 col-md-6">
-            <div class="mb-4 position-relative">
-                <label for="{{ form.nacionalidad.id_for_label }}" class="form-label">
-                    {{ form.nacionalidad.label }}<span class="text-danger">*</span>
-                </label>
-                {{ form.nacionalidad }}
-                {% if form.nacionalidad.errors %}
-                    <div class="invalid-feedback">{{ form.nacionalidad.errors|first }}</div>
-                {% else %}
-                    <div class="invalid-feedback" style="display: none;"></div>
-                {% endif %}
-                <small class="form-text text-muted mt-1">Seleccione la nacionalidad</small>
-            </div>
-        </div>
-    </div>
-</div>
-
-        <!-- Datos Laborales -->
-        <div class="mb-5">
-            <div class="d-flex align-items-center mb-4 gap-3">
-                <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-                    <i class="bi bi-building fs-5 text-white"></i>
-                </div>
-                <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Datos Laborales</h5>
-            </div>
-            <div class="row g-4">
-                <div class="col-12 col-md-6">
-                    <div class="mb-4 position-relative">
-                        <label for="{{ form.lugar_trabajo.id_for_label }}" class="form-label">
-                            {{ form.lugar_trabajo.label }}
-                        </label>
-                        {{ form.lugar_trabajo }}
-                        {% if form.lugar_trabajo.errors %}
-                            <div class="invalid-feedback">{{ form.lugar_trabajo.errors|first }}</div>
-                        {% endif %}
-                        <small class="form-text text-muted mt-1">Ej: Nombre de la empresa u organización</small>
+        <div class="modal-body p-4">
+            <!-- Estado del Lead -->
+            <div class="mb-5">
+                <div class="edit-section-header">
+                    <div class="edit-section-icon">
+                        <i class="bi bi-activity fs-5 text-white"></i>
                     </div>
+                    <h5 class="edit-section-title">Estado del Lead</h5>
                 </div>
-                <div class="col-12 col-md-6">
-                    <div class="mb-4 position-relative">
-                        <label for="{{ form.cargo.id_for_label }}" class="form-label">
-                            {{ form.cargo.label }}
-                        </label>
-                        {{ form.cargo }}
-                        {% if form.cargo.errors %}
-                            <div class="invalid-feedback">{{ form.cargo.errors|first }}</div>
-                        {% endif %}
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                {{ form.estado.label }}<span class="required-asterisk">*</span>
+                            </label>
+                            {{ form.estado }}
+                            {% if form.estado.errors %}
+                                <div class="invalid-feedback">{{ form.estado.errors|first }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted mt-2 d-flex align-items-center gap-2">
+                                <i class="bi bi-info-circle"></i>Opciones: Activo, Inactivo, Potencial
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Datos Personales -->
+            <div class="mb-5">
+                <div class="edit-section-header">
+                    <div class="edit-section-icon">
+                        <i class="bi bi-person-lines-fill fs-5 text-white"></i>
+                    </div>
+                    <h5 class="edit-section-title">Datos Personales</h5>
+                </div>
+                <div class="row g-3">
+                    <!-- Nombre -->
+                    <div class="col-12 col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                Nombre<span class="required-asterisk">*</span>
+                            </label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}
+                                <div class="invalid-feedback">{{ form.nombre.errors|first }}</div>
+                            {% endif %}
+                            <small class="text-muted form-required-message">Este campo es obligatorio</small>
+                        </div>
+                    </div>
+
+                    <!-- Apellido -->
+                    <div class="col-12 col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.apellido.id_for_label }}" class="form-label">
+                                Apellido<span class="required-asterisk">*</span>
+                            </label>
+                            {{ form.apellido }}
+                            {% if form.apellido.errors %}
+                                <div class="invalid-feedback">{{ form.apellido.errors|first }}</div>
+                            {% endif %}
+                            <small class="text-muted form-required-message">Este campo es obligatorio</small>
+                        </div>
+                    </div>
+
+                    <!-- Cédula/Pasaporte -->
+                    <div class="col-12 col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.cedula_pasaporte.id_for_label }}" class="form-label">
+                                {{ form.cedula_pasaporte.label }}<span class="required-asterisk">*</span>
+                            </label>
+                            {{ form.cedula_pasaporte }}
+                            {% if form.cedula_pasaporte.help_text %}
+                                <small class="form-text text-muted mt-1">{{ form.cedula_pasaporte.help_text }}</small>
+                            {% endif %}
+                            {% if form.cedula_pasaporte.errors %}
+                                <div class="invalid-feedback">{{ form.cedula_pasaporte.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Fecha de Nacimiento -->
+                    <div class="col-12 col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">
+                                {{ form.fecha_nacimiento.label }}
+                            </label>
+                            <div class="input-group">
+                                {{ form.fecha_nacimiento }}
+                                <button type="button" class="btn btn-outline-info" 
+                                    onclick="document.getElementById('{{ form.fecha_nacimiento.id_for_label }}').value = ''">
+                                    <i class="bi bi-x-circle"></i> N/A
+                                </button>
+                            </div>
+                            {% if form.fecha_nacimiento.errors %}
+                                <div class="invalid-feedback">{{ form.fecha_nacimiento.errors|first }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted mt-1">Formato: DD/MM/AAAA</small>
+                        </div>
+                    </div>
+
+                    <!-- Nacionalidad -->
+                    <div class="col-12 col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.nacionalidad.id_for_label }}" class="form-label">
+                                {{ form.nacionalidad.label }}<span class="required-asterisk">*</span>
+                            </label>
+                            {{ form.nacionalidad }}
+                            {% if form.nacionalidad.errors %}
+                                <div class="invalid-feedback">{{ form.nacionalidad.errors|first }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted mt-1">Seleccione la nacionalidad</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos Laborales -->
+            <div class="mb-5">
+                <div class="edit-section-header">
+                    <div class="edit-section-icon">
+                        <i class="bi bi-building fs-5 text-white"></i>
+                    </div>
+                    <h5 class="edit-section-title">Datos Laborales</h5>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.lugar_trabajo.id_for_label }}" class="form-label">
+                                {{ form.lugar_trabajo.label }}
+                            </label>
+                            {{ form.lugar_trabajo }}
+                            {% if form.lugar_trabajo.errors %}
+                                <div class="invalid-feedback">{{ form.lugar_trabajo.errors|first }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted mt-1">Ej: Nombre de la empresa u organización</small>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.cargo.id_for_label }}" class="form-label">
+                                {{ form.cargo.label }}
+                            </label>
+                            {{ form.cargo }}
+                            {% if form.cargo.errors %}
+                                <div class="invalid-feedback">{{ form.cargo.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de Contacto -->
+            <div class="mb-5">
+                <div class="edit-section-header">
+                    <div class="edit-section-icon">
+                        <i class="bi bi-telephone-forward fs-5 text-white"></i>
+                    </div>
+                    <h5 class="edit-section-title">Contacto</h5>
+                </div>
+                <div class="row g-3">
+                    <!-- Email -->
+                    <div class="col-12 col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                {{ form.email.label }}<span class="required-asterisk">*</span>
+                            </label>
+                            <div class="input-group">
+                                {{ form.email }}
+                                <button type="button" class="btn btn-outline-info" 
+                                        onclick="document.getElementById('{{ form.email.id_for_label }}').value = 'N/A'">
+                                    <i class="bi bi-x-circle"></i> N/A
+                                </button>
+                            </div>
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">{{ form.email.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Teléfono -->
+                    <div class="col-12 col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                {{ form.telefono.label }}<span class="required-asterisk">*</span>
+                            </label>
+                            <div class="input-group">
+                                {{ form.telefono }}
+                                <button type="button" class="btn btn-outline-info" 
+                                        onclick="document.getElementById('{{ form.telefono.id_for_label }}').value = 'N/A'">
+                                    <i class="bi bi-x-circle"></i> N/A
+                                </button>
+                            </div>
+                            {% if form.telefono.errors %}
+                                <div class="invalid-feedback">{{ form.telefono.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Móvil -->
+                    <div class="col-12 col-md-6">
+                        <div class="mb-3 position-relative">
+                            <label for="{{ form.movil.id_for_label }}" class="form-label">
+                                {{ form.movil.label }}
+                            </label>
+                            <div class="input-group">
+                                {{ form.movil }}
+                                <button type="button" class="btn btn-outline-info" 
+                                        onclick="document.getElementById('{{ form.movil.id_for_label }}').value = 'N/A'">
+                                    <i class="bi bi-x-circle"></i> N/A
+                                </button>
+                            </div>
+                            {% if form.movil.errors %}
+                                <div class="invalid-feedback">{{ form.movil.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Dirección -->
+                    <div class="col-12">
+                        <div class="mb-4 position-relative">
+                            <div class="d-flex align-items-center mb-2 gap-2">
+                                <div class="edit-section-icon-sm">
+                                    <i class="bi bi-geo-alt fs-6 text-white"></i>
+                                </div>
+                                <label for="{{ form.direccion_fisica.id_for_label }}" class="form-label mb-0">
+                                    {{ form.direccion_fisica.label }}<span class="required-asterisk">*</span>
+                                </label>
+                            </div>
+                            <div class="position-relative">
+                                {{ form.direccion_fisica }}
+                                <i class="bi bi-map address-icon"></i>
+                            </div>
+                            {% if form.direccion_fisica.errors %}
+                                <div class="invalid-feedback">{{ form.direccion_fisica.errors|first }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted mt-2 d-flex align-items-center gap-2">
+                                <i class="bi bi-pin-map"></i>Incluir ciudad y referencia cercana
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Información de Contacto -->
-        <div class="mb-5">
-            <div class="d-flex align-items-center mb-4 gap-3">
-                <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-                    <i class="bi bi-telephone-forward fs-5 text-white"></i>
-                </div>
-                <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Contacto</h5>
-            </div>
-            <div class="row g-4">
-              <!-- Para Email -->
-<div class="col-12 col-md-6">
-    <div class="mb-4 position-relative">
-        <label for="{{ form.email.id_for_label }}" class="form-label">
-            {{ form.email.label }}<span class="text-danger">*</span>
-        </label>
-        <div class="input-group">
-            {{ form.email }}
-            <button type="button" class="btn btn-outline-info" 
-                    onclick="document.getElementById('{{ form.email.id_for_label }}').value = 'N/A'">
-                <i class="bi bi-x-circle"></i> N/A
+        <div class="modal-footer border-top px-4 py-3 bg-light">
+            <button type="button" class="btn btn-outline-secondary btn-edit" data-bs-dismiss="modal">
+                <i class="bi bi-x-lg me-2"></i>Cancelar
             </button>
-        </div>
-        {% if form.email.errors %}
-            <div class="invalid-feedback">{{ form.email.errors|first }}</div>
-        {% endif %}
-    </div>
-</div>
-
-                <!-- Teléfono -->
-                <div class="col-12 col-md-6">
-                    <div class="mb-4 position-relative">
-                        <label for="{{ form.telefono.id_for_label }}" class="form-label">
-                            {{ form.telefono.label }}<span class="text-danger">*</span>
-                        </label>
-                        <div class="input-group">
-                            {{ form.telefono }}
-                            <button type="button" class="btn btn-outline-info" 
-                                    onclick="document.getElementById('{{ form.telefono.id_for_label }}').value = 'N/A'">
-                                <i class="bi bi-x-circle"></i> N/A
-                            </button>
-                        </div>
-                        {% if form.telefono.errors %}
-                            <div class="invalid-feedback">{{ form.telefono.errors|first }}</div>
-                        {% endif %}
-                        <small class="form-text text-muted mt-1">{{ form.telefono.help_text }}</small>
-                    </div>
-                </div>
-
-                <!-- Móvil -->
-                <div class="col-12 col-md-6">
-                    <div class="mb-4 position-relative">
-                        <label for="{{ form.movil.id_for_label }}" class="form-label">
-                            {{ form.movil.label }}
-                        </label>
-                        <div class="input-group">
-                            {{ form.movil }}
-                            <button type="button" class="btn btn-outline-info" 
-                                    onclick="document.getElementById('{{ form.movil.id_for_label }}').value = 'N/A'">
-                                <i class="bi bi-x-circle"></i> N/A
-                            </button>
-                        </div>
-                        {% if form.movil.errors %}
-                            <div class="invalid-feedback">{{ form.movil.errors|first }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Dirección -->
-                <div class="col-12">
-                    <div class="mb-4 position-relative">
-                        <label for="{{ form.direccion_fisica.id_for_label }}" class="form-label">
-                            {{ form.direccion_fisica.label }}<span class="text-danger">*</span>
-                        </label>
-                        {{ form.direccion_fisica }}
-                        {% if form.direccion_fisica.errors %}
-                            <div class="invalid-feedback">{{ form.direccion_fisica.errors|first }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-       
-
-        <div class="modal-footer border-top border-secondary px-4 pb-4 pt-3">
-           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg me-2"></i>Cancelar
-                    </button>
-            <button type="submit" class="btn btn-lg btn-info fw-medium">
-                <i class="bi bi-arrow-repeat me-2"></i>Actualizar Cliente
+            <button type="submit" class="btn btn-edit-primary text-white">
+                <i class="bi bi-save2 me-2 text-white"></i>Actualizar Cliente
             </button>
         </div>
     </form>
 </div>
 
+{% load static %}
+<style>
+/* Estilos personalizados para edición */
+.modal-edit-header {
+    border-bottom: none;
+    padding: 1.25rem 2rem;
+    background: #f8f9fa;
+}
+
+.modal-edit-title {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+}
+
+.edit-section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 0.5rem 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.edit-section-icon {
+    background: #3498db;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    margin-right: 1rem;
+}
+
+.edit-section-title {
+    color: #2c3e50;
+    font-weight: 500;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.form-control-edit {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control-edit:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.btn-edit-primary {
+    background: #3498db;
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-edit-primary:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+.input-group-edit .btn {
+    border: 1px solid #e0e0e0;
+    background: #f8f9fa;
+    color: #7f8c8d;
+}
+
+.input-group-edit .btn:hover {
+    background: #e9ecef;
+}
+
+.address-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7f8c8d;
+}
+</style>

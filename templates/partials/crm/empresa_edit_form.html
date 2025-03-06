@@ -1,5 +1,200 @@
 {% load static %}
-<!-- partials/crm/empresa_edit_form.html -->
+<style>
+/* Estilos personalizados actualizados */
+.modal-empresa-header {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 1.5rem 2rem;
+    background: #f8f9fa;
+    position: relative;
+}
+
+.modal-empresa-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #4a9fff, #2d70cc);
+}
+
+.modal-empresa-title {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+}
+
+.modal-empresa-title i {
+    color: #2d70cc !important;
+    font-size: 1.5rem;
+}
+
+.section-header-empresa {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 0;
+    background: transparent;
+}
+
+.section-icon-empresa {
+    background: #4a9fff;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    margin-right: 1.2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.section-icon-empresa i {
+    color: white !important;
+    font-size: 1.2rem;
+}
+
+.section-title-empresa {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+    margin: 0;
+    text-transform: uppercase;
+    font-family: 'Inter', sans-serif;
+}
+
+.form-label-empresa {
+    font-weight: 500;
+    color: #34495e;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.form-control-empresa {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.form-control-empresa:focus {
+    border-color: #4a9fff;
+    box-shadow: 0 0 0 3px rgba(74, 159, 255, 0.2);
+}
+
+.btn-empresa-primary {
+    background: #2d70cc;
+    border: none;
+    padding: 0.75rem 2rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-empresa-primary:hover {
+    background: #1a5eb5;
+    transform: translateY(-1px);
+}
+
+.phone-input-group .btn {
+    border: 1px solid #e0e0e0;
+    background: #f8f9fa;
+    color: #7f8c8d;
+    padding: 0.5rem 1rem;
+    border-radius: 0 8px 8px 0 !important;
+}
+
+.phone-input-group .btn:hover {
+    background: #e9ecef;
+    color: #2d70cc;
+}
+
+.phone-input-group .btn i {
+    color: inherit !important;
+}
+
+.address-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #2d70cc !important;
+}
+
+.toast-empresa {
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-left: 4px solid #2d70cc;
+}
+
+.toast-header-empresa {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.toast-header-empresa i {
+    color: #2d70cc !important;
+    margin-right: 0.5rem;
+}
+
+.btn-danger {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+
+.btn-danger:hover {
+    background-color: #bb2d3b !important;
+    border-color: #b02a37 !important;
+}
+
+.btn-empresa-primary {
+    background-color: #2d70cc !important;
+    border-color: #2d70cc !important;
+}
+
+.btn-empresa-primary:hover {
+    background-color: #245fa3 !important;
+    border-color: #215797 !important;
+}
+.input-icon-container {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+}
+
+.input-icon-right {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 5;
+}
+
+.input-group input,
+.input-group textarea {
+    padding-right: 40px !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group textarea:focus {
+    border-color: #2d70cc;
+    box-shadow: 0 0 0 3px rgba(45, 112, 204, 0.1);
+}
+
+</style>
+
 <div class="modal fade" id="empresaEditModal" tabindex="-1" aria-labelledby="empresaEditModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -7,35 +202,31 @@
                 {% csrf_token %}
                 <input type="hidden" name="_method" value="PUT">
                 
-                <div class="modal-header py-3">
-                    <h5 class="modal-title fw-semibold">
+                <div class="modal-header modal-empresa-header">
+                    <h5 class="modal-empresa-title">
                         <i class="bi bi-pencil-square me-2"></i>Editar Empresa
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 
                 <div class="modal-body p-4">
-                    <!-- Línea decorativa superior -->
-                    <div class="position-absolute top-0 start-0 end-0" style="height: 3px; background: linear-gradient(90deg, #4a9fff, #2d70cc);"></div>
-
                     <!-- Estado de la Empresa -->
                     <div class="mb-5">
-                        <div class="d-flex align-items-center mb-4 gap-3">
-                            <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-                                <i class="bi bi-activity fs-5 text-white"></i>
+                        <div class="section-header-empresa">
+                            <div class="section-icon-empresa">
+                                <i class="bi bi-activity"></i>
                             </div>
-                            <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Estado de la Empresa</h5>
+                            <h5 class="section-title-empresa">Estado de la Empresa</h5>
                         </div>
-                        <div class="row g-4">
+                        <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                <div class="mb-3 position-relative">
+                                    <label for="{{ form.estado.id_for_label }}" class="form-label-empresa">
                                         {{ form.estado.label }}<span class="text-danger">*</span>
                                     </label>
                                     {{ form.estado }}
-                                    <div class="invalid-feedback" style="display: none;"></div>
-                                    <small class="form-text text-muted mt-1">
-                                        Opciones: Activo, Inactivo, Potencial
+                                    <small class="form-text text-muted mt-2 d-flex align-items-center gap-2">
+                                        <i class="bi bi-info-circle text-primary"></i>Opciones: Activo, Inactivo, Potencial
                                     </small>
                                 </div>
                             </div>
@@ -44,54 +235,47 @@
 
                     <!-- Datos Principales -->
                     <div class="mb-5">
-                        <div class="d-flex align-items-center mb-4 gap-3">
-                            <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-                                <i class="bi bi-building fs-5 text-white"></i>
+                        <div class="section-header-empresa">
+                            <div class="section-icon-empresa">
+                                <i class="bi bi-building"></i>
                             </div>
-                            <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Datos Principales</h5>
+                            <h5 class="section-title-empresa">Datos Principales</h5>
                         </div>
-                        <div class="row g-4">
-                            <!-- Nombre Comercial -->
+                        <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.nombre_comercial.id_for_label }}" class="form-label">
+                                <div class="mb-3 position-relative">
+                                    <label for="{{ form.nombre_comercial.id_for_label }}" class="form-label-empresa">
                                         {{ form.nombre_comercial.label }}<span class="text-danger">*</span>
                                     </label>
                                     {{ form.nombre_comercial }}
-                                    <div class="invalid-feedback" style="display: none;"></div>
                                 </div>
                             </div>
-
-                            <!-- Razón Social -->
+                            
                             <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.razon_social.id_for_label }}" class="form-label">
+                                <div class="mb-3 position-relative">
+                                    <label for="{{ form.razon_social.id_for_label }}" class="form-label-empresa">
                                         {{ form.razon_social.label }}<span class="text-danger">*</span>
                                     </label>
                                     {{ form.razon_social }}
-                                    <div class="invalid-feedback" style="display: none;"></div>
                                 </div>
                             </div>
-
+                            
                             <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.rnc.id_for_label }}" class="form-label">
+                                <div class="mb-3 position-relative">
+                                    <label for="{{ form.rnc.id_for_label }}" class="form-label-empresa">
                                         {{ form.rnc.label }}<span class="text-danger">*</span>
                                     </label>
                                     {{ form.rnc }}
-                                    <div class="invalid-feedback" style="display: none;"></div>
                                     <small class="form-text text-muted mt-1">{{ form.rnc.help_text }}</small>
                                 </div>
                             </div>
-
-                            <!-- Sitio Web -->
+                            
                             <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.sitio_web.id_for_label }}" class="form-label">
+                                <div class="mb-3 position-relative">
+                                    <label for="{{ form.sitio_web.id_for_label }}" class="form-label-empresa">
                                         {{ form.sitio_web.label }}
                                     </label>
                                     {{ form.sitio_web }}
-                                    <div class="invalid-feedback" style="display: none;"></div>
                                 </div>
                             </div>
                         </div>
@@ -99,32 +283,28 @@
 
                     <!-- Representante Legal -->
                     <div class="mb-5">
-                        <div class="d-flex align-items-center mb-4 gap-3">
-                            <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-                                <i class="bi bi-person-badge fs-5 text-white"></i>
+                        <div class="section-header-empresa">
+                            <div class="section-icon-empresa">
+                                <i class="bi bi-person-badge"></i>
                             </div>
-                            <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Representante Legal</h5>
+                            <h5 class="section-title-empresa">Representante Legal</h5>
                         </div>
-                        <div class="row g-4">
-                            <!-- Nombre del Representante -->
+                        <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.representante.id_for_label }}" class="form-label">
+                                <div class="mb-3 position-relative">
+                                    <label for="{{ form.representante.id_for_label }}" class="form-label-empresa">
                                         {{ form.representante.label }}<span class="text-danger">*</span>
                                     </label>
                                     {{ form.representante }}
-                                    <div class="invalid-feedback" style="display: none;"></div>
                                 </div>
                             </div>
-
-                            <!-- Cargo del Representante -->
+                            
                             <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.cargo_representante.id_for_label }}" class="form-label">
+                                <div class="mb-3 position-relative">
+                                    <label for="{{ form.cargo_representante.id_for_label }}" class="form-label-empresa">
                                         {{ form.cargo_representante.label }}<span class="text-danger">*</span>
                                     </label>
                                     {{ form.cargo_representante }}
-                                    <div class="invalid-feedback" style="display: none;"></div>
                                 </div>
                             </div>
                         </div>
@@ -132,80 +312,89 @@
 
                     <!-- Información de Contacto -->
                     <div class="mb-5">
-                        <div class="d-flex align-items-center mb-4 gap-3">
-                            <div class="bg-info rounded-circle p-2 d-flex align-items-center">
-                                <i class="bi bi-telephone-forward fs-5 text-white"></i>
+                        <div class="section-header-empresa">
+                            <div class="section-icon-empresa">
+                                <i class="bi bi-telephone-forward"></i>
                             </div>
-                            <h5 class="text-info mb-0 text-uppercase fw-light letter-spacing-1">Contacto</h5>
+                            <h5 class="section-title-empresa">Contacto</h5>
                         </div>
-                        <div class="row g-4">
-                            <!-- Teléfono Principal -->
+                        <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                <div class="mb-3 position-relative">
+                                    <label for="{{ form.telefono.id_for_label }}" class="form-label-empresa">
                                         {{ form.telefono.label }}<span class="text-danger">*</span>
                                     </label>
                                     <div class="input-group phone-input-group">
                                         {{ form.telefono }}
-                                        <button type="button" class="btn btn-outline-info" 
+                                        <button type="button" class="btn" 
                                                 onclick="document.getElementById('{{ form.telefono.id_for_label }}').value = 'N/A'">
                                             <i class="bi bi-x-circle"></i> N/A
                                         </button>
                                     </div>
-                                    <div class="invalid-feedback" style="display: none;"></div>
                                     <small class="form-text text-muted mt-1">{{ form.telefono.help_text }}</small>
                                 </div>
                             </div>
-
-                            <!-- Teléfono Secundario -->
+                            
                             <div class="col-12 col-md-6">
-                                <div class="mb-4 position-relative">
-                                    <label for="{{ form.telefono2.id_for_label }}" class="form-label">
+                                <div class="mb-3 position-relative">
+                                    <label for="{{ form.telefono2.id_for_label }}" class="form-label-empresa">
                                         {{ form.telefono2.label }}
                                     </label>
                                     <div class="input-group phone-input-group">
                                         {{ form.telefono2 }}
-                                        <button type="button" class="btn btn-outline-info" 
+                                        <button type="button" class="btn" 
                                                 onclick="document.getElementById('{{ form.telefono2.id_for_label }}').value = 'N/A'">
                                             <i class="bi bi-x-circle"></i> N/A
                                         </button>
                                     </div>
-                                    <div class="invalid-feedback" style="display: none;"></div>
-                                    <small class="form-text text-muted mt-1">{{ form.telefono2.help_text }}</small>
                                 </div>
                             </div>
-
-                               
-<div class="col-12 col-md-6">
-    <div class="mb-4 position-relative">
-        <label for="{{ form.direccion_electronica.id_for_label }}" class="form-label">
-            {{ form.direccion_electronica.label }}<span class="text-danger">*</span>
-        </label>
-        {{ form.direccion_electronica }}
-        <div class="invalid-feedback" style="display: none;"></div>
-        <small class="form-text text-muted mt-1">{{ form.direccion_electronica.help_text }}</small>
-    </div>
-</div>
-
-                            <!-- Dirección Física -->
+                            
+                            <div class="col-12 col-md-6">
+                                <div class="mb-3 position-relative">
+                                    <label for="{{ form.direccion_electronica.id_for_label }}" class="form-label-empresa">
+                                        {{ form.direccion_electronica.label }}<span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.direccion_electronica }}
+                                </div>
+                            </div>
+                            
                             <div class="col-12">
                                 <div class="mb-4 position-relative">
-                                    <label for="{{ form.direccion_fisica.id_for_label }}" class="form-label">
-                                        {{ form.direccion_fisica.label }}<span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.direccion_fisica }}
-                                    <div class="invalid-feedback" style="display: none;"></div>
+                                    <div class="d-flex align-items-center mb-3 gap-2">
+                                        <div class="input-icon-container bg-primary">
+                                            <i class="bi bi-geo-alt fs-5 text-white"></i>
+                                        </div>
+                                        <label for="{{ form.direccion_fisica.id_for_label }}" class="form-label mb-0">
+                                            {{ form.direccion_fisica.label }}<span class="text-danger">*</span>
+                                        </label>
+                                    </div>
+                                    <div class="input-group">
+                                        {{ form.direccion_fisica }}
+                                        <span class="input-icon-right">
+                                            <i class="bi bi-map text-primary"></i>
+                                        </span>
+                                    </div>
+                                    {% if form.direccion_fisica.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.direccion_fisica.errors|first }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted mt-2 d-flex align-items-center gap-2">
+                                        <i class="bi bi-info-circle text-primary"></i>Ejemplo: Calle, Número, Ciudad, Provincia
+                                    </small>
                                 </div>
+                            </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="modal-footer border-top px-4 py-3">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <div class="modal-footer border-top px-4 py-3 bg-light">
+                    <button type="button" class="btn btn-danger text-white" data-bs-dismiss="modal">
                         <i class="bi bi-x-lg me-2"></i>Cancelar
                     </button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-empresa-primary text-white" style="background-color: #2d70cc;">
                         <i class="bi bi-save2 me-2"></i>Guardar Cambios
                     </button>
                 </div>
@@ -214,14 +403,9 @@
     </div>
 </div>
 
-<div id="liveToast" class="toast position-fixed bottom-0 end-0 m-3">
-    <div class="toast-header">
-        <i class="toast-icon bi"></i>
-        <strong class="me-auto">Notificación</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-    </div>
-    <div class="toast-body"></div>
-</div>
+
+
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

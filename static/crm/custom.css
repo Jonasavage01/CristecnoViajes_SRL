@@ -1,152 +1,6 @@
 /* ========== Formularios Tema Claro ========== */
-#clienteForm {
-    .modal-content {
-        background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    }
 
-    .modal-header {
-        border-bottom: 2px solid var(--primary-color);
-        padding: 1.5rem 2rem;
-        
-        .modal-title {
-            color: var(--dark-text);
-            font-weight: 600;
-            font-size: 1.25rem;
-            
-            i {
-                color: var(--primary-color);
-            }
-        }
-    }
 
-    .modal-body {
-        padding: 2rem;
-    }
-
-    .form-label {
-        font-weight: 500;
-        color: var(--dark-text);
-        margin-bottom: 0.75rem;
-        font-size: 0.95rem;
-        
-        span.text-danger {
-            color: var(--danger-color) !important;
-        }
-    }
-
-    .form-control {
-        background: #ffffff !important;
-        border: 2px solid #dee2e6 !important;
-        color: var(--dark-text) !important;
-        padding: 0.75rem 1.25rem !important;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        transition: all 0.2s ease;
-        
-        &:focus {
-            border-color: var(--primary-color) !important;
-            box-shadow: 0 0 0 3px rgba(42, 92, 130, 0.15) !important;
-        }
-        
-        &::placeholder {
-            color: #adb5bd !important;
-            opacity: 1;
-        }
-    }
-
-    .input-group-text {
-        background: #f8f9fa;
-        border-color: #dee2e6;
-        color: var(--muted-text);
-    }
-
-    .invalid-feedback {
-        font-size: 0.85rem;
-        margin-top: 0.25rem;
-    }
-
-    .btn-outline-secondary {
-        border-color: #dee2e6;
-        color: var(--muted-text);
-        
-        &:hover {
-            background: #f8f9fa;
-        }
-    }
-
-    .btn-primary {
-        background: var(--primary-color);
-        border: none;
-        padding: 0.75rem 1.75rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        
-        &:hover {
-            background: #1f4a6d;
-            transform: translateY(-1px);
-        }
-    }
-
-    /* Secciones del formulario */
-    .d-flex.align-items-center.mb-4 {
-        margin-bottom: 2rem !important;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #eee;
-        
-        .bg-info {
-            background: var(--primary-color) !important;
-            padding: 0.75rem !important;
-            
-            i {
-                font-size: 1.25rem;
-            }
-        }
-        
-        h5 {
-            color: var(--dark-text);
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-    }
-
-    /* Línea decorativa */
-    .position-absolute.top-0 {
-        height: 4px !important;
-        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)) !important;
-        opacity: 0.9;
-    }
-
-    /* Botones N/A */
-    .btn-outline-info {
-        border-color: #dee2e6;
-        color: var(--muted-text);
-        
-        &:hover {
-            background: #f8f9fa;
-        }
-    }
-
-    /* Campos de fecha */
-    input[type="date"]::-webkit-calendar-picker-indicator {
-        filter: invert(0.5);
-    }
-
-    @media (max-width: 768px) {
-        .modal-dialog {
-            margin: 1rem;
-        }
-        
-        .modal-body {
-            padding: 1.5rem;
-        }
-        
-        .form-control {
-            font-size: 0.9rem;
-        }
-    }
-}
 
 /* ========== Botones y Paginación ========== */
 .btn {
@@ -190,15 +44,7 @@
 }
 
 /* ========== Utilidades ========== */
-.avatar {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    font-weight: 500;
-}
+
 
 .invalid-feedback {
     display: none;
@@ -223,7 +69,7 @@ input[value="N/A"] {
 }
 
 
-/* cliente detail PAGE */
+/* cliente/ empresas detail PAGE */
 
 /* Estructura principal */
 .client-detail-card {
