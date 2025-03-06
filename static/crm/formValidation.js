@@ -96,10 +96,10 @@ const FieldValidators = {
     },
     
     email: value => {
-        const emailValue = value.trim().toUpperCase();
-        if (emailValue === 'N/A') return true;
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
-    },
+    const emailValue = value.trim().toUpperCase();
+    if (emailValue === 'N/A') return true;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+},
     
     fecha_nacimiento: value => {
         if (!value) return true;
@@ -204,8 +204,8 @@ const handleNASelection = (fieldId) => {
     const field = document.getElementById(fieldId);
     if (field) {
         field.value = 'N/A';
-        validateField(field);
         field.dispatchEvent(new Event('input'));
+        validateField(field);
     }
 };
 

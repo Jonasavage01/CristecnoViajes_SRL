@@ -53,7 +53,10 @@ class ClienteForm(forms.ModelForm):
             'cedula_pasaporte': 'Permite números y letras para pasaportes internacionales',
             'telefono': 'Números con + opcional para internacional. Ej: 18091234567 ó +18091234567',
             'movil': 'Números con + opcional para internacional. Ej: 18091234567 ó +18091234567',
-            'email': 'Ejemplo: nombre@dominio.com',
+            'email': forms.TextInput(attrs={
+            'placeholder': 'Ej: nombre@dominio.com o N/A',
+            'pattern': '^([^@\s]+@[^@\s]+\.[^@\s]+|N/A)$'
+        }),
             'documento': 'Formatos aceptados: PDF, DOC, DOCX (Máx. 5MB)',
         }
         labels = {
@@ -103,9 +106,18 @@ class ClienteForm(forms.ModelForm):
         return self._clean_phone_field('móvil', self.cleaned_data.get('movil', ''))
 
     def _validate_unique_email_and_cedula(self):
-        """Validación de unicidad considerando la instancia actual"""
-        cedula = self.cleaned_data.get('cedula_pasaporte')
+        """Validación de unicidad mejorada"""
         email = self.cleaned_data.get('email')
+        cedula = self.cleaned_data.get('cedula_pasaporte')
+        
+        # Validar email solo si no es N/A
+        if email and email != self.NA_CHOICE:
+            qs = Cliente.objects.filter(email__iexact=email)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                self.add_error('email', 'Este correo ya está registrado')
+
         
         if cedula:
             qs = Cliente.objects.filter(cedula_pasaporte__iexact=cedula).exclude(pk=self.instance.pk)
@@ -117,18 +129,32 @@ class ClienteForm(forms.ModelForm):
             if qs.exists():
                 self.add_error('email', 'Este correo ya está registrado')
                 
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().upper()
+        if email == self.NA_CHOICE:
+            return self.NA_CHOICE
+        if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+            raise ValidationError("Correo electrónico inválido")
+        return email
+
     def clean(self):
         cleaned_data = super().clean()
-        # Actualizar campos si contienen "N/A"
+        # Convertir N/A a mayúsculas y validar al menos un contacto
         for field in ['telefono', 'movil', 'email']:
-            if cleaned_data.get(field, '').strip().upper() == self.NA_CHOICE:
+            value = cleaned_data.get(field, '')
+            if isinstance(value, str) and value.strip().upper() == self.NA_CHOICE:
                 cleaned_data[field] = self.NA_CHOICE
-        # Validar que al menos un método de contacto esté presente
-        if (cleaned_data.get('telefono') == self.NA_CHOICE and
-            cleaned_data.get('movil') == self.NA_CHOICE and
-            not cleaned_data.get('email')):
+
+        # Validar al menos un método de contacto válido
+        contactos = [
+            cleaned_data.get('telefono') not in [self.NA_CHOICE, ''],
+            cleaned_data.get('movil') not in [self.NA_CHOICE, ''],
+            cleaned_data.get('email') not in [self.NA_CHOICE, '']
+        ]
+        
+        if not any(contactos):
             raise ValidationError("Debe proporcionar al menos un método de contacto válido")
-        # Validación de unicidad de cédula y email
+        
         self._validate_unique_email_and_cedula()
         return cleaned_data
 

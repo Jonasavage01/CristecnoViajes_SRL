@@ -50,7 +50,12 @@ class Cliente(models.Model):
     )
     lugar_trabajo = models.CharField('Lugar de Trabajo', max_length=100, blank=True)
     cargo = models.CharField('Cargo', max_length=100, blank=True)
-    email = models.EmailField('Correo Electrónico', unique=True)
+    email = models.CharField(
+    'Correo Electrónico', 
+    max_length=254, 
+    unique=True,
+    help_text='Ejemplo: nombre@dominio.com o N/A'
+)
     direccion_fisica = models.TextField('Dirección Física')
     telefono = models.CharField(
         'Teléfono', 

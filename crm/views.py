@@ -248,6 +248,11 @@ class CRMView(AuthRequiredMixin, ListView):
         return redirect('crm_home')
 
     def post(self, request, *args, **kwargs):
+        post_data = request.POST.copy()
+        for field in ['email', 'telefono', 'movil']:
+            if post_data.get(field, '').strip().upper() == 'N/A':
+                post_data[field] = 'N/A'
+                
         form = ClienteForm(request.POST, request.FILES)
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         try:
@@ -375,6 +380,7 @@ class ClienteUpdateView(AuthRequiredMixin,UpdateView):
         return context
 
     def post(self, request, *args, **kwargs):
+        
         """Override para asegurar la instancia antes de procesar el formulario"""
         logger.debug(f"Editando cliente - Método POST - Usuario: {request.user}")
         self.object = self.get_object()
