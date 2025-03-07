@@ -184,5 +184,38 @@
     </div>
 </div>
 
+<!-- Modal de Notificación Mejorado -->
+<div id="notificationModal" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-body text-center p-5">
+                <div class="notification-icon-container mb-4">
+                    <i class="bi notification-icon fs-1"></i>
+                </div>
+                <h5 class="notification-message fw-semibold mb-0 text-dark"></h5>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
+
+<style>
+    .notification-icon-container {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid;
+    }
+    
+    .notification-icon-container .bi-check-circle-fill { color: #28a745; border-color: #28a745; }
+    .notification-icon-container .bi-x-circle-fill { color: #dc3545; border-color: #dc3545; }
+    .notification-icon-container .bi-info-circle-fill { color: #17a2b8; border-color: #17a2b8; }
+    </style>

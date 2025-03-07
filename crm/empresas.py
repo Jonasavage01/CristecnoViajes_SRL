@@ -503,7 +503,7 @@ class NotaEmpresaCreateView(AuthRequiredMixin,CreateView):
             }, status=400)
         return super().form_invalid(form)
 
-# En views.py
+@method_decorator(require_http_methods(["POST"]), name='dispatch')
 class DeleteDocumentoEmpresaView(AuthRequiredMixin,DeleteView):
     allowed_roles = ['admin', 'clientes']
     model = DocumentoEmpresa
@@ -515,15 +515,21 @@ class DeleteDocumentoEmpresaView(AuthRequiredMixin,DeleteView):
         return reverse_lazy('empresa_detail', kwargs={'pk': self.kwargs['pk']})
 
     def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        success_message = "Documento eliminado exitosamente"
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            self.object = self.get_object()
             self.object.delete()
-            return JsonResponse({'success': True, 'message': success_message})
-        return super().delete(request, *args, **kwargs)
+        
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return HttpResponse(status=204)  # 204 No Content
+        
+            return redirect(self.get_success_url())
+    
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': str(e)}, status=400)
+            raise
 
-
+@method_decorator(require_http_methods(["POST"]), name='dispatch')
 class DeleteNotaEmpresaView(AuthRequiredMixin,DeleteView):
     allowed_roles = ['admin', 'clientes']
     model = NotaEmpresa
@@ -535,14 +541,19 @@ class DeleteNotaEmpresaView(AuthRequiredMixin,DeleteView):
         return reverse_lazy('empresa_detail', kwargs={'pk': self.kwargs['pk']})
 
     def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        success_message = "Nota eliminada exitosamente"
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            self.object = self.get_object()
             self.object.delete()
-            return JsonResponse({'success': True, 'message': success_message})
-        return super().delete(request, *args, **kwargs)
-
+        
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return HttpResponse(status=204)  # 204 No Content
+        
+            return redirect(self.get_success_url())
+    
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': str(e)}, status=400)
+        raise
 
 
 class EmpresaPDFView(AuthRequiredMixin,DetailView):

@@ -193,17 +193,17 @@
                 </div>
 
         <!-- Pestaña Documentos - Versión Mejorada -->
-<div class="tab-pane fade" id="docsTab">
-    <div class="row px-lg-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm overflow-hidden">
-                <!-- Card Header Mejorado -->
-                <div class="card-header bg-primary bg-opacity-10 border-bottom border-2 border-primary py-3">
-                    <h5 class="mb-0 text-dark fw-semibold">
-                        <i class="bi bi-file-earmark-arrow-up me-2 text-primary"></i>
-                        Gestión de Documentos
-                    </h5>
-                </div>
+        <div class="tab-pane fade" id="docsTab">
+            <div class="row px-lg-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm overflow-hidden">
+                        <!-- Card Header Mejorado -->
+                        <div class="card-header bg-primary bg-opacity-10 border-bottom border-2 border-primary py-3">
+                            <h5 class="mb-0 text-dark fw-semibold">
+                                <i class="bi bi-file-earmark-arrow-up me-2 text-primary"></i>
+                                Gestión de Documentos
+                            </h5>
+                        </div>
                 
                 <!-- Card Body Mejorado -->
                 <div class="card-body p-lg-4">
@@ -238,41 +238,41 @@
                         </div>
                     </form>
 
-                    <!-- Separador Estilizado -->
-                    <div class="d-flex align-items-center my-4">
-                        <hr class="flex-grow-1 border-top border-2">
-                        <span class="mx-3 small text-muted">Documentos Adjuntos</span>
-                        <hr class="flex-grow-1 border-top border-2">
+                    <!-- Separador con icono -->
+                    <div class="position-relative my-4">
+                        <hr class="border-top border-2">
+                        <div class="position-absolute top-50 start-50 translate-middle bg-white px-3">
+                            <i class="bi bi-files text-muted"></i>
+                        </div>
                     </div>
-
-                    <!-- Grid de Documentos Mejorado -->
-                    <div id="documentsContainer" class="row g-4">
+                       <!-- Grid de Documentos Mejorado -->
+                       <div id="documentsContainer" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-3">
                         {% for documento in documentos %}
-                        <div class="col-12 col-sm-6 col-xl-4">
-                            <div class="card border-0 shadow-sm h-100 hover-shadow transition-all">
-                                <div class="card-body">
+                        <div class="col" data-item-id="doc-{{ documento.pk }}">
+                            <div class="card border-0 shadow-sm h-100 hover-shadow-lg transition-all">
+                                <div class="card-body d-flex flex-column">
                                     <!-- Preview/Icono -->
                                     {% if documento.extension in 'jpg,jpeg,png' %}
-                                    <div class="document-preview ratio ratio-16x9 mb-3">
+                                    <div class="document-preview ratio ratio-1x1 mb-3 rounded-3 overflow-hidden">
                                         <img src="{{ documento.archivo.url }}" 
-                                             class="object-fit-cover rounded"
+                                             class="object-fit-cover"
                                              alt="Preview {{ documento.nombre_archivo }}"
                                              loading="lazy">
                                     </div>
                                     {% else %}
-                                    <div class="text-center py-4">
+                                    <div class="text-center py-3 bg-primary bg-opacity-05 rounded-3 mb-3">
                                         <i class="bi {{ documento.icon_class }} display-5 text-primary opacity-75"></i>
                                     </div>
                                     {% endif %}
                                     
                                     <!-- Detalles del Documento -->
-                                    <div class="d-flex flex-column">
-                                        <h6 class="mb-1 text-truncate fw-semibold">{{ documento.nombre_archivo }}</h6>
-                                        <div class="d-flex justify-content-between small">
-                                            <span class="badge bg-primary bg-opacity-10 text-primary">
+                                    <div class="d-flex flex-column flex-grow-1">
+                                        <h6 class="mb-1 text-truncate fw-semibold small">{{ documento.nombre_archivo }}</h6>
+                                        <div class="d-flex justify-content-between align-items-center small mt-auto">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary text-truncate">
                                                 {{ documento.get_tipo_display }}
                                             </span>
-                                            <span class="text-muted">
+                                            <span class="text-muted ms-2">
                                                 {{ documento.fecha_subida|date:"d/m/Y" }}
                                             </span>
                                         </div>
@@ -283,36 +283,39 @@
                                 <div class="card-footer bg-transparent border-0 pt-0 d-flex justify-content-end gap-2">
                                     <a href="{{ documento.archivo.url }}" 
                                        target="_blank"
-                                       class="btn btn-icon btn-sm btn-outline-primary rounded-circle"
+                                       class="btn btn-icon btn-sm btn-light rounded-3"
                                        data-bs-toggle="tooltip" 
                                        title="Vista previa">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                     <a href="{{ documento.archivo.url }}" 
                                        download
-                                       class="btn btn-icon btn-sm btn-outline-secondary rounded-circle"
+                                       class="btn btn-icon btn-sm btn-light rounded-3"
                                        data-bs-toggle="tooltip" 
                                        title="Descargar">
                                         <i class="bi bi-download"></i>
                                     </a>
-                                    <form method="post" action="{% url 'delete_documento_empresa' pk=empresa.pk doc_pk=documento.pk %}">
+                                    <form method="post" 
+                                          action="{% url 'delete_documento_empresa' pk=empresa.pk doc_pk=documento.pk %}"
+                                          class="d-inline">
                                         {% csrf_token %}
-                                        <button type="button" 
-                                                class="btn btn-icon btn-sm btn-outline-danger rounded-circle delete-document">
-                                            <i class="bi bi-trash"></i>
+                                        <button type="submit" 
+                                                class="btn btn-icon btn-sm btn-light rounded-3 delete-document"
+                                                data-bs-toggle="tooltip"
+                                                title="Eliminar">
+                                            <i class="bi bi-trash text-danger"></i>
                                         </button>
                                     </form>
-                                </div>
                                 </div>
                             </div>
                         </div>
                         {% empty %}
                         <!-- Estado Vacío Mejorado -->
-                        <div class="col-12 text-center py-5">
-                            <div class="empty-state">
-                                <i class="bi bi-folder-x display-4 text-muted opacity-50"></i>
-                                <h6 class="mt-3 text-muted fw-semibold">No se encontraron documentos</h6>
-                                <p class="small text-muted mb-0">Sube tu primer documento usando el formulario superior</p>
+                        <div class="col-12">
+                            <div class="empty-state text-center p-5 bg-light rounded-3 w-100">
+                                <i class="bi bi-folder-x display-4 text-muted opacity-50 mb-3"></i>
+                                <h5 class="text-muted fw-semibold mb-2">No se encontraron documentos</h5>
+                                <p class="text-muted mb-0 small">Utiliza el formulario superior para subir tu primer documento</p>
                             </div>
                         </div>
                         {% endfor %}
@@ -322,7 +325,6 @@
         </div>
     </div>
 </div>
-
 
                 <!-- Pestaña Notas -->
                 <div class="tab-pane fade" id="notesTab">
@@ -350,7 +352,7 @@
 
                                     <div class="notes-timeline" id="notesContainer">
                                         {% for nota in notas %}
-                                        <div class="note-item mb-3">
+                                        <div class="note-item mb-3" data-item-id="note-{{ nota.pk }}">
                                             <div class="card border-0 shadow-sm">
                                                 <div class="card-body">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -369,9 +371,11 @@
                                                         <form method="post" 
       action="{% url 'delete_nota_empresa' pk=empresa.pk nota_pk=nota.pk %}">
     {% csrf_token %}
-    <button type="submit" class="btn btn-link text-danger btn-sm">
-        <i class="bi bi-trash"></i>
-    </button>
+    <button type="submit" 
+    class="btn btn-danger delete-note"
+    data-delete-url="{% url 'delete_nota_empresa' pk=empresa.pk nota_pk=nota.pk %}">
+<i class="bi bi-trash"></i>
+</button>
 </form>
                                                     </div>
                                                     <p class="mb-0 text-muted">{{ nota.contenido }}</p>
@@ -394,13 +398,80 @@
         </div>
     </div>
 </div>
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmationModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>Confirmar acción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar este elemento?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+
+    /* Estilos para el modal de notificación */
+    #notificationModal .modal-content {
+        border: none;
+        border-radius: 1rem;
+    }
+    
+    #notificationModal .bi {
+        font-size: 3rem;
+    }
+    
+    #notificationModal .modal-body {
+        padding: 2rem;
+    }
+    
+    #notificationModal .notification-message {
+        font-size: 1.25rem;
+        font-weight: 500;
+    }
+    
+    /* Animaciones personalizadas */
+    .modal.fade .modal-dialog {
+        transform: scale(0.9);
+        transition: transform 0.3s ease-out;
+    }
+    
+    .modal.show .modal-dialog {
+        transform: scale(1);
+    }
+
+    .document-preview img {
+        transition: transform 0.3s ease;
+    }
+    .document-preview:hover img {
+        transform: scale(1.05);
+    }
+    .hover-shadow-lg {
+        transition: box-shadow 0.2s ease;
+    }
+    .hover-shadow-lg:hover {
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+    }
+    .bg-opacity-05 {
+        background-color: rgba(var(--bs-primary-rgb), 0.05) !important;
+    }
+</style>
 
 {% include "partials/crm/empresa_form_modal.html" %}
 
 
 {% endblock %}
 
+
 {% block extra_js %}
-<script src="{% static 'crm/empresas.js' %}"></script>
 <script src="{% static 'crm/empresa_detail.js' %}"></script>
+<script src="{% static 'crm/empresas.js' %}"></script>
+
 {% endblock %}
