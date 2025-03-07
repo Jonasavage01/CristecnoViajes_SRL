@@ -10,6 +10,11 @@ from .models import Cliente
 from .export_utils import exportar_clientes
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+import json  # Para serializar los datos
+from django.urls import reverse  # Para generar URLs
+from django.utils.html import format_html
+from django.views.generic import DetailView
+
 
 
 # Django core imports
@@ -275,7 +280,7 @@ class CRMView(AuthRequiredMixin, ListView):
 
 
 
-class ClienteDetailView(AuthRequiredMixin,DetailView):
+class ClienteDetailView(AuthRequiredMixin, DetailView):
     model = Cliente
     template_name = "crm/cliente_detail.html"
     context_object_name = 'cliente'
@@ -283,6 +288,7 @@ class ClienteDetailView(AuthRequiredMixin,DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        documentos = self.object.documentos.all()
         cliente = self.object
         
         icon_map = {
@@ -336,29 +342,35 @@ class ClienteDetailView(AuthRequiredMixin,DetailView):
                 ]
             }
         ]
-        
+
         # Documentos adjuntos
         context['documentos_json'] = [
-    {
-        'url': doc.archivo.url,
-        'name': doc.nombre_archivo,
-        'type': doc.extension,
-        'upload_date': doc.fecha_subida.strftime("%d/%m/%Y %H:%M"),
-        'id': doc.id,
-        'tipo': doc.tipo  # Cambiar de tipo_display a tipo
-    } 
-    for doc in self.object.documentos.all().select_related('cliente')
-]
+            {
+                'url': doc.archivo.url,
+                'name': doc.nombre_archivo,
+                'type': doc.extension,
+                'upload_date': doc.fecha_subida.strftime("%d/%m/%Y %H:%M"),
+                'id': doc.id,
+                'tipo': doc.tipo,
+                'delete_url': reverse('delete_document', kwargs={
+                    'cliente_pk': cliente.pk,
+                    'doc_pk': doc.pk
+                })
+            } 
+            for doc in self.object.documentos.all().select_related('cliente')
+        ]
 
-        
         # Notas
         context['notas_info'] = {
-    'titulo': 'Notas',
-    'icono': icon_map['Notas'],
-    'contenido': cliente.notas_cliente.all().order_by('-fecha_creacion')
-                 .select_related('autor').only('contenido', 'fecha_creacion', 'autor__username'),
-    'ultima_actualizacion': cliente.ultima_actividad.strftime("%d/%m/%Y %H:%M")
-}
+            'titulo': 'Notas',
+            'icono': icon_map['Notas'],
+            'contenido': cliente.notas_cliente.all().order_by(
+                '-fecha_creacion'
+            ).select_related('autor').only(
+                'contenido', 'fecha_creacion', 'autor__username'
+            ),
+            'ultima_actualizacion': cliente.ultima_actividad.strftime("%d/%m/%Y %H:%M")
+        }
         
         return context
 
@@ -556,6 +568,33 @@ class NoteCreateView(AuthRequiredMixin,View):
             return JsonResponse({'success': False, 'error': 'Error del servidor'}, status=500)
 
 
+
+class DocumentDeleteView(AuthRequiredMixin, DeleteView):
+    model = DocumentoCliente
+    
+    def get_object(self, queryset=None):
+        return get_object_or_404(
+            DocumentoCliente,
+            pk=self.kwargs['doc_pk'],
+            cliente_id=self.kwargs['cliente_pk']  # Usar cliente_id para coincidir con el campo en DB
+        )
+    
+    def delete(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+            self.object.delete()
+            return JsonResponse({
+                'success': True,
+                'message': 'Documento eliminado correctamente',
+                'doc_id': self.object.id
+            })
+        except Exception as e:
+            logger.error(f"Error eliminando documento: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': 'Error interno del servidor'
+            }, status=500)
+
 class DeleteNoteView(AuthRequiredMixin, View):
     allowed_roles = ['admin', 'clientes']
     
@@ -573,26 +612,6 @@ class DeleteNoteView(AuthRequiredMixin, View):
                 'success': False,
                 'error': 'Nota no encontrada'
             }, status=404)
-
-class DocumentDeleteView(AuthRequiredMixin, DeleteView):
-    model = DocumentoCliente
-    
-    def delete(self, request, *args, **kwargs):
-        try:
-            self.object = self.get_object()
-            doc_id = self.object.id
-            self.object.delete()
-            return JsonResponse({
-                'success': True,
-                'message': 'Documento eliminado correctamente',
-                'doc_id': doc_id
-            })
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=500)
-    
 
 class ClientePDFView(AuthRequiredMixin,DetailView):
     model = Cliente

@@ -1,6 +1,9 @@
+
 {% extends "base.html" %}
 {% load static %}
-
+<script>
+    window.CLIENTE_ID = {{ cliente.pk }};
+</script>
 {% block title %}Detalle de Cliente - {{ cliente.nombre }} {{ cliente.apellido }}{% endblock %}
 
 {% block content %}
@@ -236,10 +239,12 @@
                                                             <i class="bi bi-clock me-1"></i>
                                                             {{ nota.fecha_creacion|date:"d/m/Y H:i" }}
                                                         </small>
-                                                        <button class="btn btn-link text-danger btn-sm delete-note" 
-                                                                data-id="{{ nota.id }}">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
+                                                        <button class="btn btn-sm btn-danger delete-note" 
+        data-id="{{ nota.id }}"
+        data-cliente-id="{{ cliente.pk }}"
+        data-url="{% url 'delete_nota' cliente.pk nota.id %}">
+    <i class="bi bi-trash"></i>
+</button>
                                                     </div>
                                                     <p class="mb-0 text-muted">{{ nota.contenido }}</p>
                                                 </div>
@@ -268,5 +273,8 @@
 
 
 {% block extra_js %}
+<script>
+    window.CLIENTE_ID = {{ cliente.pk }};
+</script>
 <script src="{% static 'crm/cliente_detail.js' %}"></script>
 {% endblock %}

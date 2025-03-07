@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="bi bi-download"></i>
                         </a>
                         <button class="btn btn-sm btn-light shadow-sm delete-document" 
-                                data-id="${doc.id}" data-bs-toggle="tooltip" title="Eliminar">
+                                data-url="${doc.delete_url}">
                             <i class="bi bi-trash text-danger"></i>
                         </button>
                     </div>
@@ -172,15 +172,17 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>`;
     };
 
-    // ========== [MANEJO DE EVENTOS] ==========
-    const setupDeleteHandlers = (selector, endpointBase, successMessage) => {
-        document.addEventListener('click', async (e) => {
-            const deleteBtn = e.target.closest(selector);
-            if (!deleteBtn) return;
+   // ========== [MANEJO DE EVENTOS] ==========
+const setupDeleteHandlers = () => {
+    // Eliminar documentos
+    document.addEventListener('click', async (e) => {
+        const deleteBtn = e.target.closest('.delete-document');
+        if (deleteBtn) {
+            const deleteUrl = deleteBtn.dataset.url;
 
             const result = await Swal.fire({
                 title: '¿Estás seguro?',
-                text: "Esta acción no se puede deshacer",
+                text: "El documento será eliminado permanentemente",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',
@@ -189,17 +191,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (result.isConfirmed) {
                 try {
-                    const response = await fetch(`${endpointBase}${deleteBtn.dataset.id}/`, {
+                    const response = await fetch(deleteUrl, {
                         method: 'DELETE',
                         headers: {
                             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                         }
                     });
-                    
+
                     if (response.ok) {
-                        deleteBtn.closest('.document-item, .note-item').remove();
+                        deleteBtn.closest('.document-item').remove();
                         
-                        if (selector === '.delete-document' && DOCUMENTS_CONTAINER.children.length === 0) {
+                        if (DOCUMENTS_CONTAINER.children.length === 0) {
                             DOCUMENTS_CONTAINER.innerHTML = `
                                 <div class="col-12 text-center py-4">
                                     <i class="bi bi-folder-x fs-1 text-muted"></i>
@@ -207,14 +209,60 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>`;
                         }
                         
-                        Swal.fire('Éxito', successMessage, 'success');
+                        Swal.fire('Éxito', 'Documento eliminado correctamente', 'success');
                     }
                 } catch (error) {
-                    Swal.fire('Error', 'Error al eliminar el elemento', 'error');
+                    Swal.fire('Error', 'Error al eliminar el documento', 'error');
                 }
             }
-        });
-    };
+        }
+    });
+
+
+    // Eliminar notas (similar pero para notas)
+    document.addEventListener('click', async (e) => {
+        const deleteBtn = e.target.closest('.delete-note');
+        if (deleteBtn) {
+            const deleteUrl = deleteBtn.dataset.url;
+
+            const result = await Swal.fire({
+                title: '¿Estás seguro?',
+                text: "La nota será eliminada permanentemente",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(deleteUrl, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    });
+
+                    if (response.ok) {
+                        deleteBtn.closest('.note-item').remove();
+                        
+                        if (NOTES_CONTAINER.children.length === 0) {
+                            NOTES_CONTAINER.innerHTML = `
+                                <div class="empty-state text-center py-4">
+                                    <i class="bi bi-journal-x display-4 text-muted"></i>
+                                    <h5 class="mt-3 text-muted">No hay notas registradas</h5>
+                                </div>`;
+                        }
+                        
+                        Swal.fire('Éxito', 'Nota eliminada correctamente', 'success');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'Error al eliminar la nota', 'error');
+                }
+            }
+        }
+    });
+};
 
     // ========== [INICIALIZACIÓN] ==========
     const loadInitialDocuments = () => {
@@ -252,6 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const init = () => {
         refreshTooltips();
         loadInitialDocuments();
+        setupDeleteHandlers();
     };
 
     // ========== [MANEJADORES DE EVENTOS] ==========
@@ -289,8 +338,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    setupDeleteHandlers('.delete-document', `/clientes/${clienteId}/documentos/`, 'Documento eliminado');
-    setupDeleteHandlers('.delete-note', `/clientes/${clienteId}/notas/`, 'Nota eliminada');
 
     init();
 });
