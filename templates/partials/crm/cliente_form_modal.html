@@ -1,4 +1,55 @@
 {% load static %}
+{% load i18n %}
+
+<style>
+    
+    /* Estilos mejorados */
+    .required-field::after {
+        content: "*";
+        color: #e74c3c;
+        margin-left: 3px;
+        font-weight: 700;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    .input-group-btn {
+        width: auto;
+        flex-shrink: 0;
+    }
+    .input-group-btn button {
+        border-radius: 0 6px 6px 0;
+        transition: all 0.2s ease;
+    }
+
+    .input-group-btn button:hover {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+    }
+
+    .section-header {
+        border-bottom: 2px solid #f0f2f5;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .modal-xl-custom {
+        max-width: 920px;
+    }
+
+    .invalid-feedback {
+        font-size: 0.85rem;
+        margin-top: 0.3rem;
+    }
+
+    .bi-x-circle {
+        margin-right: 0.3rem;
+    }
+</style>
 
 <!-- Modal para Nuevo Cliente -->
 <div class="modal fade" id="clienteModal" tabindex="-1" aria-labelledby="clienteModalLabel" aria-hidden="true">
@@ -6,87 +57,100 @@
         <div class="modal-content">
             <form id="clienteForm" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
-                <div class="modal-header modal-header-custom">
+                <div class="modal-header modal-header-custom bg-light">
                     <h5 class="modal-title modal-title-custom">
                         <i class="bi bi-person-plus me-2"></i>Registro de Cliente
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                
+
+                <!-- Cuerpo del Modal -->
                 <div class="modal-body p-4">
-                    <!-- Estado del Lead -->
+                    <!-- Sección: Estado del Lead -->
                     <div class="mb-5">
                         <div class="section-header">
-                            <div class="section-icon">
+                            <div class="section-icon bg-primary-light">
                                 <i class="bi bi-activity fs-5 text-primary"></i>
                             </div>
-                            <h5 class="section-title">Estado del Lead</h5>
+                            <h5 class="section-title">{% trans "Estado del Lead" %}</h5>
                         </div>
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
                                 <div class="mb-3 position-relative">
-                                    <label for="{{ form.estado.id_for_label }}" class="form-label">
-                                        {{ form.estado.label }}<span class="required-asterisk">*</span>
+                                    <label class="form-label{% if form.estado.field.required %} required-field{% endif %}">
+                                        {{ form.estado.label }}
                                     </label>
                                     {{ form.estado }}
-                                    {% if form.estado.errors %}
-                                        <div class="invalid-feedback">{{ form.estado.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="form-text text-muted mt-1">Opciones: Activo, Inactivo, Potencial</small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.estado.errors %}
+                                            {{ form.estado.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
+                                    <small class="form-text text-muted mt-1">
+                                        {% trans "Opciones: Activo, Inactivo, Potencial" %}
+                                    </small>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Datos Personales -->
+                    <!-- Sección: Datos Personales -->
                     <div class="mb-5">
                         <div class="section-header">
-                            <div class="section-icon">
+                            <div class="section-icon bg-primary-light">
                                 <i class="bi bi-person-lines-fill fs-5 text-primary"></i>
                             </div>
-                            <h5 class="section-title">Datos Personales</h5>
+                            <h5 class="section-title">{% trans "Datos Personales" %}</h5>
+                            <small class="text-muted d-block mb-3">{% trans "Campos obligatorios marcados con" %} <span class="text-danger">*</span></small>
                         </div>
+                        
                         <div class="row g-3">
                             <!-- Nombre -->
                             <div class="col-12 col-md-6">
                                 <div class="mb-3 position-relative">
-                                    <label for="{{ form.nombre.id_for_label }}" class="form-label">
-                                        Nombre<span class="required-asterisk">*</span>
+                                    <label class="form-label{% if form.nombre.field.required %} required-field{% endif %}">
+                                        {{ form.nombre.label }}
                                     </label>
                                     {{ form.nombre }}
-                                    {% if form.nombre.errors %}
-                                        <div class="invalid-feedback">{{ form.nombre.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="text-muted form-required-message">Este campo es obligatorio</small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.nombre.errors %}
+                                            {{ form.nombre.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Apellido -->
                             <div class="col-12 col-md-6">
                                 <div class="mb-3 position-relative">
-                                    <label for="{{ form.apellido.id_for_label }}" class="form-label">
-                                        Apellido<span class="required-asterisk">*</span>
+                                    <label class="form-label{% if form.apellido.field.required %} required-field{% endif %}">
+                                        {{ form.apellido.label }}
                                     </label>
                                     {{ form.apellido }}
-                                    {% if form.apellido.errors %}
-                                        <div class="invalid-feedback">{{ form.apellido.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="text-muted form-required-message">Este campo es obligatorio</small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.apellido.errors %}
+                                            {{ form.apellido.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Cédula/Pasaporte -->
                             <div class="col-12 col-md-6">
                                 <div class="mb-3 position-relative">
-                                    <label for="{{ form.cedula_pasaporte.id_for_label }}" class="form-label">
-                                        {{ form.cedula_pasaporte.label }}<span class="required-asterisk">*</span>
+                                    <label class="form-label{% if form.cedula_pasaporte.field.required %} required-field{% endif %}">
+                                        {{ form.cedula_pasaporte.label }}
                                     </label>
                                     {{ form.cedula_pasaporte }}
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.cedula_pasaporte.errors %}
+                                            {{ form.cedula_pasaporte.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                     {% if form.cedula_pasaporte.help_text %}
-                                        <small class="form-text text-muted mt-1">{{ form.cedula_pasaporte.help_text }}</small>
-                                    {% endif %}
-                                    {% if form.cedula_pasaporte.errors %}
-                                        <div class="invalid-feedback">{{ form.cedula_pasaporte.errors|first }}</div>
+                                        <small class="form-text text-muted mt-1">
+                                            {{ form.cedula_pasaporte.help_text|safe }}
+                                        </small>
                                     {% endif %}
                                 </div>
                             </div>
@@ -94,340 +158,200 @@
                             <!-- Fecha de Nacimiento -->
                             <div class="col-12 col-md-6">
                                 <div class="mb-3 position-relative">
-                                    <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">
+                                    <label class="form-label">
                                         {{ form.fecha_nacimiento.label }}
                                     </label>
                                     <div class="input-group">
                                         {{ form.fecha_nacimiento }}
-                                        <button type="button" class="btn btn-outline-info" 
-                                            onclick="document.getElementById('{{ form.fecha_nacimiento.id_for_label }}').value = ''">
-                                            <i class="bi bi-x-circle"></i> N/A
+                                        <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('{{ form.fecha_nacimiento.id_for_label }}').value = ''">
+                                            <i class="bi bi-x-circle"></i> {% trans "Limpiar" %}
                                         </button>
                                     </div>
-                                    {% if form.fecha_nacimiento.errors %}
-                                        <div class="invalid-feedback">{{ form.fecha_nacimiento.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="form-text text-muted mt-1">Formato: DD/MM/AAAA</small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.fecha_nacimiento.errors %}
+                                            {{ form.fecha_nacimiento.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
+                                    <small class="form-text text-muted mt-1">
+                                        {% trans "Formato: DD/MM/AAAA" %}
+                                    </small>
                                 </div>
                             </div>
 
                             <!-- Nacionalidad -->
                             <div class="col-12 col-md-6">
                                 <div class="mb-3 position-relative">
-                                    <label for="{{ form.nacionalidad.id_for_label }}" class="form-label">
-                                        {{ form.nacionalidad.label }}<span class="required-asterisk">*</span>
+                                    <label class="form-label">
+                                        {{ form.nacionalidad.label }}
                                     </label>
                                     {{ form.nacionalidad }}
-                                    {% if form.nacionalidad.errors %}
-                                        <div class="invalid-feedback">{{ form.nacionalidad.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="form-text text-muted mt-1">Seleccione la nacionalidad</small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.nacionalidad.errors %}
+                                            {{ form.nacionalidad.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Datos Laborales -->
+                    <!-- Sección: Datos Laborales -->
                     <div class="mb-5">
                         <div class="section-header">
-                            <div class="section-icon">
+                            <div class="section-icon bg-primary-light">
                                 <i class="bi bi-building fs-5 text-primary"></i>
                             </div>
-                            <h5 class="section-title">Datos Laborales</h5>
+                            <h5 class="section-title">{% trans "Datos Laborales" %}</h5>
                         </div>
+                        
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
                                 <div class="mb-3 position-relative">
-                                    <label for="{{ form.lugar_trabajo.id_for_label }}" class="form-label">
-                                        {{ form.lugar_trabajo.label }}{% if form.lugar_trabajo.field.required %}<span class="required-asterisk">*</span>{% endif %}
+                                    <label class="form-label">
+                                        {{ form.lugar_trabajo.label }}
                                     </label>
                                     {{ form.lugar_trabajo }}
-                                    {% if form.lugar_trabajo.errors %}
-                                        <div class="invalid-feedback">{{ form.lugar_trabajo.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="form-text text-muted mt-1">Ej: Nombre de la empresa u organización</small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.lugar_trabajo.errors %}
+                                            {{ form.lugar_trabajo.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
+                            
                             <div class="col-12 col-md-6">
                                 <div class="mb-3 position-relative">
-                                    <label for="{{ form.cargo.id_for_label }}" class="form-label">
-                                        {{ form.cargo.label }}{% if form.cargo.field.required %}<span class="required-asterisk">*</span>{% endif %}
+                                    <label class="form-label">
+                                        {{ form.cargo.label }}
                                     </label>
                                     {{ form.cargo }}
-                                    {% if form.cargo.errors %}
-                                        <div class="invalid-feedback">{{ form.cargo.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="form-text text-muted mt-1">Ej: Gerente de Ventas</small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.cargo.errors %}
+                                            {{ form.cargo.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Información de Contacto -->
+                    <!-- Sección: Información de Contacto -->
                     <div class="mb-5">
                         <div class="section-header">
-                            <div class="section-icon">
+                            <div class="section-icon bg-primary-light">
                                 <i class="bi bi-telephone-forward fs-5 text-primary"></i>
                             </div>
-                            <h5 class="section-title">Contacto</h5>
+                            <h5 class="section-title">{% trans "Contacto" %}</h5>
                         </div>
+                        
                         <div class="row g-3">
                             <!-- Email -->
                             <div class="col-12 col-md-6">
                                 <div class="mb-3 position-relative">
-                                    <label for="{{ form.email.id_for_label }}" class="form-label">
-                                        {{ form.email.label }}<span class="required-asterisk">*</span>
+                                    <label class="form-label">
+                                        {{ form.email.label }}
                                     </label>
                                     <div class="input-group">
                                         {{ form.email }}
-                                        <button type="button" class="btn btn-outline-info" 
-                                                onclick="document.getElementById('{{ form.email.id_for_label }}').value = 'N/A'">
-                                            <i class="bi bi-x-circle"></i> N/A
+                                        <button type="button" class="btn btn-outline-secondary input-group-btn" data-na-target="{{ form.email.id_for_label }}">
+                                            <i class="bi bi-x-circle"></i> {% trans "N/A" %}
                                         </button>
                                     </div>
-                                    {% if form.email.errors %}
-                                        <div class="invalid-feedback">{{ form.email.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="form-text text-muted mt-1">Ejemplo: nombre@dominio.com o N/A</small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.email.errors %}
+                                            {{ form.email.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Teléfono -->
                             <div class="col-12 col-md-6">
                                 <div class="mb-3 position-relative">
-                                    <label for="{{ form.telefono.id_for_label }}" class="form-label">
-                                        {{ form.telefono.label }}<span class="required-asterisk">*</span>
+                                    <label class="form-label">
+                                        {{ form.telefono.label }}
                                     </label>
                                     <div class="input-group">
                                         {{ form.telefono }}
-                                        <button type="button" class="btn btn-outline-info" 
-                                                onclick="document.getElementById('{{ form.telefono.id_for_label }}').value = 'N/A'">
-                                            <i class="bi bi-x-circle"></i> N/A
+                                        <button type="button" class="btn btn-outline-secondary input-group-btn" data-na-target="{{ form.telefono.id_for_label }}">
+                                            <i class="bi bi-x-circle"></i> {% trans "N/A" %}
                                         </button>
                                     </div>
-                                    {% if form.telefono.errors %}
-                                        <div class="invalid-feedback">{{ form.telefono.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="form-text text-muted mt-1">{{ form.telefono.help_text }}</small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.telefono.errors %}
+                                            {{ form.telefono.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Móvil -->
                             <div class="col-12 col-md-6">
                                 <div class="mb-3 position-relative">
-                                    <label for="{{ form.movil.id_for_label }}" class="form-label">
-                                        {{ form.movil.label }}<span class="required-asterisk">*</span>
+                                    <label class="form-label">
+                                        {{ form.movil.label }}
                                     </label>
                                     <div class="input-group">
                                         {{ form.movil }}
-                                        <button type="button" class="btn btn-outline-info" 
-                                                onclick="document.getElementById('{{ form.movil.id_for_label }}').value = 'N/A'">
-                                            <i class="bi bi-x-circle"></i> N/A
+                                        <button type="button" class="btn btn-outline-secondary input-group-btn" data-na-target="{{ form.movil.id_for_label }}">
+                                            <i class="bi bi-x-circle"></i> {% trans "N/A" %}
                                         </button>
                                     </div>
-                                    {% if form.movil.errors %}
-                                        <div class="invalid-feedback">{{ form.movil.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="form-text text-muted mt-1">{{ form.movil.help_text }}</small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.movil.errors %}
+                                            {{ form.movil.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
 
-                    <!-- Sección de Dirección Mejorada -->
-<div class="col-12">
-    <div class="mb-4 position-relative">
-        <div class="d-flex align-items-center mb-2 gap-2">
-            <div class="section-icon-sm">
-                <i class="bi bi-geo-alt fs-6 text-primary"></i>
-            </div>
-            <label for="{{ form.direccion_fisica.id_for_label }}" class="form-label mb-0">
-                {{ form.direccion_fisica.label }}{% if form.direccion_fisica.field.required %}<span class="required-asterisk">*</span>{% endif %}
-            </label>
-        </div>
-        {{ form.direccion_fisica }}
-        {% if form.direccion_fisica.errors %}
-            <div class="invalid-feedback">{{ form.direccion_fisica.errors|first }}</div>
-        {% endif %}
-        <small class="form-text text-muted mt-2 d-flex align-items-center gap-2">
-            <i class="bi bi-info-circle"></i>Incluir ciudad, estado y referencia cercana
-        </small>
-    </div>
-</div>
-  </div>
-</div>
-                
+                            <!-- Dirección -->
+                            <div class="col-12">
+                                <div class="mb-4 position-relative">
+                                    <div class="d-flex align-items-center mb-2 gap-2">
+                                        <div class="section-icon-sm bg-primary-light">
+                                            <i class="bi bi-geo-alt fs-6 text-primary"></i>
+                                        </div>
+                                        <label class="form-label">
+                                            {{ form.direccion_fisica.label }}
+                                        </label>
+                                    </div>
+                                    {{ form.direccion_fisica }}
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.direccion_fisica.errors %}
+                                            {{ form.direccion_fisica.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-             <!-- Footer del Modal Mejorado -->
-<div class="modal-footer border-top px-4 py-3">
-    <button type="button" class="btn btn-outline-light btn-navigation border text-secondary" data-bs-dismiss="modal">
-        <i class="bi bi-x-lg me-2"></i>Cancelar
-    </button>
-    <button type="submit" class="btn btn-primary-custom btn-navigation text-white">
-        <i class="bi bi-save2 me-2 text-white"></i>Guardar Cliente
-    </button>
-</div>
-
+                <!-- Pie del Modal -->
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-2"></i>{% trans "Cancelar" %}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save2 me-2"></i>
+                        <span class="submit-text">{% trans "Guardar Cliente" %}</span>
+                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 </div>
 
-<style>
-    /* Estilos personalizados */
-    .modal-xl-custom {
-        max-width: 900px;
-    }
-    
-    .modal-header-custom {
-        border-bottom: none;
-        padding: 1.5rem 2rem;
-    }
-    
-    .modal-title-custom {
-        color: #2c3e50;
-        font-weight: 600;
-        font-size: 1.25rem;
-    }
-    
-    .section-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
-    
-    .section-icon {
-        background: #f8f9fa;
-        border: 2px solid #3498db;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        margin-right: 1rem;
-    }
-    
-    .section-title {
-        color: #2c3e50;
-        font-weight: 500;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        margin: 0;
-    }
-    
-    .form-label {
-        font-weight: 500;
-        color: #34495e;
-        margin-bottom: 0.5rem;
-    }
-    
-    .form-control-custom {
-        border: 1px solid #e0e0e0;
-        border-radius: 6px;
-        padding: 0.75rem 1rem;
-        transition: all 0.3s ease;
-    }
-    
-    .form-control-custom:focus {
-        border-color: #3498db;
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-    }
-    
-    .invalid-feedback {
-        font-size: 0.85rem;
-        margin-top: 0.25rem;
-    }
-    
-    .btn-navigation {
-        padding: 0.75rem 1.5rem;
-        border-radius: 6px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-primary-custom {
-        background: #3498db;
-        border: none;
-        padding: 0.75rem 2rem;
-    }
-    
-    .btn-primary-custom:hover {
-        background: #2980b9;
-    }
-    
-    .upload-area {
-        border: 2px dashed #e0e0e0;
-        border-radius: 8px;
-        padding: 1.5rem;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .upload-area:hover {
-        border-color: #3498db;
-        background: #f8f9fa;
-    }
-    
-    .input-group-text-custom {
-        background: #f8f9fa;
-        border: 1px solid #e0e0e0;
-        color: #7f8c8d;
-    }
-    
-    .required-asterisk {
-        color: #e74c3c;
-        margin-left: 3px;
-    }
-    
-    /* Agregar al CSS existente */
-    .section-icon-sm {
-        width: 34px;
-        height: 34px;
-        border: 2px solid #3498db;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f8f9fa;
-    }
-    
-    .btn-outline-light.text-secondary {
-        border-color: #e0e0e0;
-        color: #7f8c8d !important;
-    }
-    
-    .btn-outline-light.text-secondary:hover {
-        background: #f8f9fa;
-        border-color: #d0d0d0;
-    }
-    
-    .btn-primary-custom.text-white:hover {
-        background: #2471a3;
-    }
-    
-    /* Ajuste para textarea */
-    textarea.form-control {
-        border: 1px solid #e0e0e0;
-        border-radius: 6px;
-        padding: 0.75rem 1rem;
-        min-height: 100px;
-        transition: all 0.3s ease;
-    }
-    </style>
 
-<!-- Scripts al final del documento -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="{% static 'crm/alerts.js' %}"></script> <!-- Sin type="module" -->
-
-<!-- Scripts adicionales para enfoque y limpieza de errores al abrir/cerrar el modal -->
 <script>
-document.getElementById('clienteModal').addEventListener('shown.bs.modal', function () {
+document.getElementById('clienteModal').addEventListener('shown.bs.modal', function() {
     const firstInput = this.querySelector('input:not([type="hidden"]), select');
     firstInput?.focus();
 });
 
-document.getElementById('clienteModal').addEventListener('hide.bs.modal', function () {
+document.getElementById('clienteModal').addEventListener('hide.bs.modal', function() {
     this.querySelectorAll('.is-invalid').forEach(field => {
         field.classList.remove('is-invalid');
     });

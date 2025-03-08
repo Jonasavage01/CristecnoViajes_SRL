@@ -315,7 +315,7 @@
 </div>
 
 {% include "partials/crm/cliente_form_modal.html" %} <!-- Modal para crear -->
-{% include "partials/crm/cliente_edit_modal.html" %} <!-- Modal de edición -->
+{% include "partials/crm/cliente_edit_form.html" %} <!-- Modal de edición -->
 
 
 
@@ -383,7 +383,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Luego tus scripts -->
 <script src="{% static 'crm/formValidation.js' %}"></script>
- <script src="{% static 'crm/clientes.js' %}"></script>
- <script src="{% static 'crm/export.js' %}"></script>
+<script src="{% static 'crm/clientes.js' %}"></script>
+<script src="{% static 'crm/export.js' %}"></script>
 {% endblock %}

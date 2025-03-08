@@ -15,7 +15,7 @@ from django.urls import reverse  # Para generar URLs
 from django.utils.html import format_html
 from django.views.generic import DetailView
 
-
+from django.utils.safestring import mark_safe
 
 # Django core imports
 from django.conf import settings
@@ -186,7 +186,16 @@ class CRMView(AuthRequiredMixin, ListView):
     # Métodos de manejo de POST (se mantienen iguales)
     def _compile_form_errors(self, form):
         errors = []
+        # Manejar errores no asociados a campos específicos
+        non_field_errors = form.errors.get('__all__', [])
+        for error in non_field_errors:
+            errors.append(str(error))
+    
+        # Manejar errores de campos
         for field, field_errors in form.errors.items():
+            if field == '__all__': 
+                continue  # Ya los procesamos arriba
+        
             label = form.fields[field].label
             error_msg = f"{label}: {field_errors[0]}"
             if field == 'documento' and 'El archivo es demasiado grande' in field_errors[0]:
@@ -225,7 +234,8 @@ class CRMView(AuthRequiredMixin, ListView):
             return JsonResponse({
                 'success': False,
                 'errors': errors,
-                'form_errors': form.errors
+                # Modificar esta línea para acceder correctamente a los mensajes
+                'form_errors': {k: [v[0] for v in vs] for k, vs in form.errors.items()}
             }, status=400)
         messages.error(self.request, 'Por favor corrija los errores en el formulario')
         return self._render_form_with_errors(form)
@@ -255,7 +265,8 @@ class CRMView(AuthRequiredMixin, ListView):
     def post(self, request, *args, **kwargs):
         post_data = request.POST.copy()
         for field in ['email', 'telefono', 'movil']:
-            if post_data.get(field, '').strip().upper() == 'N/A':
+            value = post_data.get(field, '').strip().upper()
+            if value in ['N/A', 'NA', '']:
                 post_data[field] = 'N/A'
                 
         form = ClienteForm(request.POST, request.FILES)
@@ -374,9 +385,8 @@ class ClienteDetailView(AuthRequiredMixin, DetailView):
         
         return context
 
-
 @method_decorator(xframe_options_sameorigin, name='dispatch')
-class ClienteUpdateView(AuthRequiredMixin,UpdateView):
+class ClienteUpdateView(AuthRequiredMixin, UpdateView):
     model = Cliente
     form_class = ClienteEditForm
     template_name = "partials/crm/cliente_edit_form.html"
@@ -385,87 +395,72 @@ class ClienteUpdateView(AuthRequiredMixin,UpdateView):
     def get_success_url(self):
         return reverse_lazy('cliente_detail', kwargs={'pk': self.object.pk})
 
-    def get_context_data(self, **kwargs):
-        """Añadir contexto adicional para depuración"""
-        context = super().get_context_data(**kwargs)
-        context['debug_instance_pk'] = self.object.pk if self.object else 'None'
-        return context
-
     def post(self, request, *args, **kwargs):
-        
-        """Override para asegurar la instancia antes de procesar el formulario"""
         logger.debug(f"Editando cliente - Método POST - Usuario: {request.user}")
         self.object = self.get_object()
-        logger.debug(f"Instancia obtenida - PK: {self.object.pk}")
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        """Manejar respuesta exitosa con depuración"""
-        logger.debug("Iniciando form_valid...")
-        
-        # Guardar cambios
-        self.object = form.save()
-        logger.info(f"Cliente {self.object.pk} actualizado por {self.request.user}")
-
+        try:
+            self.object = form.save()
+        except IntegrityError as e:
+            logger.error(f'Error de integridad al guardar: {str(e)}')
+            form.add_error(None, ValidationError(
+                mark_safe("⛔ Conflicto de datos único detectado!<br>"
+                          "Posibles causas:<br>"
+                          "- Cédula/Pasaporte ya registrado<br>"
+                          "- Email en uso por otro cliente"),
+                code='integrity_error'
+            ))
+            return self.form_invalid(form)
+            
         # Respuesta AJAX
         if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
-            logger.debug("Respondiendo a solicitud AJAX")
             return JsonResponse({
-               'success': True,
-        'message': 'Cliente actualizado exitosamente',
-        'cliente_data': {
-            'id': self.object.id,
-            'nombre': self.object.nombre,
-            'apellido': self.object.apellido,
-            'estado': self.object.estado,
-            'estado_display': self.object.get_estado_display(),
-            'estado_color': self.object.get_estado_color(),
-            'telefono': self.object.telefono,
-            'email': self.object.email,
-            'cedula_pasaporte': self.object.cedula_pasaporte,
-            'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M")
+                'success': True,
+                'message': mark_safe('✅ Cliente actualizado exitosamente'),
+                'cliente_data': {
+                    'id': self.object.id,
+                    'nombre': self.object.nombre,
+                    'apellido': self.object.apellido,
+                    'estado': self.object.estado,
+                    'estado_display': self.object.get_estado_display(),
+                    'estado_color': self.object.get_estado_color(),
+                    'telefono': self.object.telefono,
+                    'email': self.object.email,
+                    'cedula_pasaporte': self.object.cedula_pasaporte,
+                    'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M")
                 }
             })
         
-        # Respuesta normal
-        messages.success(self.request, 'Cliente actualizado exitosamente!')
+        messages.success(self.request, mark_safe('✅ Cliente actualizado exitosamente!'))
         return redirect(self.get_success_url())
 
     def form_invalid(self, form):
-        """Manejar errores de validación con logging detallado"""
         logger.error("Errores de validación en el formulario de edición")
-        logger.debug("Datos del formulario inválidos: %s", form.data)
-        logger.debug("Errores detallados: %s", form.errors.as_json())
         
-        # Depuración de la instancia
-        if hasattr(form, 'instance'):
-            logger.debug(f"Instancia en formulario inválido - PK: {form.instance.pk if form.instance else 'None'}")
-        else:
-            logger.warning("Formulario no tiene instancia asociada")
+        # Formatear errores para AJAX
+        formatted_errors = {}
+        for field, errors in form.errors.items():
+            formatted_errors[field] = [
+                mark_safe(e) if '<br>' in str(e) else str(e) 
+                for e in errors
+            ]
 
-        # Respuesta AJAX
         if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'errors': form.errors.get_json_data(),
-                'form_errors': form.errors.get_json_data(),
-                'debug': {
-                    'instance_pk': self.object.pk if self.object else 'None',
-                    'form_instance_pk': form.instance.pk if form.instance else 'None'
-                }
+                'message': mark_safe('❌ Por favor corrige los errores en el formulario'),
+                'errors': formatted_errors,
+                'form_errors': formatted_errors,
             }, status=400)
             
+        # Para requests normales
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(self.request, mark_safe(f"📌 {field.title()}: {error}"))
+                
         return super().form_invalid(form)
-
-    def _compile_form_errors(self, form):
-        """Método auxiliar para formatear errores (usado en plantillas)"""
-        errors = []
-        for field, error_list in form.errors.items():
-            errors.append({
-                'field': field,
-                'messages': error_list
-            })
-        return errors
 
 
 class DocumentUploadView(AuthRequiredMixin,FormView):

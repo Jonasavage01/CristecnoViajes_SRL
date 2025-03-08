@@ -207,3 +207,6 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_SAVE_EVERY_REQUEST = True  # Renovar la sesión con cada request
+USE_I18N = True
+USE_L10N = False  # Desactivar formato local para fechas
+DATE_INPUT_FORMATS = ['%d/%m/%Y', '%Y-%m-%d']  # Formatos de fecha aceptados
