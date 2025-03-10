@@ -21,15 +21,11 @@ logger = logging.getLogger(__name__)
 
 class EmpresaForm(forms.ModelForm):
     NA_CHOICE = 'N/A'
-    DOC_MAX_SIZE = 5 * 1024 * 1024  # 5MB
-    ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
     
+    # Campo explícito para estado con choices correctamente definidos
     estado = forms.ChoiceField(
         choices=Empresa.ESTADO_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-select',
-            'data-style': 'btn-primary'
-        }),
+        widget=forms.Select(attrs={'class': 'form-select'}),
         label='Estado de la Empresa'
     )
     
@@ -37,96 +33,76 @@ class EmpresaForm(forms.ModelForm):
         model = Empresa
         fields = '__all__'
         widgets = {
-            'nombre_comercial': forms.TextInput(attrs={'autofocus': True}),
-            'direccion_fisica': forms.Textarea(attrs={
-                'rows': 2,
-                'placeholder': 'Ej: Calle Principal #123, Ciudad, Provincia'
-            }),
+            'direccion_fisica': forms.Textarea(attrs={'rows': 2}),
             'telefono': forms.TextInput(attrs={
-                'placeholder': '+18091234567 o 8091234567',
-                'pattern': '^(\+|00)?[1-9]\d{7,14}$'
+                'placeholder': 'Ej: 8091234567',
+                'pattern': '^[1-9]\d{7,14}$'  # Patrón sin +
             }),
             'telefono2': forms.TextInput(attrs={
-                'placeholder': '+18091234567 o 8091234567 (Opcional)',
-                'pattern': '^(\+|00)?[1-9]\d{7,14}$|^N/A$'
+                'placeholder': 'Ej: 8091234567 (Opcional)',
+                'pattern': '^(N/A|[1-9]\d{7,14})$'  # Patrón sin +
             }),
             'sitio_web': forms.URLInput(attrs={
-                'placeholder': 'https://www.ejemplo.com'
+                'placeholder': 'Ej: https://www.empresa.com'
             }),
-            
-            'rnc': forms.TextInput(attrs={
-                'class': 'form-control',
-                'pattern': '^[\d-]+$'
+            'documento': forms.FileInput(attrs={
+                'accept': '.pdf,.doc,.docx,.jpg,.jpeg,.png'
             }),
-            'direccion_electronica': forms.EmailInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'ejemplo@dominio.com'
-            }),
+            'rnc': forms.TextInput(attrs={'class': 'form-control'}),
+            'direccion_electronica': forms.EmailInput(attrs={'class': 'form-control'}),
         }
         help_texts = {
-            'rnc': _('Registro Nacional de Contribuyente (solo números y guiones)'),
-            'telefono': _('Formato internacional: +18091234567 o nacional: 8091234567'),
-            
-            },
-        
-        error_messages = {
-            'direccion_electronica': {
-                'unique': _("Esta dirección de correo electrónico ya está registrada.")
-            }
+            'rnc': 'Registro Nacional de Contribuyente',
+            'telefono': 'Formato: 8-15 dígitos sin símbolos. Ej: 8091234567',
+            'telefono2': 'Formato: 8-15 dígitos o N/A (Opcional)',
+            'direccion_electronica': 'Ejemplo: empresa@dominio.com',
+            'documento': 'Formatos aceptados: PDF, DOC, DOCX, JPG, JPEG, PNG (Máx. 5MB)',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._set_required_fields()
-        self._add_form_control_class()
-
-    def _set_required_fields(self):
-        for field in ['nombre_comercial', 'razon_social', 'rnc', 'direccion_electronica', 'telefono']:
-            self.fields[field].required = True
-            self.fields[field].widget.attrs['required'] = 'required'
-
-    def _add_form_control_class(self):
-        for field_name, field in self.fields.items():
-            if not isinstance(field.widget, forms.CheckboxInput):
-                field.widget.attrs.setdefault('class', 'form-control')
+        # Configuración inicial de campos
+        for field in ['rnc', 'direccion_electronica']:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
 
     def clean_rnc(self):
-        rnc = self.cleaned_data['rnc'].strip().replace('-', '')
-        
-        if not rnc.isdigit():
-            raise ValidationError(_("El RNC solo puede contener números y guiones"))
-            
-        if len(rnc) < 9 or len(rnc) > 11:
-            raise ValidationError(_("El RNC debe tener entre 9 y 11 dígitos"))
-            
-        if Empresa.objects.filter(rnc=rnc).exclude(pk=self.instance.pk if self.instance else None).exists():
-            raise ValidationError(_("Este RNC ya está registrado"))
-            
-        return rnc
+        data = self.cleaned_data['rnc'].strip()
+    
+        if not data:
+         raise ValidationError("El RNC es obligatorio")
+    
+    # Permitir solo números y guiones
+        if not re.match(r'^[\d-]+$', data):
+            raise ValidationError("El RNC solo puede contener números y guiones")
+    
+    # Eliminar guiones para guardar en base de datos
+        cleaned_data = data.replace('-', '')
+        return cleaned_data
 
-    def _clean_phone(self, value, field_name):
-        value = value.strip()
-        if value.upper() == self.NA_CHOICE:
+    def _clean_phone_field(self, field_name, value):
+        value = value.strip().upper()
+    
+        if value == self.NA_CHOICE:
             return self.NA_CHOICE
-            
-        if not value:
-            if field_name == 'telefono':
-                raise ValidationError(_("El teléfono principal es obligatorio"))
-            return ''
-            
-        # Validar formato internacional o nacional
-        if not re.match(r'^(\+?[1-9]\d{7,14}|00[1-9]\d{7,14})$', value):
-            raise ValidationError(_(
-                "Formato inválido. Ejemplos válidos: %(examples)s"
-            ) % {'examples': '+18091234567, 8091234567'})
-            
+        
+    # Permitir números con o sin +
+        if not re.match(r'^\+?\d{7,15}$', value):
+            raise ValidationError(
+                f"Formato inválido para {field_name}. Ejemplos válidos: 8091234567, +18091234567"
+        )
         return value
 
     def clean_telefono(self):
-        return self._clean_phone(self.cleaned_data['telefono'], 'telefono')
+        telefono = self.cleaned_data.get('telefono', '')
+        if not telefono:
+            raise ValidationError("El teléfono principal es obligatorio")
+        return self._clean_phone_field('teléfono principal', telefono)
 
     def clean_telefono2(self):
-        return self._clean_phone(self.cleaned_data.get('telefono2', ''), 'telefono2')
+        telefono2 = self.cleaned_data.get('telefono2', '').strip()
+        if not telefono2 or telefono2.upper() == self.NA_CHOICE:
+            return self.NA_CHOICE
+        return self._clean_phone_field('teléfono secundario', telefono2)
 
     def clean_direccion_electronica(self):
         email = self.cleaned_data.get('direccion_electronica', '').lower().strip()
@@ -139,16 +115,57 @@ class EmpresaForm(forms.ModelForm):
         
         return email
 
+    def clean_documento(self):
+        documento = self.cleaned_data.get('documento')
+        if documento:
+        # Validar tipo de archivo
+            valid_extensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+            ext = os.path.splitext(documento.name)[1].lower()
+            if ext not in valid_extensions:
+                raise ValidationError(
+                    "Tipo de archivo no permitido. Formatos aceptados: " + 
+                    ", ".join(ext.upper() for ext in valid_extensions)
+             )
+        
+        # Validar tamaño
+            max_size = 5 * 1024 * 1024  # 5MB
+            if documento.size > max_size:
+                raise ValidationError(
+                f"Tamaño máximo permitido: {max_size/1024/1024}MB. " +
+                f"Archivo actual: {documento.size/1024/1024:.2f}MB"
+            )
+        return documento
+
+    def _validate_unique_rnc_and_email(self):
+        """Validación de unicidad para RNC y Email"""
+        rnc = self.cleaned_data.get('rnc')
+        email = self.cleaned_data.get('direccion_electronica')
+        
+        if rnc:
+            qs = Empresa.objects.filter(rnc__iexact=rnc)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                self.add_error('rnc', 'Este RNC ya está registrado')
+        
+        if email:
+            qs = Empresa.objects.filter(direccion_electronica__iexact=email)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                self.add_error('direccion_electronica', 'Este email ya está registrado')
+
     def clean(self):
         cleaned_data = super().clean()
-        self._normalize_na_values(cleaned_data)
+        
+        # Manejar N/A en teléfono secundario
+        if cleaned_data.get('telefono2', '').upper() == self.NA_CHOICE:
+            cleaned_data['telefono2'] = self.NA_CHOICE
+        
+        # Validar unicidad
+        self._validate_unique_rnc_and_email()
+        
         return cleaned_data
-
-    def _normalize_na_values(self, cleaned_data):
-        for field in ['telefono2']:
-            value = cleaned_data.get(field, '')
-            if isinstance(value, str) and value.upper() == self.NA_CHOICE:
-                cleaned_data[field] = self.NA_CHOICE
 
 
 class EmpresaEditForm(forms.ModelForm):

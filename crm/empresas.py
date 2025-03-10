@@ -20,7 +20,6 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.http import HttpResponse, HttpResponseServerError
 from django.utils.text import slugify
-from django.shortcuts import render
 from weasyprint import HTML
 from django.views.decorators.http import require_http_methods
 import logging
@@ -85,23 +84,12 @@ class ExportEmpresasView(AuthRequiredMixin,View):
         return queryset.order_by('-fecha_registro')
 
     def get(self, request, *args, **kwargs):
-        self.object_list = self.get_queryset()
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            context = self.get_context_data()
-            return render(request, 'crm/partials/empresas_table.html', context)
-            
-        return super().get(request, *args, **kwargs)
+        formato = kwargs.get('formato', 'csv')
+        queryset = self.get_queryset()
+        return exportar_empresas(queryset, formato)  # Función en export_utils
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        
-        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            context['partial'] = True
-            
-        return context
-
-class EmpresasView(ListView):
+class EmpresasView(AuthRequiredMixin,ListView):
+    allowed_roles = ['admin', 'clientes']
     model = Empresa
     template_name = "crm/empresas.html"
     context_object_name = 'empresas'
@@ -109,78 +97,155 @@ class EmpresasView(ListView):
     ordering = ['-fecha_registro']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        # Aquí iría la lógica de filtrado si es necesaria
-        return queryset
+        try:
+            queryset = Empresa.objects.prefetch_related('documentos_empresa')
+            empresa_filter = EmpresaFilter(self.request.GET, queryset)
+            return empresa_filter.apply_filters().order_by('-fecha_registro')
+        except ValidationError as e:
+            messages.error(self.request, str(e))
+            return self.model.objects.none()
+
+        # Modificar el método get para mejor manejo de AJAX
+    def get(self, request, *args, **kwargs):
+        try:
+        # Inicializar el queryset base
+            self.object_list = self.get_queryset()
+        
+            if 'apply_filters' in request.GET:
+                empresa_filter = EmpresaFilter(request.GET, self.object_list)
+            
+                if not empresa_filter.has_active_filters:
+                    messages.warning(request, "Por favor ingresa al menos un criterio de filtrado")
+                    return redirect('empresas')
+            
+            # Aplicar filtros y actualizar object_list
+                self.object_list = empresa_filter.apply_filters()
+        
+        # Manejar requests AJAX
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                self.template_name = 'partials/crm/empresas_table.html'
+                context = self.get_context_data()
+                return self.render_to_response(context)
+        
+        # Llamar al get() de la clase base con el object_list actualizado
+            return super().get(request, *args, **kwargs)
+    
+        except ValidationError as e:
+            messages.error(request, str(e))
+            return redirect('empresas')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = EmpresaForm()
+        context.update({
+            'form': EmpresaForm(),
+            'estados': Empresa.ESTADO_CHOICES,
+            'default_date': timezone.now().strftime('%Y-%m-%d'),
+            'has_filters': EmpresaFilter(self.request.GET, self.get_queryset()).has_active_filters,
+            'filter_params': self._clean_get_params()
+            
+        })
         return context
 
-    def _handle_ajax_response(self, form):
-        if form.is_valid():
-            empresa = form.save()
+    def _clean_get_params(self):  # <-- Añadir este método
+        """Limpia los parámetros GET eliminando 'page' para mantener los filtros en la paginación"""
+        params = self.request.GET.copy()
+        if 'page' in params:
+            del params['page']
+        return params.urlencode()
+
+    
+    def _handle_success_response(self, is_ajax, empresa_id):
+        if is_ajax:
+            empresa = Empresa.objects.get(pk=empresa_id)
+            
+            # Renderizar tabla actualizada
+            self.object_list = self.get_queryset()
+            context = self.get_context_data()
+            
+            
             return JsonResponse({
                 'success': True,
-                'message': 'Empresa creada exitosamente',
-                'data': {
+                'message': 'Empresa creada exitosamente!',
+                'redirect_url': reverse('empresa_detail', args=[empresa_id]),
+                
+                'empresa_data': {
                     'id': empresa.id,
                     'nombre_comercial': empresa.nombre_comercial,
                     'rnc': empresa.rnc,
                     'estado': empresa.get_estado_display(),
+                    'fecha_registro': empresa.fecha_registro.strftime('%d/%m/%Y'),
+                    'telefono': empresa.telefono,
+                    'direccion_electronica': empresa.direccion_electronica,
+                    'representante': empresa.representante,
+                    'edit_url': reverse('empresa_edit', args=[empresa_id]),
                 }
             })
-        else:
+        
+        messages.success(self.request, 'Empresa creada exitosamente!')
+        return redirect('empresas')
+
+    def _handle_form_errors(self, form, is_ajax):
+        # Reemplazar la línea errors = self._compile_form_errors(form) por:
+        errors = []
+        for field, field_errors in form.errors.items():
+            for error in field_errors:
+                errors.append(f"{form.fields[field].label}: {error}")
+    
+        if is_ajax:
             return JsonResponse({
                 'success': False,
-                'errors': form.errors.get_json_data(),
-                'message': 'Corrija los errores en el formulario'
+                'errors': errors,
+                'form_errors': form.errors
             }, status=400)
+    
+    # Para requests normales, necesitamos re-renderizar el template con el formulario
+        messages.error(self.request, 'Por favor corrija los errores en el formulario')
+        context = self.get_context_data()
+        context['form'] = form  # Pasar el formulario con errores
+        return self.render_to_response(context)
 
-    def _handle_regular_response(self, form):
-        if form.is_valid():
-            empresa = form.save()
-            messages.success(self.request, 'Empresa creada exitosamente')
-            return redirect('empresas')
-        else:
-            messages.error(self.request, 'Errores en el formulario')
-            return self.render_to_response(self.get_context_data(form=form))
+    def _handle_integrity_error(self, error, is_ajax):
+        error_message = self._parse_integrity_error(error)
+        if is_ajax:
+            return JsonResponse({
+                'success': False,
+                'errors': [error_message],
+                'error_type': 'integrity_error'
+            }, status=409)
+        messages.error(self.request, error_message)
+        return redirect('empresas')
+
+    def _handle_generic_error(self, error, is_ajax):
+        error_message = f'Error del servidor: {str(error)}'
+        if is_ajax:
+            return JsonResponse({
+                'success': False,
+                'errors': [error_message],
+                'error_type': 'server_error'
+            }, status=500)
+        messages.error(self.request, error_message)
+        return redirect('empresas')
 
     def post(self, request, *args, **kwargs):
         form = EmpresaForm(request.POST, request.FILES)
-        
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         try:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return self._handle_ajax_response(form)
-            return self._handle_regular_response(form)
-            
+            if form.is_valid():
+                empresa = form.save()
+                logger.info(f'Empresa creada: {empresa.id}')
+                return self._handle_success_response(is_ajax, empresa.id)
+
+            logger.warning('Errores de validación en el formulario')
+            return self._handle_form_errors(form, is_ajax)
+    
         except IntegrityError as e:
-            error_msg = self._parse_integrity_error(e)
-            if request.is_ajax():
-                return JsonResponse({
-                    'success': False,
-                    'message': error_msg
-                }, status=409)
-            messages.error(request, error_msg)
-            return redirect('empresas')
+            logger.error(f'Error de integridad: {str(e)}')
+            return self._handle_integrity_error(e, is_ajax)
 
-    def _parse_integrity_error(self, error):
-        error_str = str(error).lower()
-        if 'rnc' in error_str:
-            return 'Este RNC ya está registrado'
-        if 'direccion_electronica' in error_str:
-            return 'Este correo electrónico ya está registrado'
-        return 'Error de duplicidad en los datos'
-
-    def form_invalid(self, form):
-        response = super().form_invalid(form)
-        if self.request.is_ajax():
-            return JsonResponse({
-                'success': False,
-                'errors': form.errors.get_json_data()
-            }, status=400)
-        return response
+        except Exception as e:
+            logger.critical(f'Error inesperado: {str(e)}', exc_info=True)
+            return self._handle_generic_error(e, is_ajax)
+        
 
 class EmpresaUpdateView(AuthRequiredMixin,UpdateView):
     allowed_roles = ['admin', 'clientes']
