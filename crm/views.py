@@ -429,7 +429,10 @@ class ClienteUpdateView(AuthRequiredMixin, UpdateView):
                     'telefono': self.object.telefono,
                     'email': self.object.email,
                     'cedula_pasaporte': self.object.cedula_pasaporte,
-                    'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M")
+                    'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+                    'cargo': self.object.cargo,
+                    'movil': self.object.movil,
+                    'direccion_fisica': self.object.direccion_fisica
                 }
             })
         
@@ -438,30 +441,30 @@ class ClienteUpdateView(AuthRequiredMixin, UpdateView):
 
     def form_invalid(self, form):
         logger.error("Errores de validación en el formulario de edición")
-        
-        # Formatear errores para AJAX
-        formatted_errors = {}
+    
+    # Construir mensaje detallado de errores
+        error_messages = []
         for field, errors in form.errors.items():
-            formatted_errors[field] = [
-                mark_safe(e) if '<br>' in str(e) else str(e) 
-                for e in errors
-            ]
+            field_label = form.fields[field].label if field in form.fields else field
+            for error in errors:
+                error_messages.append(f"<b>{field_label}:</b> {error}")
+    
+        detailed_message = mark_safe("Errores encontrados:<br>" + "<br>".join(error_messages))
 
+    # Respuesta AJAX
         if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'message': mark_safe('❌ Por favor corrige los errores en el formulario'),
-                'errors': formatted_errors,
-                'form_errors': formatted_errors,
+                'message': detailed_message,
+                'errors': form.errors.get_json_data(),
             }, status=400)
-            
-        # Para requests normales
+
+    # Para requests normales
         for field, errors in form.errors.items():
             for error in errors:
                 messages.error(self.request, mark_safe(f"📌 {field.title()}: {error}"))
-                
+    
         return super().form_invalid(form)
-
 
 class DocumentUploadView(AuthRequiredMixin,FormView):
     form_class = DocumentoForm

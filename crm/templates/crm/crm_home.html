@@ -275,15 +275,15 @@
                     </td>
                     <td class="text-end">
                         <div class="d-flex gap-2 justify-content-end actions-container">
-                            <a href="#" 
-                               class="btn btn-sm btn-outline-primary edit-client" 
-                               title="Editar"
-                               data-bs-toggle="modal"
-                               data-bs-target="#clienteEditModal"
-                               data-url="{% url 'cliente_edit' cliente.id %}"
-                               data-pk="{{ cliente.id }}">
-                                <i class="bi bi-pencil"></i>
-                            </a>
+                          <a href="#" 
+                          class="btn btn-sm btn-outline-primary edit-client" 
+                          title="Editar"
+                          data-bs-toggle="modal"
+                          data-bs-target="#editClienteModal"
+                          data-url="{% url 'cliente_edit' cliente.id %}"
+                          data-pk="{{ cliente.id }}">
+                           <i class="bi bi-pencil"></i>
+                       </a>
                             <a href="#" 
                                class="btn btn-sm btn-outline-danger delete-client" 
                                title="Eliminar"
@@ -384,7 +384,7 @@
 
 {% block extra_js %}
 <!-- Luego tus scripts -->
-<script src="{% static 'crm/formValidation.js' %}"></script>
+
 <script src="{% static 'crm/clientes.js' %}"></script>
 <script src="{% static 'crm/export.js' %}"></script>
 {% endblock %}

@@ -141,18 +141,28 @@ class ClienteForm(forms.ModelForm):
         return self._clean_phone_field('móvil', self.cleaned_data.get('movil', ''))
 
     def clean_email(self):
-        email = self.cleaned_data.get('email', '').strip().upper()
+        email = self.cleaned_data.get('email', '').strip().lower()  # Siempre a minúsculas
+        if email == self.NA_CHOICE.lower():
         
-        if email == self.NA_CHOICE:
             return self.NA_CHOICE
-            
         if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
             raise ValidationError(
-                mark_safe("📧 Formato de email inválido.<br>"
-                          "Ejemplo válido: nombre@dominio.com")
+                mark_safe("📧 Invalid email format.<br>Example: name@domain.com")
             )
-            
         return email
+
+    def _check_unique(self, field, value, error_message):
+        """Verifica unicidad considerando mayúsculas/minúsculas para email"""
+        if field == 'email':
+            lookup = f"{field}__iexact" if field == 'email' else field  # Búsqueda insensible a mayúsculas
+        else:
+            lookup = field
+
+        queryset = Cliente.objects.filter(**{lookup: value})
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            self.add_error(field, mark_safe(f"⛔ {error_message}"))
 
     def clean(self):
         cleaned_data = super().clean()
@@ -335,19 +345,39 @@ class ClienteEditForm(forms.ModelForm):
         return data
 
     def clean_email(self):
-        email = self.cleaned_data.get('email', '').strip().upper()
+        email = self.cleaned_data.get('email', '').strip().lower()
         
-        if email == self.NA_CHOICE:
+        # Manejo del valor placeholder
+        if email == self.NA_CHOICE.lower():
             return self.NA_CHOICE
-            
+
+        # Validación de formato básico
         if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
             raise ValidationError(
                 mark_safe("📧 Formato de email inválido.<br>"
                           "Ejemplo válido: nombre@dominio.com")
             )
+
+        # Validación de unicidad case-insensitive
+        self._check_unique(
+            field='email',
+            value=email,
+            error_message='Este correo ya está registrado'
+        )
         
-        self._check_unique('email', email, 'Este correo ya está registrado')
         return email
+
+    def _check_unique(self, field, value, error_message):
+        """Validación genérica de unicidad con búsqueda case-insensitive"""
+        lookup = f'{field}__iexact'  # Busqueda insensible a mayúsculas
+        
+        # Excluimos la instancia actual si es edición
+        queryset = Cliente.objects.filter(**{lookup: value})
+        if self.instance and self.instance.pk:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        
+        if queryset.exists():
+            raise ValidationError(error_message)
 
 
 

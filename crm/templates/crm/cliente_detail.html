@@ -29,7 +29,7 @@
                     <a href="#" 
                     class="btn btn-light btn-hover-scale btn-actions edit-client"
                     data-bs-toggle="modal"
-                    data-bs-target="#clienteEditModal"
+                    data-bs-target="#editClienteModal"
                     data-url="{% url 'cliente_edit' cliente.pk %}"
                     data-client-id="{{ cliente.id }}"  <!-- Corregir aquí -->
                     <title="Editar cliente">
@@ -75,57 +75,64 @@
         <!-- Contenido de pestañas -->
         <div class="card-body px-0">
             <div class="tab-content">
-                <!-- Pestaña Información -->
-                <div class="tab-pane fade show active" id="infoTab">
-                    <div class="row g-4 px-3 px-lg-4">
-                        {% for seccion in secciones %}
-                        <div class="col-12 col-lg-6">
-                            <div class="section-card card h-100 border-0 shadow-sm">
-                                <div class="card-header bg-light bg-gradient border-0 py-3">
-                                    <h5 class="mb-0 d-flex align-items-center text-primary">
-                                        <i class="bi bi-{{ seccion.icono }} me-3 fs-4"></i>
-                                        {{ seccion.titulo }}
-                                    </h5>
-                                </div>
-                                <div class="card-body pt-4">
-                                    <dl class="row mb-0">
-                                        {% for campo in seccion.campos %}
-                                        <dt class="col-md-5 data-label fw-500">{{ campo.0 }}</dt>
-                                        <dd class="col-md-7 mb-3">
-                                            <div class="d-flex align-items-center">
-                                                {% if campo.0 == 'Email' %}
-                                                <a href="mailto:{{ campo.1 }}" 
-                                                   class="text-decoration-none link-primary d-flex align-items-center">
-                                                    <i class="bi bi-envelope me-2"></i>
-                                                    {{ campo.1 }}
-                                                </a>
-                                                {% elif campo.0 == 'Teléfono' or campo.0 == 'Móvil' %}
-                                                <div class="d-flex align-items-center gap-2 w-100">
-                                                    <a href="tel:{{ campo.1|cut:' '|cut:'+' }}" 
-                                                       class="text-decoration-none link-primary d-flex align-items-center">
-                                                        <i class="bi bi-phone me-2"></i>
-                                                        {{ campo.1 }}
-                                                    </a>
-                                                    <button class="btn btn-sm btn-outline-secondary btn-copy ms-auto" 
-                                                            data-copy="{{ campo.1 }}"
-                                                            data-bs-toggle="tooltip"
-                                                            title="Copiar al portapapeles">
-                                                        <i class="bi bi-clipboard"></i>
-                                                    </button>
-                                                </div>
-                                                {% else %}
-                                                <span class="text-muted">{{ campo.1|default:"N/A" }}</span>
-                                                {% endif %}
-                                            </div>
-                                        </dd>
-                                        {% endfor %}
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
+              <!-- Pestaña Información -->
+<div class="tab-pane fade show active" id="infoTab">
+    <div class="row g-4 px-3 px-lg-4">
+        {% for seccion in secciones %}
+        <div class="col-12 col-lg-6">
+            <div class="section-card card h-100 border-0 shadow-sm">
+                <div class="card-header bg-light bg-gradient border-0 py-3">
+                    <h5 class="mb-0 d-flex align-items-center text-primary">
+                        <i class="bi bi-{{ seccion.icono }} me-3 fs-4"></i>
+                        {{ seccion.titulo }}
+                    </h5>
                 </div>
+                <div class="card-body pt-4">
+                    <dl class="row mb-0">
+                        {% for campo in seccion.campos %}
+                        <dt class="col-md-5 data-label fw-500" data-label="{{ campo.0|lower|slugify }}">
+                            {{ campo.0 }}
+                        </dt>
+                        <dd class="col-md-7 mb-3" data-field="{{ campo.0|lower|slugify }}">
+                            <div class="d-flex align-items-center">
+                                {% if campo.0 == 'Email' %}
+                                <a href="mailto:{{ campo.1 }}" 
+                                   class="text-decoration-none link-primary d-flex align-items-center"
+                                   data-target="link">
+                                    <i class="bi bi-envelope me-2" data-target="icon"></i>
+                                    <span data-target="value">{{ campo.1 }}</span>
+                                </a>
+                                {% elif campo.0 == 'Teléfono' or campo.0 == 'Móvil' %}
+                                <div class="d-flex align-items-center gap-2 w-100">
+                                    <a href="tel:{{ campo.1|cut:' '|cut:'+' }}" 
+                                       class="text-decoration-none link-primary d-flex align-items-center"
+                                       data-target="link">
+                                        <i class="bi bi-phone me-2" data-target="icon"></i>
+                                        <span data-target="value">{{ campo.1 }}</span>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-secondary btn-copy ms-auto" 
+                                            data-copy="{{ campo.1 }}"
+                                            data-bs-toggle="tooltip"
+                                            title="Copiar al portapapeles"
+                                            data-target="copy">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                                {% else %}
+                                <span class="text-muted" data-target="value">
+                                    {{ campo.1|default:"N/A" }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </dd>
+                        {% endfor %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
 
               <!-- Pestaña Documentos Clientes - Versión Mejorada -->
               <div class="tab-pane fade" id="docsTab">
@@ -267,7 +274,7 @@
         </div>
     </div>
 </div>
-{% include "partials/crm/cliente_edit_modal.html" %}
+{% include "partials/crm/cliente_edit_form.html" %}
 
 {% endblock %}
 
@@ -277,4 +284,5 @@
     window.CLIENTE_ID = {{ cliente.pk }};
 </script>
 <script src="{% static 'crm/cliente_detail.js' %}"></script>
+
 {% endblock %}

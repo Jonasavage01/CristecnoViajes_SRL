@@ -1,158 +1,132 @@
-{% load static %}
-<!-- partials/crm/empresa_form_modal.html -->
+{% load static i18n %}
 <style>
-    .modal-empresa {
-        --primary-color: #2563eb;
-        --hover-color: #1d4ed8;
-        --error-color: #dc2626;
-        --success-color: #16a34a;
-        --muted-color: #64748b;
+    /* Estilos consistentes con el formulario de clientes */
+    .modal-xl-custom {
+        max-width: 920px;
     }
 
-    .modal-empresa .modal-content {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    }
-
-    .modal-empresa .modal-header {
-        border-bottom: 1px solid #e2e8f0;
-        padding: 1.5rem;
-    }
-
-    .modal-empresa .modal-title {
-        color: #1e293b;
-        font-size: 1.25rem;
-        font-weight: 600;
-    }
-
-    .modal-empresa .section-header {
+    .section-header {
+        border-bottom: 2px solid #f0f2f5;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
         display: flex;
         align-items: center;
         gap: 1rem;
-        margin-bottom: 2rem;
     }
 
-    .modal-empresa .section-icon {
+    .section-icon {
         width: 40px;
         height: 40px;
         border-radius: 8px;
-        background: #eff6ff;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 1px solid #bfdbfe;
+        background-color: rgba(13, 110, 253, 0.1);
     }
 
-    .modal-empresa .section-title {
-        color: #1e293b;
-        font-size: 1rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .section-icon > i {
+        font-size: 1.25rem;
+        color: #0d6efd;
+    }
+
+    .section-title {
         margin: 0;
+        color: #2c3e50;
+        font-weight: 600;
     }
 
-    .modal-empresa .form-label {
+    .required-field::after {
+        content: "*";
+        color: #e74c3c;
+        margin-left: 3px;
+        font-weight: 700;
+    }
+
+    .form-label {
         font-weight: 500;
-        color: #334155;
+        color: #2c3e50;
         margin-bottom: 0.5rem;
-        font-size: 0.875rem;
     }
 
-    .modal-empresa .form-control {
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
+    .input-group-btn button {
+        border-radius: 0 6px 6px 0;
         transition: all 0.2s ease;
+        padding: 0.5rem 1rem;
     }
 
-    .modal-empresa .form-control:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    .input-group-btn button:hover {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
     }
 
-    .modal-empresa .input-group .btn-na {
-        border: 1px solid #cbd5e1;
-        border-left: none;
-        border-radius: 0 8px 8px 0;
-        background: #f8fafc;
-        color: var(--muted-color);
-        transition: all 0.2s ease;
+    .invalid-feedback {
+        font-size: 0.85rem;
+        margin-top: 0.3rem;
+        display: block;
     }
 
-    .modal-empresa .input-group .btn-na:hover {
-        background: #f1f5f9;
-        color: var(--primary-color);
+    .form-text {
+        font-size: 0.85rem;
     }
 
-    .modal-empresa .invalid-feedback {
-        font-size: 0.8125rem;
-        color: var(--error-color);
-        margin-top: 0.25rem;
-    }
+    /* Agregar al bloque de estilos */
+.invalid-feedback {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
 
-    .modal-empresa .form-control.is-invalid {
-        border-color: var(--error-color);
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc2626'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc2626' stroke='none'/%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 1rem center;
-        background-size: 16px 16px;
-        padding-right: 2.5rem;
-    }
+.invalid-feedback.show {
+    display: block;
+    opacity: 1;
+}
 
-    .modal-empresa .modal-footer {
-        border-top: 1px solid #e2e8f0;
-        padding: 1.5rem;
-    }
+.is-invalid {
+    border-color: #dc3545 !important;
+    animation: shake 0.3s ease;
+}
 
-    .modal-empresa .btn-primary {
-        background: var(--primary-color);
-        border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.2s ease;
-    }
-
-    .modal-empresa .btn-primary:hover {
-        background: var(--hover-color);
-    }
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
 </style>
 
-{% load static %}
-<div class="modal fade modal-empresa" id="empresaModal" tabindex="-1" aria-labelledby="empresaModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+<div class="modal fade" id="empresaModal" tabindex="-1" aria-labelledby="empresaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl-custom">
         <div class="modal-content">
             <form id="empresaForm" method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
-                <div class="modal-header">
+                <div class="modal-header bg-light">
                     <h5 class="modal-title">
                         <i class="bi bi-building me-2"></i>Registro de Empresa
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                
-                <div class="modal-body p-5">
-                    <!-- Estado de la Empresa -->
+
+                <div class="modal-body p-4">
+                    <!-- Sección: Estado de la Empresa -->
                     <div class="mb-5">
                         <div class="section-header">
                             <div class="section-icon">
-                                <i class="bi bi-activity text-primary"></i>
+                                <i class="bi bi-activity"></i>
                             </div>
                             <h5 class="section-title">Estado de la Empresa</h5>
                         </div>
-                        <div class="row g-4">
+                        <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <div class="mb-4">
-                                    <label for="{{ form.estado.id_for_label }}" class="form-label">
-                                        {{ form.estado.label }}<span class="text-danger ms-1">*</span>
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label{% if form.estado.field.required %} required-field{% endif %}">
+                                        {{ form.estado.label }}
                                     </label>
                                     {{ form.estado }}
-                                    {% if form.estado.errors %}
-                                        <div class="invalid-feedback">{{ form.estado.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="text-muted d-block mt-2 fs-12">
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.estado.errors %}
+                                            {{ form.estado.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
+                                    <small class="form-text text-muted mt-1">
                                         Opciones: Activo, Inactivo, Potencial
                                     </small>
                                 </div>
@@ -160,52 +134,60 @@
                         </div>
                     </div>
 
-                    <!-- Datos Principales -->
+                    <!-- Sección: Datos Principales -->
                     <div class="mb-5">
                         <div class="section-header">
                             <div class="section-icon">
-                                <i class="bi bi-building text-primary"></i>
+                                <i class="bi bi-building"></i>
                             </div>
                             <h5 class="section-title">Datos Principales</h5>
+                            <small class="text-muted d-block mb-3">Campos obligatorios marcados con <span class="text-danger">*</span></small>
                         </div>
-                        <div class="row g-4">
+                        
+                        <div class="row g-3">
                             <!-- Nombre Comercial -->
                             <div class="col-12 col-md-6">
-                                <div class="mb-4">
-                                    <label for="{{ form.nombre_comercial.id_for_label }}" class="form-label">
-                                        {{ form.nombre_comercial.label }}<span class="text-danger ms-1">*</span>
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label{% if form.nombre_comercial.field.required %} required-field{% endif %}">
+                                        {{ form.nombre_comercial.label }}
                                     </label>
                                     {{ form.nombre_comercial }}
-                                    {% if form.nombre_comercial.errors %}
-                                        <div class="invalid-feedback">{{ form.nombre_comercial.errors|first }}</div>
-                                    {% endif %}
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.nombre_comercial.errors %}
+                                            {{ form.nombre_comercial.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Razón Social -->
                             <div class="col-12 col-md-6">
-                                <div class="mb-4">
-                                    <label for="{{ form.razon_social.id_for_label }}" class="form-label">
-                                        {{ form.razon_social.label }}<span class="text-danger ms-1">*</span>
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label{% if form.razon_social.field.required %} required-field{% endif %}">
+                                        {{ form.razon_social.label }}
                                     </label>
                                     {{ form.razon_social }}
-                                    {% if form.razon_social.errors %}
-                                        <div class="invalid-feedback">{{ form.razon_social.errors|first }}</div>
-                                    {% endif %}
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.razon_social.errors %}
+                                            {{ form.razon_social.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- RNC -->
                             <div class="col-12 col-md-6">
-                                <div class="mb-4">
-                                    <label for="{{ form.rnc.id_for_label }}" class="form-label">
-                                        {{ form.rnc.label }}<span class="text-danger ms-1">*</span>
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label{% if form.rnc.field.required %} required-field{% endif %}">
+                                        {{ form.rnc.label }}
                                     </label>
                                     {{ form.rnc }}
-                                    {% if form.rnc.errors %}
-                                        <div class="invalid-feedback">{{ form.rnc.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="text-muted d-block mt-2 fs-12">
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.rnc.errors %}
+                                            {{ form.rnc.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
+                                    <small class="form-text text-muted mt-1">
                                         {{ form.rnc.help_text }}
                                     </small>
                                 </div>
@@ -213,147 +195,159 @@
 
                             <!-- Sitio Web -->
                             <div class="col-12 col-md-6">
-                                <div class="mb-4">
-                                    <label for="{{ form.sitio_web.id_for_label }}" class="form-label">
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label">
                                         {{ form.sitio_web.label }}
                                     </label>
                                     {{ form.sitio_web }}
-                                    {% if form.sitio_web.errors %}
-                                        <div class="invalid-feedback">{{ form.sitio_web.errors|first }}</div>
-                                    {% endif %}
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.sitio_web.errors %}
+                                            {{ form.sitio_web.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Representante Legal -->
+                    <!-- Sección: Representante Legal -->
                     <div class="mb-5">
                         <div class="section-header">
                             <div class="section-icon">
-                                <i class="bi bi-person-badge text-primary"></i>
+                                <i class="bi bi-person-badge"></i>
                             </div>
                             <h5 class="section-title">Representante Legal</h5>
                         </div>
-                        <div class="row g-4">
-                            <!-- Nombre del Representante -->
+                        
+                        <div class="row g-3">
+                            <!-- Representante -->
                             <div class="col-12 col-md-6">
-                                <div class="mb-4">
-                                    <label for="{{ form.representante.id_for_label }}" class="form-label">
-                                        {{ form.representante.label }}<span class="text-danger ms-1">*</span>
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label{% if form.representante.field.required %} required-field{% endif %}">
+                                        {{ form.representante.label }}
                                     </label>
                                     {{ form.representante }}
-                                    {% if form.representante.errors %}
-                                        <div class="invalid-feedback">{{ form.representante.errors|first }}</div>
-                                    {% endif %}
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.representante.errors %}
+                                            {{ form.representante.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Cargo del Representante -->
+                            <!-- Cargo Representante -->
                             <div class="col-12 col-md-6">
-                                <div class="mb-4">
-                                    <label for="{{ form.cargo_representante.id_for_label }}" class="form-label">
-                                        {{ form.cargo_representante.label }}<span class="text-danger ms-1">*</span>
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label{% if form.cargo_representante.field.required %} required-field{% endif %}">
+                                        {{ form.cargo_representante.label }}
                                     </label>
                                     {{ form.cargo_representante }}
-                                    {% if form.cargo_representante.errors %}
-                                        <div class="invalid-feedback">{{ form.cargo_representante.errors|first }}</div>
-                                    {% endif %}
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.cargo_representante.errors %}
+                                            {{ form.cargo_representante.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Información de Contacto -->
+                    <!-- Sección: Contacto -->
                     <div class="mb-5">
                         <div class="section-header">
                             <div class="section-icon">
-                                <i class="bi bi-telephone text-primary"></i>
+                                <i class="bi bi-telephone"></i>
                             </div>
-                            <h5 class="section-title">Contacto</h5>
+                            <h5 class="section-title">Información de Contacto</h5>
                         </div>
-                        <div class="row g-4">
-                            <!-- Teléfono Principal -->
+                        
+                        <div class="row g-3">
+                            <!-- Teléfono -->
                             <div class="col-12 col-md-6">
-                                <div class="mb-4">
-                                    <label for="{{ form.telefono.id_for_label }}" class="form-label">
-                                        {{ form.telefono.label }}<span class="text-danger ms-1">*</span>
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label{% if form.telefono.field.required %} required-field{% endif %}">
+                                        {{ form.telefono.label }}
                                     </label>
                                     <div class="input-group">
                                         {{ form.telefono }}
-                                        <button type="button" class="btn btn-na" 
-                                                onclick="document.getElementById('{{ form.telefono.id_for_label }}').value = 'N/A'">
-                                            <i class="bi bi-x-lg fs-14"></i>
+                                        <button type="button" class="btn btn-outline-secondary input-group-btn" 
+                                                data-na-target="{{ form.telefono.id_for_label }}">
+                                            <i class="bi bi-x-circle"></i> N/A
                                         </button>
                                     </div>
-                                    {% if form.telefono.errors %}
-                                        <div class="invalid-feedback">{{ form.telefono.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="text-muted d-block mt-2 fs-12">
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.telefono.errors %}
+                                            {{ form.telefono.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
+                                    <small class="form-text text-muted mt-1">
                                         {{ form.telefono.help_text }}
                                     </small>
                                 </div>
                             </div>
 
-                            <!-- Teléfono Secundario -->
+                            <!-- Teléfono 2 -->
                             <div class="col-12 col-md-6">
-                                <div class="mb-4">
-                                    <label for="{{ form.telefono2.id_for_label }}" class="form-label">
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label">
                                         {{ form.telefono2.label }}
                                     </label>
                                     <div class="input-group">
                                         {{ form.telefono2 }}
-                                        <button type="button" class="btn btn-na" 
-                                                onclick="document.getElementById('{{ form.telefono2.id_for_label }}').value = 'N/A'">
-                                            <i class="bi bi-x-lg fs-14"></i>
+                                        <button type="button" class="btn btn-outline-secondary input-group-btn" 
+                                                data-na-target="{{ form.telefono2.id_for_label }}">
+                                            <i class="bi bi-x-circle"></i> N/A
                                         </button>
                                     </div>
-                                    {% if form.telefono2.errors %}
-                                        <div class="invalid-feedback">{{ form.telefono2.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="text-muted d-block mt-2 fs-12">
-                                        {{ form.telefono2.help_text }}
-                                    </small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.telefono2.errors %}
+                                            {{ form.telefono2.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Email -->
                             <div class="col-12 col-md-6">
-                                <div class="mb-4">
-                                    <label for="{{ form.direccion_electronica.id_for_label }}" class="form-label">
-                                        {{ form.direccion_electronica.label }}<span class="text-danger ms-1">*</span>
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label{% if form.direccion_electronica.field.required %} required-field{% endif %}">
+                                        {{ form.direccion_electronica.label }}
                                     </label>
                                     {{ form.direccion_electronica }}
-                                    {% if form.direccion_electronica.errors %}
-                                        <div class="invalid-feedback">{{ form.direccion_electronica.errors|first }}</div>
-                                    {% endif %}
-                                    <small class="text-muted d-block mt-2 fs-12">
-                                        {{ form.direccion_electronica.help_text }}
-                                    </small>
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.direccion_electronica.errors %}
+                                            {{ form.direccion_electronica.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Dirección Física -->
                             <div class="col-12">
-                                <div class="mb-4">
-                                    <label for="{{ form.direccion_fisica.id_for_label }}" class="form-label">
-                                        {{ form.direccion_fisica.label }}<span class="text-danger ms-1">*</span>
+                                <div class="mb-3 position-relative">
+                                    <label class="form-label{% if form.direccion_fisica.field.required %} required-field{% endif %}">
+                                        {{ form.direccion_fisica.label }}
                                     </label>
                                     {{ form.direccion_fisica }}
-                                    {% if form.direccion_fisica.errors %}
-                                        <div class="invalid-feedback">{{ form.direccion_fisica.errors|first }}</div>
-                                    {% endif %}
+                                    <div class="invalid-feedback d-block">
+                                        {% if form.direccion_fisica.errors %}
+                                            {{ form.direccion_fisica.errors|join:" "|safe }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
-                        Cancelar
+                <div class="modal-footer border-top px-4 py-3">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-2"></i>{% trans "Cancelar" %}
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        Guardar Empresa
+                        <i class="bi bi-save2 me-2"></i>
+                        <span class="submit-text">{% trans "Guardar Empresa" %}</span>
+                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
                     </button>
                 </div>
             </form>
@@ -361,18 +355,344 @@
     </div>
 </div>
 
-<!-- Scripts -->
-<script src="{% static 'crm/alerts.js' %}"></script> 
-
 <script>
-document.getElementById('empresaModal').addEventListener('shown.bs.modal', function () {
-    const firstInput = this.querySelector('input:not([type="hidden"]), select');
-    firstInput?.focus();
-});
+    document.addEventListener('DOMContentLoaded', function() {
+        const empresaForm = document.getElementById('empresaForm');
+        const empresaModal = new bootstrap.Modal(document.getElementById('empresaModal'));
+        let isSubmitting = false;
+        
+        // Inicializar características dinámicas
+        function initDynamicFeatures() {
+            // Tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(tooltipTriggerEl => {
+                new bootstrap.Tooltip(tooltipTriggerEl, { trigger: 'hover' });
+            });
+    
+            // Eventos N/A para teléfonos
+            document.querySelectorAll('[data-na-target]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const target = document.getElementById(this.dataset.naTarget);
+                    if (target) {
+                        target.value = 'N/A';
+                        target.dispatchEvent(new Event('input'));
+                    }
+                });
+            });
+    
+            // Validación en tiempo real para RNC
+            const rncInput = document.getElementById('id_rnc');
+            if (rncInput) {
+                rncInput.addEventListener('input', function(e) {
+                    const value = e.target.value.replace(/[^\d-]/g, '');
+                    e.target.value = value;
+                });
+            }
+    
+            // Validación de email en tiempo real
+            const emailInput = document.getElementById('id_direccion_electronica');
+            if (emailInput) {
+                emailInput.addEventListener('input', function() {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    this.classList.toggle('is-invalid', !emailRegex.test(this.value));
+                });
+            }
+        }
+    
+        // Manejar submit del formulario
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            if (isSubmitting) return;
+            
+            const formData = new FormData(empresaForm);
+            const submitBtn = empresaForm.querySelector('button[type="submit"]');
+            
+            // Validación frontend adicional
+            if (!frontendValidation()) return;
+    
+            isSubmitting = true;
+            toggleLoadingState(submitBtn, true);
+    
+            fetch(empresaForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+            })
+            .then(handleResponse)
+            .catch(handleNetworkError)
+            .finally(() => {
+                isSubmitting = false;
+                toggleLoadingState(submitBtn, false);
+            });
+        }
+    
+        function frontendValidation() {
+            let isValid = true;
+            // Validar campos requeridos
+            empresaForm.querySelectorAll('[required]').forEach(field => {
+                if (!field.value.trim()) {
+                    showFieldError(field, 'Este campo es requerido');
+                    isValid = false;
+                }
+            });
+            return isValid;
+        }
+    
+        function handleResponse(response) {
+            if (!response.ok) {
+                return response.json().then(handleErrorResponse);
+            }
+            return response.json().then(data => {
+                if (data.success) {
+                    handleSuccess(data);
+                } else {
+                    handleErrorResponse(data);
+                }
+            });
+        }
+    
+        function handleSuccess(data) {
+            showSuccessAlert(data.message);
+            empresaModal.hide();
+            resetForm();
+            
+            if (data.redirect_url) {
+                setTimeout(() => window.location.href = data.redirect_url, 500);
+            } else {
+                refreshEmpresasTable(data);
+            }
+        }
+    
+        function handleErrorResponse(error) {
+            if (error.errors) {
+                showFormErrors(error.errors);
+            }
+            if (error.message) {
+                showErrorAlert(error.message);
+            }
+        }
+    
+        function handleNetworkError(error) {
+            showErrorAlert('Error de conexión. Por favor intente nuevamente.');
+        }
+    
+        function showFormErrors(errors) {
+            clearErrors();
+            
+            // Crear lista de errores para la alerta
+            const errorList = [];
+            
+            Object.entries(errors).forEach(([field, messages]) => {
+                const input = document.querySelector(`[name="${field}"]`);
+                const fieldLabel = input?.closest('.position-relative')?.querySelector('.form-label')?.textContent || field;
+                
+                messages.forEach((msg, index) => {
+                    const errorMessage = `${fieldLabel}: ${msg}`;
+                    errorList.push(errorMessage);
+                    
+                    // Resaltar campo en el formulario
+                    if (input && index === 0) {
+                        input.classList.add('is-invalid');
+                        const errorContainer = input.closest('.position-relative')?.querySelector('.invalid-feedback');
+                        if (errorContainer) {
+                            errorContainer.textContent = msg;
+                            errorContainer.style.display = 'block';
+                        }
+                    }
+                });
+            });
+            
+            // Mostrar alerta flotante
+            showErrorAlert({
+                title: 'Errores en el Formulario',
+                content: errorList.map(e => `• ${e}`).join('<br>'),
+                duration: 10000
+            });
+            
+            scrollToFirstError();
+        }
+        function showErrorAlert({title = 'Error', content = '', duration = 5000}) {
+            const alertId = 'custom-error-alert';
+            let alertEl = document.getElementById(alertId);
+            
+            if (!alertEl) {
+                alertEl = document.createElement('div');
+                alertEl.id = alertId;
+                alertEl.className = 'position-fixed top-0 end-0 m-4 z-9999';
+                alertEl.style.maxWidth = '400px';
+                document.body.appendChild(alertEl);
+            }
+            
+            alertEl.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show shadow-lg" role="alert">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-x-circle-fill fs-4 flex-shrink-0"></i>
+                        <div>
+                            <h5 class="alert-heading mb-2">${title}</h5>
+                            <div class="small">${content}</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alertEl.querySelector('.alert'));
+                bsAlert.close();
+            }, duration);
+        }
+        function showFieldError(field, message) {
+            field.classList.add('is-invalid');
+            const errorContainer = field.closest('.position-relative')?.querySelector('.invalid-feedback');
+            if (errorContainer) {
+                errorContainer.textContent = message;
+                errorContainer.style.display = 'block';
+            }
+        }
+    
+        function clearErrors() {
+            empresaForm.querySelectorAll('.is-invalid').forEach(field => {
+                field.classList.remove('is-invalid');
+            });
+            empresaForm.querySelectorAll('.invalid-feedback').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
+    
+        function scrollToFirstError() {
+            const firstError = document.querySelector('.is-invalid');
+            if (firstError) {
+                firstError.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }
+    
+        function toggleLoadingState(button, isLoading) {
+            const spinner = button.querySelector('.spinner-border');
+            const textSpan = button.querySelector('.submit-text');
+            
+            button.disabled = isLoading;
+            spinner?.classList.toggle('d-none', !isLoading);
+            textSpan?.classList.toggle('d-none', isLoading);
+        }
+    
+        function resetForm() {
+            empresaForm.reset();
+            empresaForm.querySelectorAll('.is-invalid').forEach(field => {
+                field.classList.remove('is-invalid');
+            });
+            empresaForm.querySelector('input[autofocus]')?.focus();
+        }
+    
+        async function refreshEmpresasTable(data) {
+            const empresasTable = document.getElementById('empresasTable');
+            if (!empresasTable) return;
+        
+            try {
+                // Obtener la última versión de los datos
+                const response = await fetch(window.location.href, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                
+                if (!response.ok) throw new Error('Error al actualizar datos');
+                
+                const newTable = document.createElement('div');
+                newTable.innerHTML = await response.text();
+                const newBody = newTable.querySelector('#empresasTable tbody').innerHTML;
+                
+                // Actualizar tabla y mantener la posición de scroll
+                const oldScroll = window.scrollY;
+                empresasTable.querySelector('tbody').innerHTML = newBody;
+                window.scrollTo(0, oldScroll);
+                
+                // Resaltar nueva empresa
+                if (data.empresa_data?.id) {
+                    highlightNewRow(data.empresa_data.id);
+                    updateEmpresasCounter(1);
+                }
+                
+                initDynamicFeatures();
+            } catch (error) {
+                console.error('Error actualizando tabla:', error);
+                // Fallback: Recargar página
+                window.location.reload();
+            }
+        }
+        
+        // Nueva función para actualizar el contador
+        function updateEmpresasCounter(increment = 0) {
+            const countBadge = document.querySelector('.badge.text-info');
+            if (!countBadge) return;
+        
+            const currentCount = parseInt(countBadge.textContent) || 0;
+            const newCount = currentCount + increment;
+            
+            countBadge.textContent = newCount;
+            countBadge.classList.add('scale-up');
+            setTimeout(() => countBadge.classList.remove('scale-up'), 500);
+        }
 
-document.getElementById('empresaModal').addEventListener('hide.bs.modal', function () {
-    this.querySelectorAll('.is-invalid').forEach(field => {
-        field.classList.remove('is-invalid');
+        function createEmpresaRow(empresaData) {
+            const row = document.createElement('tr');
+            row.className = 'position-relative new-row-highlight clickable-row';
+            row.dataset.empresaId = empresaData.id;
+            
+            row.innerHTML = `
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar bg-info text-white me-3">
+                            ${empresaData.nombre_comercial?.[0]?.toUpperCase() || ''}
+                        </div>
+                        <div>
+                            <div class="fw-bold">${empresaData.nombre_comercial}</div>
+                            <small class="text-muted">${empresaData.razon_social?.substring(0, 30) || ''}</small>
+                        </div>
+                    </div>
+                </td>
+                <td><code>${empresaData.rnc}</code></td>
+                <td>
+                    <div class="text-truncate" style="max-width: 200px;">${empresaData.representante || 'N/A'}</div>
+                    <small class="text-muted d-block">${empresaData.direccion_electronica || 'N/A'}</small>
+                </td>
+                <td>${empresaData.telefono || 'N/A'}</td>
+                <td>${new Date().toLocaleDateString()}</td>
+                <td>
+                    <span class="badge bg-${empresaData.estado_color}">
+                        ${empresaData.estado}
+                    </span>
+                </td>
+                <td class="text-end">
+                    <!-- Botones de acciones aquí -->
+                </td>
+            `;
+            
+            return row;
+        }
+    
+        function highlightNewRow(empresaId) {
+            const newRow = document.querySelector(`tr[data-empresa-id="${empresaId}"]`);
+            if (newRow) {
+                newRow.classList.add('new-row-highlight');
+                setTimeout(() => newRow.classList.remove('new-row-highlight'), 2000);
+            }
+        }
+    
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        }
+    
+        // Event Listeners
+        empresaForm.addEventListener('submit', handleFormSubmit);
+        empresaModal._element.addEventListener('shown.bs.modal', initDynamicFeatures);
+        empresaModal._element.addEventListener('hidden.bs.modal', resetForm);
+    
+        // Inicialización inicial
+        initDynamicFeatures();
     });
-});
-</script>
+    </script>
+
