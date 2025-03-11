@@ -5,7 +5,9 @@ from .views import (
     ConfigPanelView,
     UserListView,
     UserCreateView,
-    AdminPasswordChangeView,ActivityLogView
+    AdminPasswordChangeView,
+    ActivityLogView,
+    ActivityLogDetailView
 
 )
 
@@ -18,5 +20,6 @@ urlpatterns = [
     path('users/create/', UserCreateView.as_view(), name='user_create'),
     path('users/<int:pk>/password/', AdminPasswordChangeView.as_view(), name='admin_password_change'),
     path('activity-log/', ActivityLogView.as_view(), name='activity_log'),
+     path('activity-log/<int:pk>/', ActivityLogDetailView.as_view(), name='activity_detail'),
     
 ]

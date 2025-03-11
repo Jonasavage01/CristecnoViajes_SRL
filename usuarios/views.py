@@ -10,11 +10,13 @@ from django.views.decorators.debug import sensitive_post_parameters
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 import logging
+from django.views.generic import ListView, DetailView
+from .models import UserActivityLog
 from django.utils import timezone
 from .models import UsuarioPersonalizado, UserActivityLog
 from .forms import LoginForm, UserCreationForm, AdminPasswordChangeForm
 from crm.mixins import AuthRequiredMixin
-
+from django.views.generic import DetailView
 logger = logging.getLogger(__name__)
 
 class CustomLoginView(LoginView):
@@ -211,6 +213,47 @@ class AdminPasswordChangeView(AuthRequiredMixin, PasswordChangeView):
         messages.error(self.request, _('Error al cambiar la contraseña'))
         return response
 
+class ActivityLogDetailView(AuthRequiredMixin, DetailView):
+    model = UserActivityLog
+    template_name = 'usuarios/activity_detail.html'
+    allowed_roles = ['admin']
+    context_object_name = 'log'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        log = self.object
+
+        # Procesamiento de coordenadas
+        lat, lon = None, None
+        if log.loc:
+            try:
+                # Limpieza y validación estricta
+                parts = log.loc.strip().split(',')
+                if len(parts) == 2:
+                    lat = float(parts[0])
+                    lon = float(parts[1])
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Formato inválido de coordenadas: {log.loc}", exc_info=True)
+
+        # Construcción de ubicación
+        location = []
+        if log.city: location.append(log.city)
+        if log.region: location.append(log.region)
+        if log.country: location.append(log.country)
+        location_str = ', '.join(location) if location else None
+
+        # Contexto mejorado
+        context.update({
+            'latitude': lat,
+            'longitude': lon,
+            'map_url': f"https://www.google.com/maps/search/?api=1&query={lat},{lon}" if lat and lon else None,
+            'location_str': location_str,
+            'has_geo_data': any([lat, lon, location_str]),
+            'is_local_ip': log.ip_address == '127.0.0.1',
+            'geo_data_available': any([log.city, log.region, log.country, log.loc])
+        })
+        return context
+
 class ActivityLogView(AuthRequiredMixin, ListView):
     model = UserActivityLog
     template_name = 'usuarios/activity_log.html'
@@ -221,7 +264,6 @@ class ActivityLogView(AuthRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related('user')
-        # Filtrar por usuario si se provee un query
         search_query = self.request.GET.get('q')
         if search_query:
             queryset = queryset.filter(
@@ -232,6 +274,8 @@ class ActivityLogView(AuthRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['page_title'] = _('Historial de Actividad')
-        context['search_query'] = self.request.GET.get('q', '')
+        context.update({
+            'page_title': _('Historial de Actividad'),
+            'search_query': self.request.GET.get('q', '')
+        })
         return context

@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'crm',
     'usuarios.apps.UsuariosConfig', 
     'dashboard.apps.DashboardConfig',
+    'django_user_agents',
     
     
 ]
@@ -53,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_user_agents.middleware.UserAgentMiddleware',
 
 ]
 
@@ -171,7 +173,10 @@ LOGGING = {
 ###############################################################################
 # Durante el desarrollo, se pueden enviar los correos a la consola.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
+if DEBUG:
+    import socket
+    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    INTERNAL_IPS = [ip[:-1] + '1' for ip in ips] + ['127.0.0.1']
 if not DEBUG:
     # Redirigir todas las peticiones a HTTPS
     SECURE_SSL_REDIRECT = True
@@ -194,6 +199,8 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # settings.py
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
@@ -210,3 +217,20 @@ SESSION_SAVE_EVERY_REQUEST = True  # Renovar la sesión con cada request
 USE_I18N = True
 USE_L10N = False  # Desactivar formato local para fechas
 DATE_INPUT_FORMATS = ['%d/%m/%Y', '%Y-%m-%d']  # Formatos de fecha aceptados
+IPINFO_TOKEN = '839449f01be879'  # Tu token de ipinfo.io
+USER_AGENTS_CACHE = 'default'  # Para mejor performance
+
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'your_app_name': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}

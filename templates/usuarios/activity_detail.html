@@ -1,0 +1,232 @@
+{% extends 'usuarios/config_panel.html' %}
+{% load static i18n %}
+
+{% block config_content %}
+<div class="container-fluid">
+    <div class="card border-0 shadow-lg">
+        <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+                <i class="bi bi-activity me-2"></i>
+                {% trans "Detalle de Actividad del Usuario" %}
+            </h4>
+            {% if log.ip_address == '127.0.0.1' %}
+                <span class="badge bg-warning bg-opacity-75 hoverable" 
+                      data-bs-toggle="tooltip" 
+                      data-bs-placement="left"
+                      title="{% trans 'Geolocalización no disponible para IPs locales' %}">
+                    <i class="bi bi-wifi-off me-1"></i> {% trans "Entorno Local" %}
+                </span>
+            {% endif %}
+        </div>
+        
+        <div class="card-body">
+            <div class="row g-4">
+                <!-- Sección Principal -->
+                <div class="col-md-8">
+                    <div class="info-section mb-5">
+                        <h5 class="text-primary mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            {% trans "Información Básica" %}
+                        </h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4 fw-500">{% trans "Usuario" %}</div>
+                            <div class="col-md-8">
+                                <span class="badge bg-primary bg-opacity-10 text-primary">
+                                    <i class="bi bi-person-circle me-2"></i>
+                                    {{ log.user.username }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4 fw-500">{% trans "Tipo de Actividad" %}</div>
+                            <div class="col-md-8">
+                                <span class="badge {% if log.activity_type == 'login' %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
+                                    <i class="bi bi-{% if log.activity_type == 'login' %}box-arrow-in-right{% else %}box-arrow-left{% endif %} me-2"></i>
+                                    {{ log.get_activity_type_display }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4 fw-500">{% trans "Fecha/Hora" %}</div>
+                            <div class="col-md-8">
+                                <i class="bi bi-clock-history me-2"></i>
+                                {{ log.timestamp|date:"d M Y H:i:s" }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta de Geolocalización -->
+                    <div class="geo-card mb-5">
+                        <h5 class="text-primary mb-4">
+                            <i class="bi bi-globe-americas me-2"></i>
+                            {% trans "Geolocalización" %}
+                        </h5>
+                        
+                        {% if has_geo_data %}
+                            <div class="alert alert-geo alert-success bg-opacity-10 border border-success">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-geo-alt-fill text-success me-2"></i>
+                                        {% trans "Ubicación Detectada" %}
+                                    </h6>
+                                    {% if map_url %}
+                                    <a href="{{ map_url }}" 
+                                       target="_blank" 
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-map me-2"></i>
+                                        {% trans "Ver en Mapa" %}
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="row g-2">
+                                    {% if log.loc %}
+                                    <div class="col-md-6">
+                                        <div class="bg-light p-3 rounded">
+                                            <small class="text-muted d-block">{% trans "Coordenadas" %}</small>
+                                            <code class="text-dark">{{ log.loc }}</code>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="col-md-6">
+                                        <div class="bg-light p-3 rounded">
+                                            <small class="text-muted d-block">{% trans "Zona Horaria" %}</small>
+                                            {{ log.timezone|default:_("No disponible") }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-geo alert-warning bg-opacity-10">
+                                <h6 class="alert-heading">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    {% trans "Geolocalización No Disponible" %}
+                                </h6>
+                                <ul class="mb-0 mt-2">
+                                    <li>{% trans "IP local o de red privada" %}</li>
+                                    <li>{% trans "Servicio no disponible temporalmente" %}</li>
+                                    <li>{% trans "Configuración de privacidad activa" %}</li>
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Sidebar de Detalles Técnicos -->
+                <div class="col-md-4">
+                    <div class="tech-details bg-light p-4 rounded-3 shadow-sm">
+                        <h5 class="text-primary mb-4">
+                            <i class="bi bi-terminal me-2"></i>
+                            {% trans "Detalles Técnicos" %}
+                        </h5>
+
+                        <div class="detail-item mb-4">
+                            <h6 class="text-muted mb-2">{% trans "Dirección IP" %}</h6>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-pc-display-horizontal me-2"></i>
+                                <code class="text-break">{{ log.ip_address }}</code>
+                            </div>
+                        </div>
+
+                        <div class="detail-item mb-4">
+                            <h6 class="text-muted mb-2">{% trans "Dispositivo" %}</h6>
+                            <div class="device-badges">
+                                {% if log.is_mobile %}
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-phone me-1"></i>
+                                        {% trans "Móvil" %}
+                                    </span>
+                                {% elif log.is_tablet %}
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-tablet me-1"></i>
+                                        {% trans "Tablet" %}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-dark">
+                                        <i class="bi bi-pc me-1"></i>
+                                        {% trans "Escritorio" %}
+                                    </span>
+                                {% endif %}
+                                
+                                {% if log.is_bot %}
+                                    <span class="badge bg-danger mt-2">
+                                        <i class="bi bi-robot me-1"></i>
+                                        {% trans "Bot Detectado" %}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <h6 class="text-muted mb-2">{% trans "Sistema y Navegador" %}</h6>
+                            <div class="system-info">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-windows me-2"></i>
+                                    {{ log.os|default:_("Desconocido") }}
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-browser-chrome me-2"></i>
+                                    {{ log.browser|default:_("Desconocido") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de User Agent -->
+            <div class="user-agent-section mt-5">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">
+                            <i class="bi bi-code-square me-2"></i>
+                            {% trans "User Agent Completo" %}
+                        </h6>
+                        <code class="text-break">{{ log.user_agent }}</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="mt-5 d-flex justify-content-end">
+                <a href="{% url 'activity_log' %}" 
+                   class="btn btn-outline-primary btn-lg rounded-pill">
+                    <i class="bi bi-arrow-left-circle me-2"></i>
+                    {% trans "Volver al Historial" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hoverable {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .hoverable:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .info-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+    .fw-500 {
+        font-weight: 500;
+        color: #2c3e50;
+    }
+    .tech-details {
+        border-left: 4px solid #4e73df;
+    }
+    .alert-geo {
+        border-radius: 10px;
+        backdrop-filter: blur(5px);
+    }
+</style>
+{% endblock %}

@@ -74,6 +74,23 @@ class UserActivityLog(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name=_('Fecha/Hora'))
     ip_address = models.GenericIPAddressField()
     user_agent = models.CharField(max_length=255)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    region = models.CharField(max_length=100, null=True, blank=True)
+    country = models.CharField(max_length=100, null=True, blank=True)
+    loc = models.CharField(max_length=50, null=True, blank=True, 
+                         help_text='Latitud/Longitud')
+    postal = models.CharField(max_length=20, null=True, blank=True)
+    timezone = models.CharField(max_length=50, null=True, blank=True)
+    
+    # Campos derivados del user agent
+    device_type = models.CharField(max_length=50, null=True, blank=True)
+    browser = models.CharField(max_length=50, null=True, blank=True)
+    os = models.CharField(max_length=50, null=True, blank=True)
+    is_mobile = models.BooleanField(null=True)
+    is_tablet = models.BooleanField(null=True)
+    is_touch_capable = models.BooleanField(null=True)
+    is_pc = models.BooleanField(null=True)
+    is_bot = models.BooleanField(null=True)
 
     class Meta:
         ordering = ('-timestamp',)

@@ -35,10 +35,12 @@
                     {% for log in logs %}
                     <tr>
                         <td>
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-person-circle me-2"></i>
-                                {{ log.user.username }}
-                            </div>
+                            <a href="{% url 'activity_detail' log.pk %}" class="text-decoration-none">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-person-circle me-2"></i>
+                                    {{ log.user.username }}
+                                </div>
+                            </a>
                         </td>
                         <td>
                             <span class="badge bg-{% if log.activity_type == 'login' %}success{% else %}danger{% endif %}">
