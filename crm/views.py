@@ -268,22 +268,26 @@ class CRMView(AuthRequiredMixin, ListView):
             value = post_data.get(field, '').strip().upper()
             if value in ['N/A', 'NA', '']:
                 post_data[field] = 'N/A'
-                
+            
         form = ClienteForm(request.POST, request.FILES)
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         try:
             if form.is_valid():
-                cliente = form.save()
+            # Asignar usuario creador
+                cliente = form.save(commit=False)
+                cliente.creado_por = request.user
+                cliente.save()
+            
                 logger.info(f'Cliente creado: {cliente.id}')
                 return self._handle_success_response(is_ajax, cliente.id)
-            
+        
             logger.warning('Errores de validación en el formulario')
             return self._handle_form_errors(form, is_ajax)
-            
+        
         except IntegrityError as e:
             logger.error(f'Error de integridad: {str(e)}')
             return self._handle_integrity_error(e, is_ajax)
-            
+        
         except Exception as e:
             logger.critical(f'Error inesperado: {str(e)}', exc_info=True)
             return self._handle_generic_error(e, is_ajax)
@@ -297,6 +301,13 @@ class ClienteDetailView(AuthRequiredMixin, DetailView):
     context_object_name = 'cliente'
     allowed_roles = ['admin', 'clientes']
 
+    def _format_user_info(self, usuario):
+        """Formatea la información del usuario para mostrar nombre y rol"""
+        if not usuario:
+            return 'N/A'
+        
+        nombre = usuario.get_full_name() or usuario.username
+        return f"{nombre} ({usuario.rol})"
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         documentos = self.object.documentos.all()
@@ -343,15 +354,17 @@ class ClienteDetailView(AuthRequiredMixin, DetailView):
                     ('Cargo', cliente.cargo or 'N/A'),
                 ]
             },
-            {
-                'titulo': 'Sistema',
+        {
+    'titulo': 'Sistema',
                 'icono': icon_map['Sistema'],
                 'campos': [
                     ('Estado', cliente.get_estado_display()),
                     ('Fecha Creación', cliente.fecha_creacion.strftime("%d/%m/%Y %H:%M")),
-                    ('Última Actividad', cliente.ultima_actividad.strftime("%d/%m/%Y %H:%M")),
-                ]
-            }
+                    ('Creado por', self._format_user_info(cliente.creado_por)),
+                    ('Última Edición', cliente.ultima_edicion.strftime("%d/%m/%Y %H:%M")),
+                    ('Editado por', self._format_user_info(cliente.editado_por)),
+    ]
+}
         ]
 
         # Documentos adjuntos
@@ -402,40 +415,47 @@ class ClienteUpdateView(AuthRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         try:
-            self.object = form.save()
+            # Asignar usuario editor y fecha
+            self.object = form.save(commit=False)
+            self.object.editado_por = self.request.user
+            self.object.save()
+        
         except IntegrityError as e:
             logger.error(f'Error de integridad al guardar: {str(e)}')
             form.add_error(None, ValidationError(
                 mark_safe("⛔ Conflicto de datos único detectado!<br>"
-                          "Posibles causas:<br>"
-                          "- Cédula/Pasaporte ya registrado<br>"
-                          "- Email en uso por otro cliente"),
+                        "Posibles causas:<br>"
+                        "- Cédula/Pasaporte ya registrado<br>"
+                        "- Email en uso por otro cliente"),
                 code='integrity_error'
             ))
             return self.form_invalid(form)
-            
+        
         # Respuesta AJAX
         if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': True,
                 'message': mark_safe('✅ Cliente actualizado exitosamente'),
                 'cliente_data': {
-                    'id': self.object.id,
-                    'nombre': self.object.nombre,
-                    'apellido': self.object.apellido,
-                    'estado': self.object.estado,
-                    'estado_display': self.object.get_estado_display(),
-                    'estado_color': self.object.get_estado_color(),
-                    'telefono': self.object.telefono,
-                    'email': self.object.email,
-                    'cedula_pasaporte': self.object.cedula_pasaporte,
-                    'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
-                    'cargo': self.object.cargo,
-                    'movil': self.object.movil,
-                    'direccion_fisica': self.object.direccion_fisica
-                }
-            })
-        
+                'id': self.object.id,
+                'nombre': self.object.nombre,
+                'apellido': self.object.apellido,
+                'estado': self.object.estado,
+                'estado_display': self.object.get_estado_display(),
+                'estado_color': self.object.get_estado_color(),
+                'telefono': self.object.telefono,
+                'email': self.object.email,
+                'cedula_pasaporte': self.object.cedula_pasaporte,
+                'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+                'cargo': self.object.cargo,
+                'movil': self.object.movil,
+                'direccion_fisica': self.object.direccion_fisica,
+                # Nuevos campos para el audit trail
+                'editado_por': self.object.editado_por.get_full_name() if self.object.editado_por else '',
+                'ultima_edicion': self.object.ultima_edicion.strftime("%d/%m/%Y %H:%M")
+            }
+        })
+    
         messages.success(self.request, mark_safe('✅ Cliente actualizado exitosamente!'))
         return redirect(self.get_success_url())
 

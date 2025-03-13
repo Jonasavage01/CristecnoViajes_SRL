@@ -1,0 +1,334 @@
+<!-- reservas/hotel_reserva.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-color: #2A5C8D;
+        --secondary-color: #6C757D;
+        --accent-color: #E9F2FA;
+    }
+    
+    .reserva-container {
+        max-width: 1000px;
+        margin: 2rem auto;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+        padding: 2rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e9ecef;
+    }
+    
+    .form-section h4 {
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--accent-color);
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: var(--secondary-color);
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(42, 92, 141, 0.1);
+    }
+    
+    .dynamic-form {
+        background: var(--accent-color);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+        border: 1px solid rgba(42, 92, 141, 0.1);
+    }
+    
+    .btn-success {
+        background-color: var(--primary-color);
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-success:hover {
+        background-color: #234d75;
+        transform: translateY(-1px);
+    }
+    
+    .add-habitacion {
+        width: 100%;
+        border-style: dashed;
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+    
+    .add-habitacion:hover {
+        background-color: var(--accent-color);
+    }
+    
+    .nino-age-input {
+        background: #f8f9fa;
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+    
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    
+    .manual-hotel input {
+        margin-top: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .reserva-container {
+            padding: 0 1rem;
+        }
+        
+        .form-section {
+            padding: 1.5rem;
+        }
+        
+        .form-section h4 {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+
+<div class="reserva-container">
+    <h2 class="mb-4 fw-bold text-center" style="color: var(--primary-color);">Nueva Reserva Hotelera</h2>
+    
+    <form method="post" enctype="multipart/form-data" id="reservaForm">
+        {% csrf_token %}
+        
+        <!-- Sección Cliente/Empresa -->
+        <div class="form-section">
+            <h4>👤 Datos del Cliente/Empresa</h4>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.tipo.label }}</label>
+                        {{ form.tipo|add_class:"form-select" }}
+                    </div>
+                </div>
+                <div class="col-md-6 cliente-field" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.cliente.label }}</label>
+                        {{ form.cliente|add_class:"form-select" }}
+                    </div>
+                </div>
+                <div class="col-md-6 empresa-field" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.empresa.label }}</label>
+                        {{ form.empresa|add_class:"form-select" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección Hotel y Fechas -->
+        <div class="form-section">
+            <h4>🏨 Detalles de la Reserva</h4>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.hotel.label }}</label>
+                        {{ form.hotel|add_class:"form-select" }}
+                        <div class="manual-hotel mt-3" style="display: none;">
+                            {{ form.manual_hotel|add_class:"form-control" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.fecha_entrada.label }}</label>
+                        {{ form.fecha_entrada|add_class:"form-control" }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.fecha_salida.label }}</label>
+                        {{ form.fecha_salida|add_class:"form-control" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección Huéspedes -->
+        <div class="form-section">
+            <h4>👥 Datos de Huéspedes</h4>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.adultos.label }}</label>
+                        {{ form.adultos|add_class:"form-control" }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.ninos.label }}</label>
+                        {{ form.ninos|add_class:"form-control" }}
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="ninos-edades mt-3">
+                        {{ nino_formset.management_form }}
+                        {% for form in nino_formset %}
+                        <div class="nino-age-input">
+                            {{ form.edad|add_class:"form-control"|attr:"placeholder:Edad del niño" }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección Habitaciones -->
+        <div class="form-section">
+            <h4>🛏️ Habitaciones</h4>
+            <div id="habitaciones-form">
+                {{ habitacion_formset.management_form }}
+                {% for form in habitacion_formset %}
+                <div class="dynamic-form">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-8">
+                            {{ form.tipo_habitacion|add_class:"form-select" }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.cantidad|add_class:"form-control"|attr:"placeholder:Cantidad" }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                <button type="button" class="btn btn-outline-primary mt-3 add-habitacion">
+                    <i class="bi bi-plus-circle me-2"></i>Añadir Habitación
+                </button>
+            </div>
+        </div>
+
+        <!-- Sección Final -->
+        <div class="form-section">
+            <h4>💰 Detalles Finales</h4>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.tarifa_adulto.label }}</label>
+                        {{ form.tarifa_adulto|add_class:"form-control" }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.tarifa_nino.label }}</label>
+                        {{ form.tarifa_nino|add_class:"form-control" }}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.comision.label }}</label>
+                        {{ form.comision|add_class:"form-control" }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.notas_cliente.label }}</label>
+                        {{ form.notas_cliente|add_class:"form-control"|attr:"rows:3" }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">{{ form.archivos.label }}</label>
+                        {{ form.archivos|add_class:"form-control" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <button type="submit" class="btn btn-success px-5 py-3">
+                <i class="bi bi-check2-circle me-2"></i>Confirmar Reserva
+            </button>
+        </div>
+    </form>
+</div>
+
+<template id="habitacion-template">
+    <div class="dynamic-form mb-3">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-8">
+                {{ habitacion_formset.empty_form.tipo_habitacion|add_class:"form-select" }}
+            </div>
+            <div class="col-md-4">
+                {{ habitacion_formset.empty_form.cantidad|add_class:"form-control"|attr:"placeholder:Cantidad" }}
+            </div>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar/ocultar campos cliente/empresa
+    $('#id_tipo').on('change', function() {
+        const tipo = $(this).val();
+        $('.cliente-field, .empresa-field').hide();
+        $(`.${tipo}-field`).show();
+    }).trigger('change');
+
+    // Manejar hotel manual
+    $('#id_hotel').on('change', function() {
+        const isOther = $(this).find(':selected').data('is-other');
+        $('.manual-hotel').toggle(isOther);
+        if (!isOther) $('#id_manual_hotel').val('');
+    });
+
+    // Añadir habitación
+    let habitacionIndex = {{ habitacion_formset.total_form_count }};
+    $('.add-habitacion').click(function() {
+        const template = $('#habitacion-template').html().replace(/__prefix__/g, habitacionIndex);
+        $('#habitaciones-form').append(template);
+        $('#id_habitaciones-TOTAL_FORMS').val(++habitacionIndex);
+    });
+
+    // Validación básica del formulario
+    $('#reservaForm').on('submit', function(e) {
+        let isValid = true;
+        $('.is-invalid').removeClass('is-invalid');
+        
+        // Validar campos requeridos
+        $('[required]').each(function() {
+            if (!$(this).val()) {
+                $(this).addClass('is-invalid');
+                isValid = false;
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            showErrorAlert('Por favor complete todos los campos requeridos');
+        }
+    });
+});
+</script>
+{% endblock %}

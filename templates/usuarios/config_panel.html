@@ -3,117 +3,211 @@
 
 {% block title %}{% trans "Configuración del Sistema" %} | {{ block.super }}{% endblock %}
 
+
+
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid py-4">
     <div class="row g-4">
-        <!-- Panel lateral de navegación -->
-        <div class="col-lg-3">
+        <!-- Sidebar Navigation -->
+        <div class="col-xl-3 col-lg-4">
             <div class="card shadow-sm border-0 h-100">
-                <!-- Información del usuario -->
-                <div class="card-header bg-white border-bottom">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-person-circle fs-4 text-primary"></i>
+                <!-- User Profile Section -->
+                <div class="card-header ">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class=" bg-primary text-white rounded-circle flex-shrink-0">
+                            {{ current_user.username|slice:":1"|upper }}
                         </div>
-                        <div class="flex-grow-1 ms-3">
-                            <div class="fw-medium small">{{ current_user.username }}</div>
-                            <div class="text-muted text-xs">{{ current_user.get_rol_display }}</div>
-                            <a href="{% url 'logout' %}" 
-   class="text-danger text-xs d-block mt-1 logout-link"
-   data-confirm="{% trans '¿Está seguro que desea cerrar la sesión?' %}">
-    <i class="bi bi-box-arrow-right me-1"></i>{% trans "Cerrar sesión" %}
-</a>
+                        <div class="flex-grow-1">
+                            <div class="d-flex flex-column">
+                                <div class="fw-medium text-dark mb-1">{{ current_user.username }}</div>
+                                <div class="text-muted small mb-2">{{ current_user.get_rol_display }}</div>
+                                <a href="{% url 'logout' %}" 
+                                   class="logout-link d-inline-flex align-items-center text-decoration-none hover-primary"
+                                   data-confirm="{% trans '¿Está seguro que desea cerrar la sesión?' %}">
+                                    <i class="bi bi-box-arrow-right me-2 small"></i>
+                                    <span class="small">{% trans "Cerrar sesión" %}</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Menú de navegación -->
-                <div class="list-group list-group-flush">
+
+                <!-- Navigation Menu -->
+                <nav class="list-group list-group-flush rounded-3">
                     <a href="{% url 'config_panel' %}" 
-                       class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 {% if request.resolver_match.url_name == 'config_panel' %}bg-light text-primary{% endif %}">
-                        <i class="bi bi-info-circle me-2 fs-5" style="width: 24px;"></i>
+                       class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 px-4 menu-item {% if request.resolver_match.url_name == 'config_panel' %}active{% endif %}">
+                        <i class="bi bi-info-circle me-3 fs-5 menu-icon"></i>
                         <span class="small">{% trans "Resumen" %}</span>
                     </a>
                     <a href="{% url 'user_list' %}" 
-                       class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 {% if 'user' in request.resolver_match.url_name %}bg-light text-primary{% endif %}">
-                        <i class="bi bi-people me-2 fs-5" style="width: 24px;"></i>
-                        <div class="d-flex justify-content-between w-100">
+                       class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 px-4 menu-item {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="bi bi-people me-3 fs-5 menu-icon"></i>
+                        <div class="d-flex justify-content-between w-100 align-items-center">
                             <span class="small">{% trans "Usuarios" %}</span>
                             <span class="badge bg-primary rounded-pill">{{ total_users }}</span>
                         </div>
                     </a>
                     <a href="{% url 'activity_log' %}" 
-                       class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 {% if request.resolver_match.url_name == 'activity_log' %}bg-light text-primary{% endif %}">
-                        <i class="bi bi-clock-history me-2 fs-5" style="width: 24px;"></i>
+                       class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 px-4 menu-item {% if request.resolver_match.url_name == 'activity_log' %}active{% endif %}">
+                        <i class="bi bi-clock-history me-3 fs-5 menu-icon"></i>
                         <span class="small">{% trans "Actividad" %}</span>
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3">
-                        <i class="bi bi-shield-lock me-2 fs-5" style="width: 24px;"></i>
-                        <div class="d-flex justify-content-between w-100">
+                    <div class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 px-4 menu-item">
+                        <i class="bi bi-shield-lock me-3 fs-5 menu-icon"></i>
+                        <div class="d-flex justify-content-between w-100 align-items-center">
                             <span class="small">{% trans "Permisos" %}</span>
                             <span class="badge bg-secondary rounded-pill small">{% trans "Próximamente" %}</span>
                         </div>
-                    </a>
-                </div>
+                    </div>
+                </nav>
             </div>
         </div>
 
-        <!-- Contenido principal -->
-        <div class="col-lg-9">
-            <div class="card shadow-sm border-0 h-100">
-                <!-- Encabezado -->
-                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
-                    <div>
-                        <h5 class="mb-0 text-dark">{% trans "Resumen del Sistema" %}</h5>
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb mb-0 mt-2 small">
-                                <li class="breadcrumb-item"><a href="/" class="text-decoration-none">{% trans "Inicio" %}</a></li>
-                                <li class="breadcrumb-item active">{% trans "Configuración" %}</li>
-                            </ol>
-                        </nav>
+        <!-- Main Content -->
+        <div class="col-xl-9 col-lg-8">
+            <div class="card shadow-sm border-0">
+                <!-- Content Header -->
+                <div class="card-header bg-transparent border-bottom px-4 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h5 mb-0 text-dark">{% trans "Resumen del Sistema" %}</h1>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb mb-0 mt-2 small">
+                                    <li class="breadcrumb-item"><a href="/" class="text-decoration-none">{% trans "Inicio" %}</a></li>
+                                    <li class="breadcrumb-item active">{% trans "Configuración" %}</li>
+                                </ol>
+                            </nav>
+                        </div>
+                        <i class="bi bi-gear fs-4 text-primary opacity-75"></i>
                     </div>
-                    <i class="bi bi-gear fs-4 text-muted"></i>
                 </div>
 
-                <div class="card-body">
+                <!-- Content Body -->
+                <div class="card-body px-4 py-3">
                     {% block config_content %}
                     <div class="row g-4">
-                        <!-- Estadísticas principales -->
+                        <!-- Statistics Cards -->
                         <div class="col-12">
                             <div class="row g-4">
+                                <!-- Users Card -->
                                 <div class="col-md-6">
-                                    <div class="card h-100 border-0 shadow-sm">
-                                        <div class="card-body">
+                                    <div class="card border-0 shadow-sm h-100">
+                                        <div class="card-body p-3">
                                             <div class="d-flex align-items-center">
-                                                <div class="bg-light-primary text-primary rounded p-2 me-3">
+                                                <div class="icon-container bg-primary-soft text-primary rounded-circle p-3 me-3">
                                                     <i class="bi bi-people fs-3"></i>
                                                 </div>
-                                                <div>
-                                                    <h6 class="mb-1 text-muted">{% trans "Usuarios Registrados" %}</h6>
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1 text-muted small">{% trans "Usuarios Registrados" %}</h6>
                                                     <h2 class="mb-0">{{ total_users }}</h2>
+                                                    <div class="mt-2">
+                                                        <span class="badge bg-primary-soft text-dark small">
+                                                            <i class="bi bi-check2-circle me-1"></i>
+                                                            {% blocktrans with active=active_users %}
+                                                            Activos: {{ active }}
+                                                            {% endblocktrans %}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="mt-3">
-                                                <span class="badge bg-light text-dark small">
-                                                    <i class="bi bi-check2-circle me-1"></i>
-                                                    {% blocktrans with active=active_users %}
-                                                    Activos: {{ active }}
-                                                    {% endblocktrans %}
-                                                </span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+
+                             <!-- En tu tarjeta de usuarios en línea -->
+<div class="col-md-6">
+    <a href="{% url 'online_users_list' %}" class="text-decoration-none text-dark">
+    <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center mb-3">
+                <div class="icon-container bg-info-soft text-info rounded-circle p-3 me-3">
+                    <i class="bi bi-person-check fs-3"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="mb-1 text-muted small">{% trans "Usuarios en Línea" %}</h6>
+                    <h2 class="mb-0">{{ online_count|default:0 }}</h2>
+
+                </div>
+            </div>
+            
+            {% if online_users_list %}
+            <div class="online-list">
+                {% for user in online_users_list %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar-icon bg-primary text-white rounded-circle small">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                    <div class="ms-3 flex-grow-1">
+                        <div class="fw-medium small">{{ user.username }}</div>
+                        <div class="text-muted x-small">
+                            {% blocktrans with time=user.last_login_time|timesince %}
+                            Activo hace {{ time }}
+                            {% endblocktrans %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if online_count > 5 %}
+                <a href="{% url 'online_users_list' %}" class="btn btn-outline-primary btn-sm w-100 mt-2">
+                    {% trans "Ver todos" %} ({{ online_count }})
+                </a>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="text-center py-3">
+                <div class="text-muted small">
+                    <i class="bi bi-people-slash me-2"></i>
+                    {% trans "No hay usuarios activos" %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
                             </div>
                         </div>
-
-                        
+                    </div>
                     {% endblock %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .avatar-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .icon-container {
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .list-group-item.active {
+        background: var(--bs-primary-bg-subtle);
+        color: var(--bs-primary);
+        border-left: 3px solid var(--bs-primary);
+    }
+    
+    .bg-primary-soft {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+    }
+    
+    .bg-info-soft {
+        background-color: rgba(var(--bs-info-rgb), 0.1);
+    }
+</styl>
 {% endblock %}
 
 {% block extra_js %}

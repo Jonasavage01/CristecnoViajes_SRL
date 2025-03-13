@@ -18,6 +18,132 @@ from .forms import LoginForm, UserCreationForm, AdminPasswordChangeForm
 from crm.mixins import AuthRequiredMixin
 from django.views.generic import DetailView
 logger = logging.getLogger(__name__)
+from django.shortcuts import render
+from django.utils import timezone
+from django.db.models import OuterRef, Subquery, Q
+from django.contrib.auth.models import User
+from .models import UsuarioPersonalizado, UserActivityLog
+from django.db.models import Prefetch
+from django.db.models import OuterRef, Subquery, Exists
+from django.db.models import F
+from django.contrib.sessions.models import Session
+
+
+def config_panel(request):
+    timeout = timezone.now() - timezone.timedelta()
+    
+    # Optimización con Prefetch
+    last_activity_subquery = UserActivityLog.objects.filter(
+        user=OuterRef('pk'),
+        activity_type='login'
+    ).order_by('-timestamp')
+
+    online_users = UsuarioPersonalizado.objects.annotate(
+        last_login_time=Subquery(last_activity_subquery.values('timestamp')[:1]),
+        has_logout=Exists(
+            UserActivityLog.objects.filter(
+                user=OuterRef('pk'),
+                activity_type='logout',
+                timestamp__gt=OuterRef('last_login_time')
+            )
+        )
+    ).filter(
+        last_login_time__gte=timeout,
+        has_logout=False
+    ).prefetch_related(
+        Prefetch('useractivitylog_set', 
+                 queryset=UserActivityLog.objects.order_by('-timestamp'),
+                 to_attr='prefetched_activities')
+    ).distinct()
+
+    context = {
+        'online_count': online_users.count(),
+        'online_users_list': online_users.order_by('-last_login_time')[:5],
+        'online_users_list': online_users.order_by('-last_login_time')[:5],
+        'active_users': online_users.count()
+    }
+    
+    response = render(...)
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    print(f"Timeout: {timeout}")
+    print(f"Usuarios online raw query: {str(online_users.query)}")
+    print("Usuarios online:", [(u.username, u.last_login_time) for u in context['online_users_list']])
+    return render(request, 'usuarios/config_panel.html', context)
+
+
+def online_users_list(request):
+    # Obtener todas las sesiones activas
+    active_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+    user_ids = []
+    
+    for session in active_sessions:
+        session_data = session.get_decoded()
+        user_id = session_data.get('_auth_user_id')
+        if user_id:
+            user_ids.append(int(user_id))
+    
+    # Eliminar duplicados y obtener usuarios
+    user_ids = list(set(user_ids))
+    online_users = UsuarioPersonalizado.objects.filter(id__in=user_ids).annotate(
+        last_login_time=Subquery(
+            UserActivityLog.objects.filter(
+                user=OuterRef('id'),
+                activity_type=UserActivityLog.ActivityType.LOGIN
+            ).order_by('-timestamp').values('timestamp')[:1]
+        )
+    ).prefetch_related(
+        Prefetch(
+            'useractivitylog_set',
+            queryset=UserActivityLog.objects.filter(activity_type='login').order_by('-timestamp'),
+            to_attr='prefetched_logins'
+        )
+    )
+    
+    context = {
+        'users': online_users,
+        'online_count': online_users.count()
+    }
+    return render(request, 'usuarios/online_users_list.html', context)
+
+def config_panel(request):
+    active_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+    user_ids = []
+    
+    for session in active_sessions:
+        session_data = session.get_decoded()
+        user_id = session_data.get('_auth_user_id')
+        if user_id:
+            user_ids.append(int(user_id))
+    
+    user_ids = list(set(user_ids))
+    online_users = UsuarioPersonalizado.objects.filter(id__in=user_ids).annotate(
+        last_login_time=Subquery(
+            UserActivityLog.objects.filter(
+                user=OuterRef('id'),
+                activity_type=UserActivityLog.ActivityType.LOGIN
+            ).order_by('-timestamp').values('timestamp')[:1]
+        )
+    ).prefetch_related(
+        Prefetch(
+            'useractivitylog_set',
+            queryset=UserActivityLog.objects.order_by('-timestamp'),
+            to_attr='prefetched_activities'
+        )
+    )
+    
+    context = {
+        'online_count': online_users.count(),
+        'users': online_users.order_by('-last_login_time'),
+        'active_users': online_users.count()
+    }
+    
+    response = render(request, 'usuarios/config_panel.html', context)
+    response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response["Pragma"] = "no-cache"
+    response["Expires"] = "0"
+    return response
 
 class CustomLoginView(LoginView):
     form_class = LoginForm
@@ -39,7 +165,6 @@ class CustomLoginView(LoginView):
         user = form.get_user()
         
     
-        
         
         # Actualizar última sesión
         user.last_login = timezone.now()
@@ -91,6 +216,7 @@ class CustomLogoutView(LogoutView):
     def dispatch(self, request, *args, **kwargs):
         
 
+         # Registrar actividad de logout
         response = super().dispatch(request, *args, **kwargs)
         response.delete_cookie('sessionid')
         response.delete_cookie('csrftoken')

@@ -30,6 +30,7 @@ class ClienteForm(forms.ModelForm):
     
     class Meta:
         model = Cliente
+        exclude = ['creado_por', 'editado_por', 'ultima_edicion', 'fecha_creacion']
         fields = '__all__'
         widgets = {
             'fecha_nacimiento': forms.DateInput(
@@ -245,7 +246,7 @@ class ClienteEditForm(forms.ModelForm):
     
     class Meta:
         model = Cliente
-        exclude = ['documento', 'notas', 'fecha_creacion', 'ultima_actividad']
+        exclude = ['documento', 'notas', 'fecha_creacion', 'ultima_actividad', 'creado_por', 'editado_por', 'ultima_edicion',]
         widgets = {
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
             'nacionalidad': forms.Select(attrs={'class': 'form-select'}),

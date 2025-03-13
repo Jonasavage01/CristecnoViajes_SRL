@@ -25,6 +25,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from usuarios.models import UsuarioPersonalizado
 
 
 class Cliente(models.Model):
@@ -67,7 +68,7 @@ class Cliente(models.Model):
         max_length=20,
         help_text='Formato internacional: +18091234567 o "N/A" si no aplica'
     )
-    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Creación')
+    
     ultima_actividad = models.DateTimeField(auto_now=True, verbose_name='Última Actividad')
     estado = models.CharField(
         'Estado del Lead',
@@ -75,7 +76,30 @@ class Cliente(models.Model):
         choices=ESTADO_CHOICES,
         default='activo' 
     )
+    creado_por = models.ForeignKey(
+        UsuarioPersonalizado, 
+        related_name='clientes_creados',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
 
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True, 
+        verbose_name='Fecha de Creación'
+    )
+    ultima_edicion = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última Edición'
+    )
+    editado_por = models.ForeignKey(
+        UsuarioPersonalizado,
+        related_name='clientes_editados',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Último Editor'
+    )
     documento = models.FileField(
         'Documento Adjunto',
         upload_to='clientes/documentos/',

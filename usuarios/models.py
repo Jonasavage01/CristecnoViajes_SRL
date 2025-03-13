@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 class UsuarioPersonalizado(AbstractUser):
     class Roles(models.TextChoices):
@@ -50,11 +51,30 @@ class UsuarioPersonalizado(AbstractUser):
         null=True, 
         blank=True
     )
-    must_change_password = models.BooleanField(
-        _('Debe cambiar contraseña'),
-        default=False,
-        help_text=_('Forzar cambio de contraseña en próximo inicio de sesión')
-    )
+    @property
+    def last_activity(self):
+        # Optimizada para usar prefetch_related
+        if hasattr(self, '_prefetched_last_activity'):
+            return self._prefetched_last_activity
+        return self.useractivitylog_set.filter(
+            activity_type='login'
+        ).order_by('-timestamp').first().timestamp
+
+    @property
+    def is_online(self):
+        if not self.last_activity:
+            return False
+        timeout = timezone.now() - timezone.timedelta(minutes=15)
+        return self.last_activity > timeout and not self.useractivitylog_set.filter(
+            activity_type='logout',
+            timestamp__gt=self.last_activity
+        ).exists()
+    
+    @property
+    def last_login_activity(self):
+        return self.useractivitylog_set.filter(
+            activity_type=UserActivityLog.ActivityType.LOGIN
+        ).order_by('-timestamp').first()
     
     class Meta:
         verbose_name = _('Usuario')
@@ -96,6 +116,25 @@ class UserActivityLog(models.Model):
         ordering = ('-timestamp',)
         verbose_name = _('Registro de actividad')
         verbose_name_plural = _('Registros de actividad')
+    @property
+    def device_icon(self):
+        icons = {
+            'mobile': 'bi-phone',
+            'tablet': 'bi-tablet',
+            'pc': 'bi-pc',
+            'bot': 'bi-robot'
+        }
+        
+        if self.is_bot: return icons['bot']
+        if self.is_mobile: return icons['mobile']
+        if self.is_tablet: return icons['tablet']
+        return icons['pc']
 
+    @property
+    def location_pin(self):
+        if self.loc:
+            return f"https://maps.googleapis.com/maps/api/staticmap?center={self.loc}&zoom=10&size=200x100&key=TU_API_KEY"
+        return None
+    
     def __str__(self):
         return f"{self.user.username} - {self.get_activity_type_display()} - {self.timestamp}"  # ti

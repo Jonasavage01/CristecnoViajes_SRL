@@ -9,6 +9,8 @@ urlpatterns = [
     path('', include('dashboard.urls')),  # Dashboard como raíz
     path('crm/', include('crm.urls')),
     path('usuarios/', include('usuarios.urls')),
+    path('reservas/', include('reservas.urls')),
+    path('select2/', include('django_select2.urls')),
 ]
 
 # Agrega la ruta para servir archivos multimedia en desarrollo

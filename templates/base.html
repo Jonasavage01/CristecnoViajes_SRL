@@ -2,25 +2,26 @@
 {% load static i18n %}
 {% load static %}
 <html lang="es">
-<head>
-    {% csrf_token %}
-    <meta name="csrf-token" content="{{ csrf_token }}">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}CristecnoViajes SRL{% endblock %}</title>
-    
-    <!-- Bootstrap 5 CSS -->
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'crm/custom.css' %}">
-    <link rel="stylesheet" href="{% static 'crm/base.css' %}">
-    <link rel="stylesheet" href="{% static 'crm/crm.css' %}">
-    {% block extra_head %}{% endblock %}
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="csrf-token" content="{{ csrf_token }}">
+        <title>{% block title %}CristecnoViajes SRL{% endblock %}</title>
+        
+        <!-- Hojas de Estilo -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        
+        <!-- Estilos Locales -->
+        <link rel="stylesheet" href="{% static 'crm/base.css' %}">
+        <link rel="stylesheet" href="{% static 'crm/crm.css' %}">
+        <link rel="stylesheet" href="{% static 'crm/custom.css' %}">
+        
+        {% block extra_head %}{% endblock %}
+    </head>
 <body>
     
           <!-- Sidebar Desktop -->
@@ -59,7 +60,7 @@
                     </ul>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/ventas/">
+                    <a class="nav-link" href="{% url 'reservas:reservas_home' %}">
                         <i class="bi bi-cart"></i>
                         <span class="menu-text">Reservas</span>
                     </a>
@@ -131,7 +132,7 @@
                 </ul>
             </li>
             <li class="nav-item">
-                <a class="nav-link py-1" href="/ventas/">
+                <a class="nav-link py-1" href="{% url 'reservas:reservas_home' %}">
                     <i class="bi bi-cart d-block"></i>
                     <span class="menu-text">Reservas</span>
                 </a>
@@ -165,19 +166,16 @@
 </nav>
 
 
-<!-- Bootstrap primero -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Luego SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
- <!-- Scripts base -->
- <script src="{% static 'crm/alerts.js' %}"></script>
+ <!-- Scripts Base -->
+ <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+ <script src="{% static 'crm/alerts.js' %}"></script>
 
 
-{# Bloque para scripts adicionales en templates hijos #}
-{% block extra_js %}{% endblock %}
+
 <!-- Agregar esto antes de cerrar el body -->
 
 <div id="liveToast" class="toast position-fixed bottom-0 end-0 m-3" role="alert" aria-live="assertive" aria-atomic="true">
@@ -206,7 +204,8 @@
 
 </body>
 </html>
-
+{# Bloque para scripts adicionales en templates hijos #}
+{% block extra_js %}{% endblock %}
 <style>
     .notification-icon-container {
         width: 80px;

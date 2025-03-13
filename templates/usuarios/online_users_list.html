@@ -1,0 +1,134 @@
+{% extends 'usuarios/config_panel.html' %}
+{% load i18n static %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h3 class="mb-0">
+                <i class="bi bi-people-fill text-primary me-2"></i>
+                {% trans "Usuarios en Línea" %}
+            </h3>
+            <div class="badge bg-primary rounded-pill fs-6">{{ online_count }} {% trans "En linea" %}</div>
+        </div>
+        
+        <div class="card-body">
+            {% if users %}
+            <div class="row g-4">
+                {% for user in users %}
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card user-card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start">
+                                <!-- Avatar del Usuario -->
+                                <div class="avatar me-3">
+                                    <div class="avatar-initials bg-primary text-white rounded-circle">
+                                        {{ user.username|slice:":2"|upper }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Información Principal -->
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-1">
+                                        {{ user.get_full_name|default:user.username }}
+                                        <small class="text-muted">@{{ user.username }}</small>
+                                    </h5>
+                                    
+                                    <div class="d-flex gap-2 align-items-center mb-2">
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-person-rolodex me-1"></i>
+                                            {{ user.get_rol_display }}
+                                        </span>
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-circle-fill me-1"></i>
+                                            {% trans "En línea" %}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Detalles de Actividad -->
+                                    <div class="activity-details">
+                                        {% with activity=user.latest_activities.0 %}
+                                        <div class="d-flex flex-column small text-muted">
+                                            <div>
+                                                <i class="bi bi-clock-history me-1"></i>
+                                                {% trans "Tiempo en línea:" %} 
+                                                {{ user.last_login_time|timesince }}
+                                            </div>
+                                            <div>
+                                                <i class="bi bi-geo-alt me-1"></i>
+                                                {% if activity.city and activity.country %}
+                                                    {{ activity.city }}, {{ activity.country }}
+                                                {% else %}
+                                                    {% trans "Ubicación no disponible" %}
+                                                {% endif %}
+                                            </div>
+                                           
+                                            <div>
+                                                <i class="bi bi-pc me-1"></i>
+                                                {{ activity.browser|default:"Navegador desconocido" }} 
+                                                on {{ activity.os|default:"OS desconocido" }}
+                                            </div>
+                                        </div>
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer bg-white border-top">
+                            <div class="d-flex justify-content-between small text-muted">
+                                <span>
+                                    <i class="bi bi-ip me-1"></i>
+                                    {{ activity.ip_address }}
+                                </span>
+                                <span>
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    {{ user.last_activity|date:"d M Y H:i" }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state text-center py-5">
+                <div class="empty-state-icon">
+                    <i class="bi bi-person-x-fill fs-1 text-muted opacity-50"></i>
+                </div>
+                <h4 class="mt-3">{% trans "No hay usuarios activos" %}</h4>
+                <p class="text-muted">{% trans "Ningún usuario ha estado activo en los últimos 15 minutos" %}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-initials {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.user-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.user-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.activity-details div {
+    line-height: 1.4;
+    margin: 0.3rem 0;
+}
+</style>
+{% endblock %}

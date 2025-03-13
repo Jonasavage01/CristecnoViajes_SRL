@@ -31,9 +31,12 @@ INSTALLED_APPS = [
     'django_countries',  # App de terceros
      'django_cleanup.apps.CleanupConfig',
      'openpyxl',
+     'widget_tweaks',
+     'django_select2',
 
     # Apps locales:
     'crm',
+    'reservas',
     'usuarios.apps.UsuariosConfig', 
     'dashboard.apps.DashboardConfig',
     'django_user_agents',
@@ -55,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
+    
 
 ]
 
@@ -141,34 +145,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 ###############################################################################
-# Configuración de Logging (básica)
-###############################################################################
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'WARNING',
-    },
-}
-
-###############################################################################
 # Configuración de Email
 ###############################################################################
 # Durante el desarrollo, se pueden enviar los correos a la consola.
@@ -220,17 +196,52 @@ DATE_INPUT_FORMATS = ['%d/%m/%Y', '%Y-%m-%d']  # Formatos de fecha aceptados
 IPINFO_TOKEN = '839449f01be879'  # Tu token de ipinfo.io
 USER_AGENTS_CACHE = 'default'  # Para mejor performance
 
+# Reemplaza todo el bloque de LOGGING con esta configuración:
 LOGGING = {
     'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose' if DEBUG else 'simple',
         },
     },
     'loggers': {
-        'your_app_name': {
+        'django': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'usuarios': {  # Logger específico para tu app de usuarios
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+        'django.db.backends': {  # Para ver queries SQL
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'handlers': ['console'],
+            'propagate': False,
         },
     },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG' if DEBUG else 'INFO',
+    },
 }
+
+SELECT2_CSS = ['https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css']
+SELECT2_JS = ['https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js']
+
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 86400  # 24 horas (ajusta según necesidad)
+SESSION_SAVE_EVERY_REQUEST = True  # Opcional: actualiza la sesión en cada solicitud

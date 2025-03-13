@@ -1,5 +1,6 @@
 from django.contrib.auth.signals import user_logged_in, user_logged_out, user_login_failed
 from django.dispatch import receiver
+from .services import get_ip_geolocation 
 from django.contrib.auth.models import AnonymousUser
 import logging
 from .services import get_ip_geolocation
@@ -16,10 +17,15 @@ logger = logging.getLogger(__name__)
 def log_user_login(sender, request, user, **kwargs):
     try:
         # Obtener IP con override para desarrollo
-        if settings.DEBUG:
-            ip_address = ' 200.215.234.10'  # IP argentina para pruebas
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip_address = x_forwarded_for.split(',')[0].strip()
         else:
-            ip_address = request.META.get('HTTP_X_FORWARDED_FOR') or request.META.get('REMOTE_ADDR')
+            ip_address = request.META.get('REMOTE_ADDR', '0.0.0.0')
+        
+        # Override solo si está en DEBUG y la IP es local
+        if settings.DEBUG and ip_address in ['127.0.0.1', '::1']:
+            ip_address = '200.215.234.10'  # IP de prueba
         
         user_agent_str = request.META.get('HTTP_USER_AGENT', '')
         user_agent = parse(user_agent_str)
