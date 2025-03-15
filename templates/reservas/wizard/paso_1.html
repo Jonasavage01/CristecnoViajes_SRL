@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .search-card {
+        max-width: 800px;
+        margin: 2rem auto;
+        border-radius: 15px;
+    }
+    
+    .progress-steps {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6c757d;
+    }
+    
+    .step.active {
+        color: #0d6efd;
+        font-weight: 500;
+    }
+    
+    .step-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #e9ecef;
+    }
+    
+    .step.active .step-number {
+        background: #0d6efd;
+        color: white;
+    }
+    
+    .search-input-container {
+        position: relative;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 3;
+    }
+    
+    #searchInput {
+        padding-left: 45px;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    
+    #searchInput:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
+    
+    .result-item {
+        transition: all 0.2s ease;
+        border-radius: 8px !important;
+        margin-bottom: 0.5rem;
+    }
+    
+    .result-item:hover {
+        transform: translateX(5px);
+        background: #f8f9fa;
+    }
+    
+    .selected-card {
+        border-left: 4px solid #0d6efd;
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="progress-steps">
+        <div class="step active">
+            <span class="step-number">1</span>
+            <span>Seleccionar Cliente</span>
+        </div>
+        <div class="step">
+            <span class="step-number">2</span>
+            <span>Detalles Reserva</span>
+        </div>
+    </div>
+
+    <div class="card search-card shadow-lg">
+        <div class="card-header bg-primary text-white py-3">
+            <h3 class="mb-0 fs-4"><i class="bi bi-person-lines-fill me-2"></i>Seleccionar Cliente/Empresa</h3>
+        </div>
+        
+        <div class="card-body">
+            <div class="search-input-container mb-4">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" 
+                       id="searchInput" 
+                       class="form-control form-control-lg" 
+                       placeholder="Buscar por nombre, cédula, RNC..."
+                       autocomplete="off">
+                <div class="spinner-border text-primary mt-2" id="loadingSpinner" role="status" style="display: none;">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+            </div>
+            
+            <div id="resultsContainer" class="mt-2" style="display: none;">
+                <h5 class="text-muted mb-3 fs-6"><i class="bi bi-list-task me-2"></i>Resultados</h5>
+                <div id="searchResults" class="list-group"></div>
+            </div>
+            
+            <div id="selectedContainer" class="mt-4" style="display: none;">
+                <div class="card selected-card border-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-check-fill fs-3 text-primary me-3"></i>
+                                <div>
+                                    <h4 id="selectedName" class="mb-1 fs-5"></h4>
+                                    <small id="selectedType" class="text-muted"></small>
+                                </div>
+                            </div>
+                            <button id="changeSelection" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-x-circle me-2"></i>Cambiar
+                            </button>
+                        </div>
+                        <hr class="my-3">
+                        <button id="confirmSelection" 
+                                class="btn btn-primary w-100 d-flex align-items-center justify-content-center"
+                                disabled>
+                            <span class="me-2">Continuar</span>
+                            <i class="bi bi-arrow-right-short fs-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos del DOM
+    const searchInput = document.getElementById('searchInput');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const searchResults = document.getElementById('searchResults');
+    const selectedContainer = document.getElementById('selectedContainer');
+    const selectedName = document.getElementById('selectedName');
+    const selectedType = document.getElementById('selectedType');
+    const confirmBtn = document.getElementById('confirmSelection');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const changeSelectionBtn = document.getElementById('changeSelection');
+    let selectedItem = null;
+    let searchTimeout;
+
+    // Función para realizar búsqueda con debounce
+    const performSearch = async (query) => {
+        if (query.length < 2) {
+            resultsContainer.style.display = 'none';
+            return;
+        }
+
+        loadingSpinner.style.display = 'block';
+        
+        try {
+            const response = await fetch(`{% url 'reservas:buscar_clientes' %}?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            searchResults.innerHTML = '';
+            
+            data.clientes.forEach(item => {
+                const element = createResultItem(item, 'cliente', 'primary');
+                searchResults.appendChild(element);
+            });
+
+            data.empresas.forEach(item => {
+                const element = createResultItem(item, 'empresa', 'success');
+                searchResults.appendChild(element);
+            });
+
+            resultsContainer.style.display = 'block';
+        } catch (error) {
+            showError('Error de conexión', 'No se pudo realizar la búsqueda');
+        } finally {
+            loadingSpinner.style.display = 'none';
+        }
+    };
+
+    // Crear elementos de resultados
+    const createResultItem = (item, type, badgeColor) => {
+        const element = document.createElement('button');
+        element.className = 'list-group-item list-group-item-action result-item';
+        element.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">${item.nombre}</h6>
+                    <small class="text-muted">${type === 'cliente' ? 'Cédula' : 'RNC'}: ${item.identificacion}</small>
+                </div>
+                <span class="badge bg-${badgeColor} rounded-pill">${type.charAt(0).toUpperCase() + type.slice(1)}</span>
+            </div>
+        `;
+        element.addEventListener('click', () => selectItem(item, type));
+        return element;
+    };
+
+    // Función para seleccionar un item
+    const selectItem = (item, type) => {
+        selectedItem = {
+            id: item.id,
+            name: item.nombre,
+            type: type,
+            identificacion: item.identificacion
+        };
+        
+        updateSelectionDisplay();
+        resultsContainer.style.display = 'none';
+        selectedContainer.style.display = 'block';
+        confirmBtn.disabled = false;
+    };
+
+    // Actualizar display de selección
+    const updateSelectionDisplay = () => {
+        selectedName.textContent = selectedItem.name;
+        selectedType.textContent = `${selectedItem.type.charAt(0).toUpperCase() + selectedItem.type.slice(1)} - ${selectedItem.identificacion}`;
+    };
+
+    // Función para mostrar errores
+    const showError = (title, text) => {
+        Swal.fire({
+            icon: 'error',
+            title: title,
+            text: text,
+            confirmButtonColor: '#0d6efd'
+        });
+    };
+
+    // Función para cambiar selección (CORREGIDA)
+    const changeSelection = async () => {
+        try {
+            await fetch('/reservas/limpiar-seleccion/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            });
+            
+            selectedItem = null;
+            selectedContainer.style.display = 'none';
+            searchInput.value = '';
+            confirmBtn.disabled = true;
+            searchInput.focus();
+            resultsContainer.style.display = 'none';
+            
+        } catch (error) {
+            showError('Error', 'No se pudo restablecer la selección');
+            console.error('Error:', error);
+        }
+    };
+
+    // Event Listeners
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            performSearch(e.target.value.trim());
+        }, 300);
+    });
+
+    document.getElementById('clearSearch').addEventListener('click', () => {
+        searchInput.value = '';
+        resultsContainer.style.display = 'none';
+    });
+
+    changeSelectionBtn.addEventListener('click', changeSelection);
+
+    confirmBtn.addEventListener('click', async () => {
+        if (!selectedItem) return;
+
+        try {
+            const result = await Swal.fire({
+                title: 'Confirmar selección',
+                html: `¿Deseas asignar la reserva a:<br>
+                      <strong>${selectedItem.name}</strong><br>
+                      <small class="text-muted">${selectedItem.identificacion}</small>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Confirmar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#0d6efd',
+                cancelButtonColor: '#dc3545'
+            });
+
+            if (result.isConfirmed) {
+                const formData = new FormData();
+                const key = selectedItem.type === 'cliente' ? 'cliente_id' : 'empresa_id';
+                formData.append(key, selectedItem.id);
+
+                const response = await fetch("{% url 'reservas:wizard_paso' tipo='hotel' paso=1 %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = data.next_url;
+                } else {
+                    showError('Error', data.error || 'Error desconocido');
+                    changeSelection();
+                }
+            }
+        } catch (error) {
+            showError('Error', 'No se pudo procesar la solicitud');
+            console.error('Error:', error);
+        }
+    });
+
+    // Cargar selección previa si existe
+    const loadPreviousSelection = () => {
+        {% if request.session.reserva_data %}
+            {% with data=request.session.reserva_data %}
+                {% if data.cliente_id %}
+                    const cliente = {{ data.cliente_json|safe }};
+                    selectItem(cliente, 'cliente');
+                {% elif data.empresa_id %}
+                    const empresa = {{ data.empresa_json|safe }};
+                    selectItem(empresa, 'empresa');
+                {% endif %}
+            {% endwith %}
+        {% endif %}
+    };
+
+    // Inicializar
+    loadPreviousSelection();
+});
+</script>
+{% endblock %}

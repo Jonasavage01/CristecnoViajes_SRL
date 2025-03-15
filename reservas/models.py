@@ -1,4 +1,3 @@
-# reservas/models.py
 from django.db import models
 from crm.models import Cliente, Empresa
 from usuarios.models import UsuarioPersonalizado
@@ -11,19 +10,18 @@ class Reserva(models.Model):
         ('otros', 'Otros')
     ]
 
+    # Paso 1
     cliente = models.ForeignKey(
         Cliente, 
         on_delete=models.SET_NULL, 
         null=True, 
-        blank=True,
-        verbose_name='Cliente asociado'
+        blank=True
     )
     empresa = models.ForeignKey(
         Empresa,
         on_delete=models.SET_NULL,
         null=True,
-        blank=True,
-        verbose_name='Empresa asociada'
+        blank=True
     )
     tipo_reserva = models.CharField(
         max_length=20, 
@@ -33,16 +31,23 @@ class Reserva(models.Model):
     creado_por = models.ForeignKey(
         UsuarioPersonalizado,
         on_delete=models.SET_NULL,
-        null=True,
-        related_name='reservas_creadas'
+        null=True
     )
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
     
+    # Paso 2
+    fecha_entrada = models.DateField(null=True)
+    fecha_salida = models.DateField(null=True)
+    adultos = models.PositiveIntegerField(default=1)
+    adolescentes = models.PositiveIntegerField(default=0)
+    ninos = models.PositiveIntegerField(default=0)
+    infantes = models.PositiveIntegerField(default=0)
+    
+    # Control
+    paso_actual = models.PositiveIntegerField(default=1)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
     class Meta:
-        verbose_name = 'Reserva'
-        verbose_name_plural = 'Reservas'
         ordering = ['-fecha_creacion']
 
     def __str__(self):
-        nombre = self.cliente.nombre if self.cliente else self.empresa.nombre_comercial
-        return f"Reserva #{self.id} - {nombre}"
+        return f"Reserva #{self.id} - {self.get_tipo_display()}"

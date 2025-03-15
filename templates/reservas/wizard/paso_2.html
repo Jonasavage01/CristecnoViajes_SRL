@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6">
+                <label>Fecha Entrada</label>
+                <input type="date" name="fecha_entrada" required class="form-control">
+            </div>
+            <div class="col-md-6">
+                <label>Fecha Salida</label>
+                <input type="date" name="fecha_salida" required class="form-control">
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <label>Adultos</label>
+                <input type="number" name="adultos" min="1" value="1" class="form-control">
+            </div>
+            <!-- Repetir para otros grupos -->
+        </div>
+        
+        <button type="submit" class="btn btn-primary mt-4">Continuar</button>
+    </form>
+</div>
+{% endblock %}
