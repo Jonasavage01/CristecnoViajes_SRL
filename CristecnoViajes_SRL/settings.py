@@ -15,7 +15,8 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 # ALLOWED_HOSTS: en producción agrega aquí los dominios o IPs permitidos.
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split()  # Ej: 'localhost 127.0.0.1'
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split() 
+# Ej: 'localhost 127.0.0.1'
 
 ###############################################################################
 # Aplicaciones instaladas
@@ -33,9 +34,11 @@ INSTALLED_APPS = [
      'openpyxl',
      'widget_tweaks',
      'django_select2',
+     'crum',
 
     # Apps locales:
     'crm',
+    'core.apps.CoreConfig',
     'reservas',
     'usuarios.apps.UsuariosConfig', 
     'dashboard.apps.DashboardConfig',
@@ -58,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
+    'usuarios.middleware.ActivityTrackingMiddleware',
     
 
 ]
@@ -122,11 +126,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ###############################################################################
 # Internacionalización
 ###############################################################################
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es'
 # Configurar zona horaria correcta
 TIME_ZONE = 'America/Santo_Domingo'
 USE_TZ = True
 USE_I18N = True
+USE_L10N = True
 
 
 ###############################################################################
@@ -242,6 +247,10 @@ LOGGING = {
 SELECT2_CSS = ['https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css']
 SELECT2_JS = ['https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js']
 
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 86400  # 24 horas (ajusta según necesidad)
 SESSION_SAVE_EVERY_REQUEST = True  # Opcional: actualiza la sesión en cada solicitud
+
+# Configurar handlers de error
+handler403 = 'core.handlers.handler403'

@@ -191,7 +191,51 @@
                         </div>
                     </div>
                 </div>
-
+<!-- Sección Sistema -->
+<div class="col-12">
+    <div class="section-card card border-0 shadow-sm">
+        <div class="card-header bg-light bg-gradient border-0 py-3">
+            <h5 class="mb-0 d-flex align-items-center text-primary">
+                <i class="bi bi-gear me-3 fs-4"></i>
+                Datos del Sistema
+            </h5>
+        </div>
+        <div class="card-body pt-4">
+            <dl class="row mb-0">
+                <dt class="col-md-4 data-label fw-500">Estado</dt>
+                <dd class="col-md-8 mb-3">
+                    <span class="badge bg-{{ empresa.get_estado_color }}">
+                        {{ empresa.get_estado_display }}
+                    </span>
+                </dd>
+                
+                <dt class="col-md-4 data-label fw-500">Fecha Creación</dt>
+                <dd class="col-md-8 mb-3">{{ empresa.fecha_creacion|date:"d/m/Y H:i" }}</dd>
+                
+                <dt class="col-md-4 data-label fw-500">Creado por</dt>
+                <dd class="col-md-8 mb-3">
+                    {% if empresa.creado_por %}
+                        {{ empresa.creado_por.get_full_name }} ({{ empresa.creado_por.rol }})
+                    {% else %}
+                        Sistema
+                    {% endif %}
+                </dd>
+                
+                <dt class="col-md-4 data-label fw-500">Última Edición</dt>
+                <dd class="col-md-8 mb-3">{{ empresa.ultima_edicion|date:"d/m/Y H:i" }}</dd>
+                
+                <dt class="col-md-4 data-label fw-500">Editado por</dt>
+                <dd class="col-md-8 mb-3">
+                    {% if empresa.editado_por %}
+                        {{ empresa.editado_por.get_full_name }} ({{ empresa.editado_por.rol }})
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </dd>
+            </dl>
+        </div>
+    </div>
+</div>
         <!-- Pestaña Documentos - Versión Mejorada -->
         <div class="tab-pane fade" id="docsTab">
             <div class="row px-lg-4">

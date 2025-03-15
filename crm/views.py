@@ -14,6 +14,7 @@ import json  # Para serializar los datos
 from django.urls import reverse  # Para generar URLs
 from django.utils.html import format_html
 from django.views.generic import DetailView
+from core.mixins import RoleAccessMixin
 
 from django.utils.safestring import mark_safe
 
@@ -58,7 +59,7 @@ from .filters import ClienteFilter
 from django.db import models
 
 from django.views.generic import ListView
-from .mixins import AuthRequiredMixin  # <-- Importar el mixin
+from .mixins import AuthRequiredMixin  
 
 # Logger configuration
 logger = logging.getLogger(__name__)
@@ -66,6 +67,7 @@ logger = logging.getLogger(__name__)
 
 
 class ExportClientesView(AuthRequiredMixin,View):
+    allowed_roles = ['admin', 'clientes']
     def get_queryset(self):
         queryset = Cliente.objects.all()
         
@@ -98,7 +100,7 @@ class ExportClientesView(AuthRequiredMixin,View):
         queryset = self.get_queryset()
         return exportar_clientes(queryset, formato)
 
-class ClienteDeleteView(AuthRequiredMixin,DeleteView):
+class ClienteDeleteView(RoleAccessMixin,DeleteView):
     model = Cliente
     template_name = "crm/cliente_confirm_delete.html"
     success_url = reverse_lazy('crm_home')
@@ -128,7 +130,7 @@ class ClienteDeleteView(AuthRequiredMixin,DeleteView):
             messages.error(request, error_msg)
             return redirect(self.get_success_url())
 
-class CRMView(AuthRequiredMixin, ListView):
+class CRMView(RoleAccessMixin, ListView):
     model = Cliente
     template_name = "crm/crm_home.html"
     context_object_name = 'clientes'
@@ -356,13 +358,13 @@ class ClienteDetailView(AuthRequiredMixin, DetailView):
             },
         {
     'titulo': 'Sistema',
-                'icono': icon_map['Sistema'],
-                'campos': [
-                    ('Estado', cliente.get_estado_display()),
-                    ('Fecha Creación', cliente.fecha_creacion.strftime("%d/%m/%Y %H:%M")),
-                    ('Creado por', self._format_user_info(cliente.creado_por)),
-                    ('Última Edición', cliente.ultima_edicion.strftime("%d/%m/%Y %H:%M")),
-                    ('Editado por', self._format_user_info(cliente.editado_por)),
+    'icono': icon_map['Sistema'],
+    'campos': [
+        ('Estado', cliente.get_estado_display()),
+        ('Fecha Creación', cliente.fecha_creacion.strftime("%d/%m/%Y %H:%M")),
+        ('Creado por', self._format_user_info(cliente.creado_por)),
+        ('Última Edición', cliente.ultima_edicion.strftime("%d/%m/%Y %H:%M") if cliente.ultima_edicion else 'N/A'),
+        ('Editado por', self._format_user_info(cliente.editado_por)),
     ]
 }
         ]
@@ -408,18 +410,43 @@ class ClienteUpdateView(AuthRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse_lazy('cliente_detail', kwargs={'pk': self.object.pk})
 
-    def post(self, request, *args, **kwargs):
-        logger.debug(f"Editando cliente - Método POST - Usuario: {request.user}")
-        self.object = self.get_object()
-        return super().post(request, *args, **kwargs)
-
     def form_valid(self, form):
         try:
             # Asignar usuario editor y fecha
             self.object = form.save(commit=False)
             self.object.editado_por = self.request.user
+            self.object.ultima_edicion = timezone.now()
             self.object.save()
-        
+            
+            # Construir respuesta
+            response_data = {
+                'success': True,
+                'message': mark_safe('✅ Cliente actualizado exitosamente'),
+                'cliente_data': {
+                    'id': self.object.id,
+                    'nombre': self.object.nombre,
+                    'apellido': self.object.apellido,
+                    'estado': self.object.estado,
+                    'estado_display': self.object.get_estado_display(),
+                    'estado_color': self.object.get_estado_color(),
+                    'telefono': self.object.telefono,
+                    'email': self.object.email,
+                    'cedula_pasaporte': self.object.cedula_pasaporte,
+                    'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+                    'cargo': self.object.cargo,
+                    'movil': self.object.movil,
+                    'direccion_fisica': self.object.direccion_fisica,
+                    'editado_por': self.object.editado_por.get_full_name() if self.object.editado_por else '',
+                    'ultima_edicion': self.object.ultima_edicion.strftime("%d/%m/%Y %H:%M")
+                }
+            }
+
+            if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
+                return JsonResponse(response_data)
+            
+            messages.success(self.request, response_data['message'])
+            return redirect(self.get_success_url())
+
         except IntegrityError as e:
             logger.error(f'Error de integridad al guardar: {str(e)}')
             form.add_error(None, ValidationError(
@@ -430,48 +457,18 @@ class ClienteUpdateView(AuthRequiredMixin, UpdateView):
                 code='integrity_error'
             ))
             return self.form_invalid(form)
-        
-        # Respuesta AJAX
-        if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': mark_safe('✅ Cliente actualizado exitosamente'),
-                'cliente_data': {
-                'id': self.object.id,
-                'nombre': self.object.nombre,
-                'apellido': self.object.apellido,
-                'estado': self.object.estado,
-                'estado_display': self.object.get_estado_display(),
-                'estado_color': self.object.get_estado_color(),
-                'telefono': self.object.telefono,
-                'email': self.object.email,
-                'cedula_pasaporte': self.object.cedula_pasaporte,
-                'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
-                'cargo': self.object.cargo,
-                'movil': self.object.movil,
-                'direccion_fisica': self.object.direccion_fisica,
-                # Nuevos campos para el audit trail
-                'editado_por': self.object.editado_por.get_full_name() if self.object.editado_por else '',
-                'ultima_edicion': self.object.ultima_edicion.strftime("%d/%m/%Y %H:%M")
-            }
-        })
-    
-        messages.success(self.request, mark_safe('✅ Cliente actualizado exitosamente!'))
-        return redirect(self.get_success_url())
 
     def form_invalid(self, form):
         logger.error("Errores de validación en el formulario de edición")
-    
-    # Construir mensaje detallado de errores
         error_messages = []
+        
         for field, errors in form.errors.items():
             field_label = form.fields[field].label if field in form.fields else field
             for error in errors:
                 error_messages.append(f"<b>{field_label}:</b> {error}")
-    
+
         detailed_message = mark_safe("Errores encontrados:<br>" + "<br>".join(error_messages))
 
-    # Respuesta AJAX
         if self.request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
@@ -479,11 +476,10 @@ class ClienteUpdateView(AuthRequiredMixin, UpdateView):
                 'errors': form.errors.get_json_data(),
             }, status=400)
 
-    # Para requests normales
         for field, errors in form.errors.items():
             for error in errors:
                 messages.error(self.request, mark_safe(f"📌 {field.title()}: {error}"))
-    
+        
         return super().form_invalid(form)
 
 class DocumentUploadView(AuthRequiredMixin,FormView):

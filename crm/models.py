@@ -16,12 +16,15 @@ from django.contrib.auth.models import User
 # Django utilities
 from django.utils.text import get_valid_filename
 
+from crum import get_current_user
+
 # Django validators
 from django.core.validators import FileExtensionValidator
 
 # Third-party package imports
 from django_countries.fields import CountryField
 import logging
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +103,12 @@ class Cliente(models.Model):
         blank=True,
         verbose_name='Último Editor'
     )
+
+    def save(self, *args, **kwargs):
+        """Actualiza automáticamente los campos de auditoría"""
+        if self.pk:  # Solo en actualizaciones
+            self.ultima_edicion = timezone.now()
+        super().save(*args, **kwargs)
     documento = models.FileField(
         'Documento Adjunto',
         upload_to='clientes/documentos/',
@@ -303,6 +312,41 @@ class Empresa(models.Model):
         default='activo'
     )
 
+    creado_por = models.ForeignKey(
+        UsuarioPersonalizado, 
+        related_name='empresas_creadas',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Creado por'
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True, 
+        verbose_name='Fecha de creación'
+    )
+    editado_por = models.ForeignKey(
+        UsuarioPersonalizado,
+        related_name='empresas_editadas',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Último editor'
+    )
+    ultima_edicion = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última edición'
+    )
+
+    def save(self, *args, **kwargs):
+        """Actualización automática de auditoría"""
+        if not self.pk:  # Solo en creación
+            self.creado_por = self.creado_por or self._get_current_user()
+        super().save(*args, **kwargs)
+
+    def _get_current_user(self):
+        """Obtiene el usuario actual desde el thread local"""
+        return get_current_user()
+    
     documento = models.FileField(
         'Documento Adjunto',
         upload_to='empresas/documentos/',

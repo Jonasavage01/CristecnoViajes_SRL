@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block content %}
+<div class="error-container min-vh-100 d-flex align-items-center">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="card error-card shadow-lg">
+                    <div class="card-header bg-danger text-white">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-shield-lock me-3 fs-2"></i>
+                            <h1 class="mb-0">{% trans "Acceso Restringido" %}</h1>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="error-details">
+                            <div class="error-icon text-center my-4">
+                                <i class="bi bi-exclamation-octagon-fill text-danger fs-1"></i>
+                            </div>
+                            
+                            <h3 class="error-message text-center mb-4">
+                                {% trans "No tienes permiso para acceder a esta sección" %}
+                            </h3>
+                            
+                            <div class="error-info mb-5">
+                                <dl class="row">
+                                    <dt class="col-sm-4">{% trans "Usuario" %}:</dt>
+                                    <dd class="col-sm-8">{{ user.username }}</dd>
+                                    
+                                    <dt class="col-sm-4">{% trans "Rol" %}:</dt>
+                                    <dd class="col-sm-8">{{ user.get_rol_display }}</dd>
+                                    
+                                    <dt class="col-sm-4">{% trans "Intento de acceso" %}:</dt>
+                                    <dd class="col-sm-8">
+                                        <code>{{ request.path }}</code>
+                                    </dd>
+                                </dl>
+                            </div>
+                            
+                            <div class="error-actions">
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <a href="{% url 'dashboard' %}" class="btn btn-primary w-100">
+                                            <i class="bi bi-house-door me-2"></i>
+                                            {% trans "Ir al Inicio" %}
+                                        </a>
+                                    </div>
+                                    
+                                    <div class="col-12 col-md-6">
+                                        <button class="btn btn-success w-100" 
+                                                onclick="showSupportModal()">
+                                            <i class="bi bi-whatsapp me-2"></i>
+                                            {% trans "Solicitar Acceso" %}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Soporte -->
+<div class="modal fade" id="supportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans "Contactar Soporte" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="support-options">
+                    <div class="mb-4">
+                        <h6>{% trans "Opciones de contacto:" %}</h6>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <i class="bi bi-whatsapp me-2 text-success"></i>
+                                WhatsApp: {{ support_phone }}
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-envelope me-2 text-primary"></i>
+                                Email: {{ support_email }}
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <p class="mb-0">
+                            {% trans "Proporcione esta información al contactar soporte:" %}
+                        </p>
+                        <ul>
+                            <li>{% trans "Usuario: " %}{{ user.username }}</li>
+                            <li>{% trans "URL solicitada: " %}{{ request.path }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showSupportModal() {
+    const modal = new bootstrap.Modal(document.getElementById('supportModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

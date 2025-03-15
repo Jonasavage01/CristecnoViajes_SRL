@@ -26,6 +26,11 @@ class UsuarioPersonalizado(AbstractUser):
         _('Fecha de creación'),
         auto_now_add=True
     )
+    last_seen = models.DateTimeField(
+        _('Última actividad'), 
+        null=True, 
+        blank=True
+    )
     
     groups = models.ManyToManyField(
         Group,
@@ -51,30 +56,10 @@ class UsuarioPersonalizado(AbstractUser):
         null=True, 
         blank=True
     )
-    @property
-    def last_activity(self):
-        # Optimizada para usar prefetch_related
-        if hasattr(self, '_prefetched_last_activity'):
-            return self._prefetched_last_activity
-        return self.useractivitylog_set.filter(
-            activity_type='login'
-        ).order_by('-timestamp').first().timestamp
 
     @property
     def is_online(self):
-        if not self.last_activity:
-            return False
-        timeout = timezone.now() - timezone.timedelta(minutes=15)
-        return self.last_activity > timeout and not self.useractivitylog_set.filter(
-            activity_type='logout',
-            timestamp__gt=self.last_activity
-        ).exists()
-    
-    @property
-    def last_login_activity(self):
-        return self.useractivitylog_set.filter(
-            activity_type=UserActivityLog.ActivityType.LOGIN
-        ).order_by('-timestamp').first()
+        return self.last_seen and self.last_seen >= timezone.now() - timezone.timedelta(minutes=2)
     
     class Meta:
         verbose_name = _('Usuario')

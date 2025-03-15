@@ -7,7 +7,8 @@ from .views import (
     UserCreateView,
     AdminPasswordChangeView,
     ActivityLogView,
-    ActivityLogDetailView,online_users_list
+    ActivityLogDetailView,online_users_list,
+    activity_ping
 
 )
 
@@ -22,5 +23,6 @@ urlpatterns = [
     path('activity-log/', ActivityLogView.as_view(), name='activity_log'),
     path('activity-log/<int:pk>/', ActivityLogDetailView.as_view(), name='activity_detail'),
     path('online-users/', online_users_list, name='online_users_list'),
+    path('activity_ping/', activity_ping, name='activity_ping'),
     
 ]

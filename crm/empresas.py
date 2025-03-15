@@ -40,6 +40,7 @@ from django.utils import timezone as django_timezone
 
 from django.views.generic import ListView
 from .mixins import AuthRequiredMixin  # <-- Importar el mixin
+from core.mixins import RoleAccessMixin
 
 
 
@@ -88,7 +89,7 @@ class ExportEmpresasView(AuthRequiredMixin,View):
         queryset = self.get_queryset()
         return exportar_empresas(queryset, formato)  # Función en export_utils
 
-class EmpresasView(AuthRequiredMixin,ListView):
+class EmpresasView(RoleAccessMixin,ListView):
     allowed_roles = ['admin', 'clientes']
     model = Empresa
     template_name = "crm/empresas.html"
@@ -231,7 +232,9 @@ class EmpresasView(AuthRequiredMixin,ListView):
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         try:
             if form.is_valid():
-                empresa = form.save()
+                empresa = form.save(commit=False)
+                empresa.creado_por = request.user  # Asignar creador
+                empresa.save()
                 logger.info(f'Empresa creada: {empresa.id}')
                 return self._handle_success_response(is_ajax, empresa.id)
 
@@ -282,8 +285,10 @@ class EmpresaUpdateView(AuthRequiredMixin,UpdateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        """Manejar respuesta exitosa con depuración"""
-        logger.debug("Iniciando form_valid para empresa...")
+        # Actualizar campos de auditoría
+        self.object = form.save(commit=False)
+        self.object.editado_por = self.request.user
+        
         
         # Actualizar última actividad
         self.object.ultima_actividad = timezone.now()
@@ -310,7 +315,11 @@ class EmpresaUpdateView(AuthRequiredMixin,UpdateView):
                     'telefono2': self.object.telefono2,
                     'direccion_electronica': self.object.direccion_electronica,
                     'fecha_registro': self.object.fecha_registro.strftime("%d/%m/%Y %H:%M"),
-                    'ultima_actividad': self.object.ultima_actividad.strftime("%d/%m/%Y %H:%M")
+                    'ultima_actividad': self.object.ultima_actividad.strftime("%d/%m/%Y %H:%M"),
+                     'creado_por': self.object.creado_por.get_full_name() if self.object.creado_por else '',
+                    'fecha_creacion': self.object.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
+                    'editado_por': self.object.editado_por.get_full_name() if self.object.editado_por else '',
+                    'ultima_edicion': self.object.ultima_edicion.strftime("%d/%m/%Y %H:%M")
                 }
             })
         

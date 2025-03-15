@@ -11,6 +11,22 @@ function clearAppCache() {
     indexedDB.deleteDatabase('localforage');
 }
 
+function setupActivityPing() {
+    const pingServer = () => {
+        fetch('/activity_ping/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCSRFToken(),
+            },
+            credentials: 'include',
+        }).catch(() => { /* Manejar errores silenciosamente */ });
+    };
+
+    // Ping inicial y cada 25 segundos
+    pingServer();
+    setInterval(pingServer, 25000);
+}
 
 // Funciones globales para SweetAlert2
 window.showSuccessAlert = function(message, options = {}) {

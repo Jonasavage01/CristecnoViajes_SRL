@@ -114,58 +114,67 @@
                                     </div>
                                 </div>
 
-                             <!-- En tu tarjeta de usuarios en línea -->
+        <!-- Tarjeta de Usuarios en Línea -->
 <div class="col-md-6">
     <a href="{% url 'online_users_list' %}" class="text-decoration-none text-dark">
-    <div class="card border-0 shadow-sm h-100">
-        <div class="card-body p-3">
-            <div class="d-flex align-items-center mb-3">
-                <div class="icon-container bg-info-soft text-info rounded-circle p-3 me-3">
-                    <i class="bi bi-person-check fs-3"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <h6 class="mb-1 text-muted small">{% trans "Usuarios en Línea" %}</h6>
-                    <h2 class="mb-0">{{ online_count|default:0 }}</h2>
-
-                </div>
-            </div>
-            
-            {% if online_users_list %}
-            <div class="online-list">
-                {% for user in online_users_list %}
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-3">
                 <div class="d-flex align-items-center mb-3">
-                    <div class="avatar-icon bg-primary text-white rounded-circle small">
-                        {{ user.username|slice:":1"|upper }}
+                    <div class="icon-container bg-info-soft text-info rounded-circle p-3 me-3">
+                        <i class="bi bi-person-check fs-3"></i>
                     </div>
-                    <div class="ms-3 flex-grow-1">
-                        <div class="fw-medium small">{{ user.username }}</div>
-                        <div class="text-muted x-small">
-                            {% blocktrans with time=user.last_login_time|timesince %}
-                            Activo hace {{ time }}
-                            {% endblocktrans %}
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1 text-muted small">{% trans "Usuarios en Línea" %}</h6>
+                        <h2 class="mb-0">{{ online_count|default:0 }}</h2>
+                        <div class="mt-2">
+                            <span class="badge bg-info-soft text-dark small">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                {% trans "Actualizado al momento" %}
+                            </span>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
                 
-                {% if online_count > 5 %}
-                <a href="{% url 'online_users_list' %}" class="btn btn-outline-primary btn-sm w-100 mt-2">
-                    {% trans "Ver todos" %} ({{ online_count }})
-                </a>
+                {% if online_users_list %}
+                <div class="online-list">
+                    {% for user in online_users_list %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="avatar-icon bg-primary text-white rounded-circle small">
+                            {{ user.username|slice:":1"|upper }}
+                        </div>
+                        <div class="ms-3 flex-grow-1">
+                            <div class="fw-medium small">{{ user.username }}</div>
+                            <div class="text-muted x-small">
+                                <i class="bi bi-clock-history me-1"></i>
+                                {% blocktrans with time=user.last_login_time|timesince %}
+                                Activo hace {{ time }}
+                                {% endblocktrans %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if online_count > 5 %}
+                    <a href="{% url 'online_users_list' %}" 
+                       class="btn btn-outline-primary btn-sm w-100 mt-2"
+                       data-bs-toggle="tooltip" 
+                       title="{% trans 'Ver todos los usuarios conectados' %}">
+                        {% trans "Ver todos" %} ({{ online_count }})
+                    </a>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <div class="text-muted small">
+                        <i class="bi bi-people-slash me-2"></i>
+                        {% trans "No hay usuarios activos" %}
+                    </div>
+                </div>
                 {% endif %}
             </div>
-            {% else %}
-            <div class="text-center py-3">
-                <div class="text-muted small">
-                    <i class="bi bi-people-slash me-2"></i>
-                    {% trans "No hay usuarios activos" %}
-                </div>
-            </div>
-            {% endif %}
         </div>
-    </div>
-</div>
-                            </div>
+    </a>
+</div>                   </div>
                         </div>
                     </div>
                     {% endblock %}
