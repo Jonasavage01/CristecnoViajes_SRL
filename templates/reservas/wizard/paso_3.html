@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="bi bi-building me-2"></i>Selección de Hotel y Habitaciones</h3>
+            <small class="d-block mt-2">Paso 3 de 4 - Elige tu alojamiento</small>
+        </div>
+        
+        <div class="card-body">
+            <form method="post" id="paso3Form" novalidate>
+                {% csrf_token %}
+                
+                <!-- Hotel Selector -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="form-floating">
+                            <select class="form-select select2-hotel" id="hotel" name="hotel" required>
+                                <option value="">Seleccione un hotel...</option>
+                                {% for hotel in hoteles %}
+                                <option value="{{ hotel.id }}" 
+                                    {% if habitaciones_existentes and habitaciones_existentes.0.tipo_habitacion.hotel.id == hotel.id %}selected{% endif %}>
+                                    {{ hotel.nombre }} - {{ hotel.ubicacion }} ({{ hotel.estrellas }}★)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <label for="hotel">Hotel/Resort</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Habitaciones -->
+                <div id="habitacionesContainer">
+                    {% for habitacion in habitaciones_existentes %}
+                    <div class="habitacion-item mb-4">
+                        <div class="card border-secondary">
+                            <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                                <h5 class="mb-0">Habitación #{{ forloop.counter }}</h5>
+                                <button type="button" class="btn btn-danger btn-sm remove-habitacion">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select class="form-select tipo-habitacion" name="habitaciones_{{ forloop.counter0 }}_tipo" required>
+                                                {% for tipo in tipos_habitacion %}
+                                                <option value="{{ tipo.id }}" 
+                                                    {% if tipo.id == habitacion.tipo_habitacion.id %}selected{% endif %}>
+                                                    {{ tipo.nombre }} (Capacidad: {{ tipo.capacidad }})
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                            <label>Tipo de Habitación</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-floating">
+                                            <input type="number" name="habitaciones_{{ forloop.counter0 }}_cantidad" 
+                                                   class="form-control" min="1" value="{{ habitacion.cantidad }}" required>
+                                            <label>Cantidad</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="habitacion-item mb-4">
+                        <!-- Template inicial -->
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Controles -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <button type="button" id="addHabitacion" class="btn btn-outline-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Añadir Habitación
+                        </button>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{% url 'reservas:wizard_paso' tipo=tipo_reserva paso=2 %}" 
+                           class="btn btn-outline-secondary btn-lg me-2">
+                           <i class="bi bi-arrow-left me-2"></i>Anterior
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            Continuar <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let habitacionIndex = {{ habitaciones_existentes.count|default:1 }};
+    const container = document.getElementById('habitacionesContainer');
+    
+    function actualizarHabitaciones() {
+        document.querySelectorAll('.habitacion-item').forEach((item, index) => {
+            item.querySelectorAll('[name]').forEach(el => {
+                const newName = el.name.replace(/_\d+_/, `_${index}_`);
+                el.name = newName;
+            });
+            item.querySelector('h5').textContent = `Habitación #${index + 1}`;
+        });
+    }
+
+    function crearNuevaHabitacion() {
+        const newItem = container.lastElementChild.cloneNode(true);
+        newItem.querySelectorAll('input, select').forEach(el => {
+            el.value = '';
+            el.removeAttribute('disabled');
+        });
+        newItem.querySelector('.remove-habitacion').style.display = 'block';
+        newItem.querySelector('.remove-habitacion').onclick = () => {
+            newItem.remove();
+            actualizarHabitaciones();
+        };
+        container.appendChild(newItem);
+        actualizarHabitaciones();
+    }
+
+    document.getElementById('addHabitacion').addEventListener('click', crearNuevaHabitacion);
+    
+    // Inicializar botones de eliminación
+    document.querySelectorAll('.remove-habitacion').forEach(btn => {
+        btn.onclick = function() {
+            this.closest('.habitacion-item').remove();
+            actualizarHabitaciones();
+        }
+    });
+    
+    // Cargar tipos de habitación según hotel seleccionado
+    document.getElementById('hotel').addEventListener('change', function() {
+        const hotelId = this.value;
+        fetch(`/api/hoteles/${hotelId}/habitaciones/`)
+            .then(response => response.json())
+            .then(data => {
+                document.querySelectorAll('.tipo-habitacion').forEach(select => {
+                    const currentValue = select.value;
+                    select.innerHTML = data.map(hab => 
+                        `<option value="${hab.id}" ${hab.id == currentValue ? 'selected' : ''}>
+                            ${hab.nombre} (${hab.precio_noche}/noche)
+                        </option>`
+                    ).join('');
+                });
+            });
+    });
+});
+</script>
+{% endblock %}

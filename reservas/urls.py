@@ -9,4 +9,7 @@ urlpatterns = [
     path('nueva/<str:tipo>/paso-<int:paso>/', views.ReservaWizard.as_view(), name='wizard_paso'),
     path('api/buscar/', views.BuscarClientesEmpresasView.as_view(), name='buscar_clientes'),
     path('limpiar-seleccion/', views.LimpiarSeleccionView.as_view(), name='limpiar_seleccion'),
+    path('api/hoteles/', views.HotelSearchView.as_view(), name='buscar_hoteles'),
+    path('api/hoteles/<int:hotel_id>/habitaciones/', views.HotelHabitacionesView.as_view(), name='hotel_habitaciones'),
+    
 ]

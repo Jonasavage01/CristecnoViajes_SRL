@@ -91,17 +91,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="progress-steps">
-        <div class="step active">
-            <span class="step-number">1</span>
-            <span>Seleccionar Cliente</span>
-        </div>
-        <div class="step">
-            <span class="step-number">2</span>
-            <span>Detalles Reserva</span>
-        </div>
-    </div>
+
 
     <div class="card search-card shadow-lg">
         <div class="card-header bg-primary text-white py-3">
@@ -137,9 +127,12 @@
                                     <small id="selectedType" class="text-muted"></small>
                                 </div>
                             </div>
-                            <button id="changeSelection" class="btn btn-outline-danger btn-sm">
-                                <i class="bi bi-x-circle me-2"></i>Cambiar
-                            </button>
+                            <!-- En tu paso_1.html -->
+<div class="input-group-append">
+    <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+        <i class="bi bi-x"></i> <!-- Usar ícono de Bootstrap Icons -->
+    </button>
+</div>
                         </div>
                         <hr class="my-3">
                         <button id="confirmSelection" 
@@ -290,11 +283,10 @@ document.addEventListener('DOMContentLoaded', function() {
         resultsContainer.style.display = 'none';
     });
 
-    changeSelectionBtn.addEventListener('click', changeSelection);
 
     confirmBtn.addEventListener('click', async () => {
         if (!selectedItem) return;
-
+    
         try {
             const result = await Swal.fire({
                 title: 'Confirmar selección',
@@ -308,13 +300,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmButtonColor: '#0d6efd',
                 cancelButtonColor: '#dc3545'
             });
-
+    
             if (result.isConfirmed) {
                 const formData = new FormData();
                 const key = selectedItem.type === 'cliente' ? 'cliente_id' : 'empresa_id';
                 formData.append(key, selectedItem.id);
-
-                const response = await fetch("{% url 'reservas:wizard_paso' tipo='hotel' paso=1 %}", {
+                formData.append('tipo_reserva', '{{ tipo_reserva }}'); // Añadir tipo_reserva
+    
+                const response = await fetch("{% url 'reservas:wizard_paso' tipo=tipo_reserva paso=1 %}", {
                     method: 'POST',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -323,13 +316,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: formData
                 });
                 
-                const data = await response.json();
-                
-                if (data.success) {
-                    window.location.href = data.next_url;
+                if (response.redirected) {
+                    window.location.href = response.url; // Redirección desde el servidor
                 } else {
-                    showError('Error', data.error || 'Error desconocido');
-                    changeSelection();
+                    const data = await response.json();
+                    if (data.success) {
+                        window.location.href = data.next_url;
+                    } else {
+                        showError('Error', data.error || 'Error desconocido');
+                    }
                 }
             }
         } catch (error) {

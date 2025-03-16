@@ -1,29 +1,278 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
+
+{% block extra_css %}
+<style>
+    .is-invalid {
+        border-color: #dc3545;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+</style>
+{%endblock%}
 <div class="container">
-    <form method="post">
-        {% csrf_token %}
-        <div class="row">
-            <div class="col-md-6">
-                <label>Fecha Entrada</label>
-                <input type="date" name="fecha_entrada" required class="form-control">
-            </div>
-            <div class="col-md-6">
-                <label>Fecha Salida</label>
-                <input type="date" name="fecha_salida" required class="form-control">
-            </div>
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="bi bi-people-fill me-2"></i>Datos de Estadía y Huéspedes</h3>
+            <small class="d-block mt-2">Paso 2 de 4 - Completa los detalles de la reserva</small>
         </div>
         
-        <div class="row mt-4">
-            <div class="col-md-3">
-                <label>Adultos</label>
-                <input type="number" name="adultos" min="1" value="1" class="form-control">
-            </div>
-            <!-- Repetir para otros grupos -->
+        <div class="card-body">
+            <form method="post" id="paso2Form" novalidate>
+                {% csrf_token %}
+                
+                <!-- Sección Fechas -->
+                <div class="row g-4 mb-5">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="date" name="fecha_entrada" id="fechaEntrada" 
+                                   class="form-control" required
+                                   min="{{ today|date:'Y-m-d' }}">
+                            <label for="fechaEntrada">Fecha de Entrada</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="date" name="fecha_salida" id="fechaSalida" 
+                                   class="form-control" required
+                                   min="{{ today|date:'Y-m-d' }}">
+                            <label for="fechaSalida">Fecha de Salida</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="alert alert-info mt-3 p-2" id="nochesInfo">
+                            <i class="bi bi-moon-stars me-2"></i>Estadía de <span id="noches">0</span> noches
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección Huéspedes -->
+                <div class="row g-4">
+                    <div class="col-md-3">
+                        <div class="card h-100 border-primary">
+                            <div class="card-body">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-person me-2"></i>Adultos
+                                    <span class="badge bg-primary float-end">+18</span>
+                                </label>
+                                <input type="number" name="adultos" value="1" min="1" 
+                                       class="form-control form-control-lg text-center"
+                                       aria-label="Cantidad de adultos">
+                                <small class="text-muted">Mayores de 18 años</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card h-100 border-warning">
+                            <div class="card-body">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-person me-2"></i>Adolescentes
+                                    <span class="badge bg-warning float-end">11-17</span>
+                                </label>
+                                <input type="number" name="adolescentes" value="0" min="0" 
+                                       class="form-control form-control-lg text-center"
+                                       aria-label="Cantidad de adolescentes">
+                                <small class="text-muted">De 11 a 17 años</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card h-100 border-success">
+                            <div class="card-body">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-person me-2"></i>Niños
+                                    <span class="badge bg-success float-end">4-10</span>
+                                </label>
+                                <input type="number" name="ninos" value="0" min="0" 
+                                       class="form-control form-control-lg text-center"
+                                       aria-label="Cantidad de niños">
+                                <small class="text-muted">De 4 a 10 años</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card h-100 border-danger">
+                            <div class="card-body">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-person me-2"></i>Infantes
+                                    <span class="badge bg-danger float-end">0-3</span>
+                                </label>
+                                <input type="number" name="infantes" value="0" min="0" 
+                                       class="form-control form-control-lg text-center"
+                                       aria-label="Cantidad de infantes">
+                                <small class="text-muted">Menores de 4 años</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen y Navegación -->
+                <div class="row mt-5">
+                    <div class="col-md-6">
+                        <div class="alert alert-primary">
+                            <h5 class="mb-0">Total Huéspedes: <span id="totalHuespedes">1</span></h5>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 text-end">
+                        <a href="{% url 'reservas:wizard_paso' tipo=tipo_reserva paso=1 %}" 
+                           class="btn btn-outline-secondary btn-lg me-2">
+                           <i class="bi bi-arrow-left me-2"></i>Anterior
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            Continuar <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
-        
-        <button type="submit" class="btn btn-primary mt-4">Continuar</button>
-    </form>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaEntrada = document.getElementById('fechaEntrada');
+    const fechaSalida = document.getElementById('fechaSalida');
+    const nochesSpan = document.getElementById('noches');
+    const totalHuespedes = document.getElementById('totalHuespedes');
+    
+    // Calcular noches automáticamente
+    function calcularNoches() {
+        if(fechaEntrada.value && fechaSalida.value) {
+            const entrada = new Date(fechaEntrada.value);
+            const salida = new Date(fechaSalida.value);
+            
+            if(salida <= entrada) {
+                nochesSpan.textContent = '0';
+                return;
+            }
+            
+            const diff = salida - entrada;
+            const noches = Math.floor(diff / (1000 * 60 * 60 * 24));
+            nochesSpan.textContent = noches;
+        }
+    }
+    
+    // Calcular total huéspedes
+    function calcularTotal() {
+        const inputs = document.querySelectorAll('input[type="number"]');
+        let total = 0;
+        
+        inputs.forEach(input => {
+            total += parseInt(input.value) || 0;
+        });
+        
+        totalHuespedes.textContent = total;
+    }
+    
+    // Validación de fechas
+    function validarFechas() {
+        if(fechaEntrada.value && fechaSalida.value) {
+            const entrada = new Date(fechaEntrada.value);
+            const salida = new Date(fechaSalida.value);
+            
+            if(salida <= entrada) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Fechas inválidas',
+                    text: 'La fecha de salida debe ser posterior a la de entrada',
+                });
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    // Event Listeners
+    [fechaEntrada, fechaSalida].forEach(el => el.addEventListener('change', calcularNoches));
+    document.querySelectorAll('input[type="number"]').forEach(el => {
+        el.addEventListener('input', calcularTotal);
+    });
+    
+    // Validación antes de enviar
+    document.getElementById('paso2Form').addEventListener('submit', function(e) {
+        if(!validarFechas()) {
+            e.preventDefault();
+            return false;
+        }
+    });
+    
+    // Inicializar cálculos
+    calcularNoches();
+    calcularTotal();
+});
+
+document.getElementById('paso2Form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    try {
+        // Limpiar errores anteriores
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        
+        const formData = new FormData(e.target);
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'  // Añadir esta cabecera
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                throw new Error('No se recibió URL de redirección');
+            }
+        } 
+        else {
+            handleFormError(data);
+        }
+    } 
+    catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de conexión',
+            text: error.message || 'No se pudo contactar al servidor'
+        });
+    }
+});
+
+function handleFormError(errorData) {
+    let errorMessage = 'Error desconocido';
+    
+    if (errorData.error) {
+        errorMessage = errorData.error;
+        // Resaltar campos con error
+        if (errorMessage.includes('fecha')) {
+            document.getElementById('fechaSalida').classList.add('is-invalid');
+        }
+        if (errorMessage.includes('adulto')) {
+            document.querySelector('input[name="adultos"]').classList.add('is-invalid');
+        }
+    }
+    
+    Swal.fire({
+        icon: 'error',
+        title: 'Error en el formulario',
+        html: `<div class="text-danger">${errorMessage}</div>`,
+        confirmButtonColor: '#0d6efd'
+    });
+}
+</script>
 {% endblock %}
