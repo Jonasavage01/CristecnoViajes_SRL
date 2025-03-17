@@ -213,11 +213,11 @@ document.addEventListener('DOMContentLoaded', function() {
     calcularTotal();
 });
 
+
 document.getElementById('paso2Form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     try {
-        // Limpiar errores anteriores
         document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
         
         const formData = new FormData(e.target);
@@ -227,7 +227,7 @@ document.getElementById('paso2Form').addEventListener('submit', async (e) => {
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'  // Añadir esta cabecera
+                'X-Requested-With': 'XMLHttpRequest'
             }
         });
         
@@ -237,7 +237,7 @@ document.getElementById('paso2Form').addEventListener('submit', async (e) => {
             if (data.redirect) {
                 window.location.href = data.redirect;
             } else {
-                throw new Error('No se recibió URL de redirección');
+                throw new Error('Respuesta inválida del servidor');
             }
         } 
         else {
@@ -248,11 +248,10 @@ document.getElementById('paso2Form').addEventListener('submit', async (e) => {
         Swal.fire({
             icon: 'error',
             title: 'Error de conexión',
-            text: error.message || 'No se pudo contactar al servidor'
+            text: error.message || 'No se pudo procesar la solicitud'
         });
     }
 });
-
 function handleFormError(errorData) {
     let errorMessage = 'Error desconocido';
     

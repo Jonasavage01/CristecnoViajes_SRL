@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 
 
 
-class ExportEmpresasView(AuthRequiredMixin,View):
+class ExportEmpresasView(RoleAccessMixin,View):
     allowed_roles = ['admin', 'clientes']
     def get_queryset(self):
         queryset = Empresa.objects.all()
@@ -250,7 +250,7 @@ class EmpresasView(RoleAccessMixin,ListView):
             return self._handle_generic_error(e, is_ajax)
         
 
-class EmpresaUpdateView(AuthRequiredMixin,UpdateView):
+class EmpresaUpdateView(RoleAccessMixin,UpdateView):
     allowed_roles = ['admin', 'clientes']
     model = Empresa
     form_class = EmpresaEditForm
@@ -371,7 +371,7 @@ class EmpresaUpdateView(AuthRequiredMixin,UpdateView):
         return errors
     
 
-class EmpresaDetailView(AuthRequiredMixin,DetailView):
+class EmpresaDetailView(RoleAccessMixin,DetailView):
     allowed_roles = ['admin', 'clientes']
     model = Empresa
     template_name = "crm/empresa_detail.html"
@@ -389,7 +389,7 @@ class EmpresaDetailView(AuthRequiredMixin,DetailView):
         })
         return context
 
-class DocumentoEmpresaUploadView(AuthRequiredMixin,CreateView):
+class DocumentoEmpresaUploadView(RoleAccessMixin,CreateView):
     allowed_roles = ['admin', 'clientes']
     form_class = DocumentoEmpresaForm
     template_name = "crm/empresa_detail.html"
@@ -455,7 +455,7 @@ class DocumentoEmpresaUploadView(AuthRequiredMixin,CreateView):
             }, status=400)
         return super().form_invalid(form)
 
-class NotaEmpresaCreateView(AuthRequiredMixin,CreateView):
+class NotaEmpresaCreateView(RoleAccessMixin,CreateView):
     allowed_roles = ['admin', 'clientes']
     form_class = NotaEmpresaForm
     template_name = "crm/empresa_detail.html"
@@ -513,7 +513,7 @@ class NotaEmpresaCreateView(AuthRequiredMixin,CreateView):
         return super().form_invalid(form)
 
 @method_decorator(require_http_methods(["POST"]), name='dispatch')
-class DeleteDocumentoEmpresaView(AuthRequiredMixin,DeleteView):
+class DeleteDocumentoEmpresaView(RoleAccessMixin,DeleteView):
     allowed_roles = ['admin', 'clientes']
     model = DocumentoEmpresa
 
@@ -539,7 +539,7 @@ class DeleteDocumentoEmpresaView(AuthRequiredMixin,DeleteView):
             raise
 
 @method_decorator(require_http_methods(["POST"]), name='dispatch')
-class DeleteNotaEmpresaView(AuthRequiredMixin,DeleteView):
+class DeleteNotaEmpresaView(RoleAccessMixin,DeleteView):
     allowed_roles = ['admin', 'clientes']
     model = NotaEmpresa
 
@@ -565,7 +565,7 @@ class DeleteNotaEmpresaView(AuthRequiredMixin,DeleteView):
         raise
 
 
-class EmpresaPDFView(AuthRequiredMixin,DetailView):
+class EmpresaPDFView(RoleAccessMixin,DetailView):
     allowed_roles = ['admin', 'clientes']
     model = Empresa
     template_name = 'crm/empresa_pdf.html'
@@ -652,7 +652,7 @@ class EmpresaPDFView(AuthRequiredMixin,DetailView):
             return HttpResponseServerError("Error generando el documento. Por favor intente más tarde.")
 
 
-class EmpresaDeleteView(AuthRequiredMixin,View):  # Cambiar de DeleteView a View
+class EmpresaDeleteView(RoleAccessMixin,View):  # Cambiar de DeleteView a View
     success_url = reverse_lazy('empresas')
     allowed_roles = ['admin', 'clientes']
     

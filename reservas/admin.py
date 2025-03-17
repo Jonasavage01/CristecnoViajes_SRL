@@ -3,15 +3,14 @@ from .models import Hotel, TipoHabitacion, HabitacionReserva, Reserva
 
 @admin.register(Hotel)
 class HotelAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'ubicacion', 'estrellas', 'activo')
-    list_filter = ('activo', 'estrellas')
+    list_display = ('nombre', 'ubicacion', 'activo')
     search_fields = ('nombre', 'ubicacion')
 
 @admin.register(TipoHabitacion)
 class TipoHabitacionAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'hotel', 'precio_noche', 'capacidad')
+    list_display = ('nombre', 'hotel')
     list_filter = ('hotel',)
-    search_fields = ('nombre', 'descripcion')
+    search_fields = ('nombre',)
 
 @admin.register(Reserva)
 class ReservaAdmin(admin.ModelAdmin):

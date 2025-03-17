@@ -59,14 +59,14 @@ from .filters import ClienteFilter
 from django.db import models
 
 from django.views.generic import ListView
-from .mixins import AuthRequiredMixin  
+
 
 # Logger configuration
 logger = logging.getLogger(__name__)
 
 
 
-class ExportClientesView(AuthRequiredMixin,View):
+class ExportClientesView(RoleAccessMixin,View):
     allowed_roles = ['admin', 'clientes']
     def get_queryset(self):
         queryset = Cliente.objects.all()
@@ -297,7 +297,7 @@ class CRMView(RoleAccessMixin, ListView):
 
 
 
-class ClienteDetailView(AuthRequiredMixin, DetailView):
+class ClienteDetailView(RoleAccessMixin, DetailView):
     model = Cliente
     template_name = "crm/cliente_detail.html"
     context_object_name = 'cliente'
@@ -401,7 +401,7 @@ class ClienteDetailView(AuthRequiredMixin, DetailView):
         return context
 
 @method_decorator(xframe_options_sameorigin, name='dispatch')
-class ClienteUpdateView(AuthRequiredMixin, UpdateView):
+class ClienteUpdateView(RoleAccessMixin, UpdateView):
     model = Cliente
     form_class = ClienteEditForm
     template_name = "partials/crm/cliente_edit_form.html"
@@ -482,7 +482,7 @@ class ClienteUpdateView(AuthRequiredMixin, UpdateView):
         
         return super().form_invalid(form)
 
-class DocumentUploadView(AuthRequiredMixin,FormView):
+class DocumentUploadView(RoleAccessMixin,FormView):
     form_class = DocumentoForm
     template_name = 'clientes/documentos_form.html'
     allowed_roles = ['admin', 'clientes']
@@ -526,7 +526,7 @@ class DocumentUploadView(AuthRequiredMixin,FormView):
         kwargs['instance'] = DocumentoCliente()
         return kwargs
 
-class NotesUpdateView(AuthRequiredMixin,View):
+class NotesUpdateView(RoleAccessMixin,View):
     def post(self, request, pk):
         cliente = get_object_or_404(Cliente, pk=pk)
         notas = request.POST.get('notas', '').strip()
@@ -548,7 +548,7 @@ class NotesUpdateView(AuthRequiredMixin,View):
             'notas_content': notas or 'No hay notas registradas'
         })
 
-class NoteCreateView(AuthRequiredMixin,View):
+class NoteCreateView(RoleAccessMixin,View):
     def post(self, request, pk):
         cliente = get_object_or_404(Cliente, pk=pk)
         contenido = request.POST.get('contenido', '').strip()
@@ -583,7 +583,7 @@ class NoteCreateView(AuthRequiredMixin,View):
 
 
 
-class DocumentDeleteView(AuthRequiredMixin, DeleteView):
+class DocumentDeleteView(RoleAccessMixin, DeleteView):
     model = DocumentoCliente
     
     def get_object(self, queryset=None):
@@ -609,7 +609,7 @@ class DocumentDeleteView(AuthRequiredMixin, DeleteView):
                 'error': 'Error interno del servidor'
             }, status=500)
 
-class DeleteNoteView(AuthRequiredMixin, View):
+class DeleteNoteView(RoleAccessMixin, View):
     allowed_roles = ['admin', 'clientes']
     
     def delete(self, request, cliente_pk, note_pk):
@@ -627,7 +627,7 @@ class DeleteNoteView(AuthRequiredMixin, View):
                 'error': 'Nota no encontrada'
             }, status=404)
 
-class ClientePDFView(AuthRequiredMixin,DetailView):
+class ClientePDFView(RoleAccessMixin,DetailView):
     model = Cliente
     template_name = 'crm/cliente_pdf.html'
     context_object_name = 'cliente'

@@ -29,6 +29,7 @@ from django.db.models import F
 from django.contrib.sessions.models import Session
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from core.mixins import RoleAccessMixin
 
 
 def online_users_list(request):
@@ -172,7 +173,7 @@ class CustomLogoutView(LogoutView):
         return response
 
 
-class UserListView(AuthRequiredMixin, ListView):
+class UserListView(RoleAccessMixin, ListView):
     model = UsuarioPersonalizado
     template_name = 'usuarios/user_list.html'
     context_object_name = 'users'
@@ -199,7 +200,7 @@ class UserListView(AuthRequiredMixin, ListView):
         context['page_title'] = _('Gestión de Usuarios')
         return context
 
-class UserCreateView(AuthRequiredMixin, CreateView):
+class UserCreateView(RoleAccessMixin, CreateView):
     model = UsuarioPersonalizado
     form_class = UserCreationForm
     template_name = 'usuarios/user_form.html'
@@ -234,7 +235,7 @@ class UserCreateView(AuthRequiredMixin, CreateView):
         messages.error(self.request, _('Error al crear el usuario'))
         return response
 
-class AdminPasswordChangeView(AuthRequiredMixin, PasswordChangeView):
+class AdminPasswordChangeView(RoleAccessMixin, PasswordChangeView):
     form_class = AdminPasswordChangeForm
     template_name = 'usuarios/admin_password_change.html'
     success_url = reverse_lazy('user_list')
@@ -271,7 +272,7 @@ class AdminPasswordChangeView(AuthRequiredMixin, PasswordChangeView):
         messages.error(self.request, _('Error al cambiar la contraseña'))
         return response
 
-class ActivityLogDetailView(AuthRequiredMixin, DetailView):
+class ActivityLogDetailView(RoleAccessMixin, DetailView):
     model = UserActivityLog
     template_name = 'usuarios/activity_detail.html'
     allowed_roles = ['admin']
@@ -312,7 +313,7 @@ class ActivityLogDetailView(AuthRequiredMixin, DetailView):
         })
         return context
 
-class ActivityLogView(AuthRequiredMixin, ListView):
+class ActivityLogView(RoleAccessMixin, ListView):
     model = UserActivityLog
     template_name = 'usuarios/activity_log.html'
     context_object_name = 'logs'

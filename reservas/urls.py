@@ -11,5 +11,12 @@ urlpatterns = [
     path('limpiar-seleccion/', views.LimpiarSeleccionView.as_view(), name='limpiar_seleccion'),
     path('api/hoteles/', views.HotelSearchView.as_view(), name='buscar_hoteles'),
     path('api/hoteles/<int:hotel_id>/habitaciones/', views.HotelHabitacionesView.as_view(), name='hotel_habitaciones'),
+    path('agregar-hotel/', views.HotelCreateView.as_view(), name='agregar_hotel'),
+    path('hoteles/', views.HotelListView.as_view(), name='hotel_list'),
+    path('hoteles/<int:pk>/', views.HotelDetailView.as_view(), name='hotel_detail'),
+     path('hoteles/<int:pk>/editar/', views.HotelUpdateView.as_view(), name='hotel_edit'),
+    path('hoteles/<int:pk>/eliminar/', views.HotelDeleteView.as_view(), name='hotel_delete'),
+    path('habitaciones/<int:pk>/eliminar/', views.TipoHabitacionDeleteView.as_view(), name='habitacion_delete'),
+   
     
 ]

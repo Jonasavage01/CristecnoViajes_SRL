@@ -10,23 +10,33 @@ from usuarios.models import UsuarioPersonalizado
 
 class Hotel(models.Model):
     nombre = models.CharField(max_length=100)
-    descripcion = models.TextField()
     ubicacion = models.CharField(max_length=100)
-    estrellas = models.PositiveIntegerField()
     activo = models.BooleanField(default=True)
-    
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return f"{self.nombre} ({self.ubicacion})"
 
 class TipoHabitacion(models.Model):
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE)
-    nombre = models.CharField(max_length=50)
-    capacidad = models.PositiveIntegerField()
-    precio_noche = models.DecimalField(max_digits=10, decimal_places=2)
-    descripcion = models.TextField()
+    nombre = models.CharField(max_length=50)  # Eliminar unique=True
+    creado_en = models.DateTimeField(auto_now_add=True)
+    
+    def clean(self):
+        if TipoHabitacion.objects.filter(
+            hotel=self.hotel, 
+            nombre__iexact=self.nombre
+        ).exclude(pk=self.pk).exists():
+            raise ValidationError(
+                'Ya existe un tipo de habitación con este nombre en el mismo hotel'
+            )
+    
+    class Meta:
+        unique_together = ('hotel', 'nombre')  # Añadir esta restricción
     
     def __str__(self):
-        return f"{self.nombre} - {self.hotel.nombre}"
+        return self.nombre
 
 class Reserva(models.Model):
     TIPO_RESERVA_CHOICES = [

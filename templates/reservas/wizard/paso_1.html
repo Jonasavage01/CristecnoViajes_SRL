@@ -305,33 +305,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 const formData = new FormData();
                 const key = selectedItem.type === 'cliente' ? 'cliente_id' : 'empresa_id';
                 formData.append(key, selectedItem.id);
-                formData.append('tipo_reserva', '{{ tipo_reserva }}'); // Añadir tipo_reserva
+                formData.append('tipo_reserva', '{{ tipo_reserva }}');
     
                 const response = await fetch("{% url 'reservas:wizard_paso' tipo=tipo_reserva paso=1 %}", {
                     method: 'POST',
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': '{{ csrf_token }}'
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: formData
                 });
-                
-                if (response.redirected) {
-                    window.location.href = response.url; // Redirección desde el servidor
-                } else {
-                    const data = await response.json();
-                    if (data.success) {
-                        window.location.href = data.next_url;
+    
+                const data = await response.json();
+    
+                if (response.ok) {
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
                     } else {
-                        showError('Error', data.error || 'Error desconocido');
+                        throw new Error('No se recibió URL de redirección');
                     }
+                } else {
+                    handleFormError(data);
                 }
             }
         } catch (error) {
-            showError('Error', 'No se pudo procesar la solicitud');
-            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                html: `<div class="text-danger">${error.message}</div>`
+            });
         }
     });
+    function handleFormError(errorData) {
+        let errorMessage = 'Error desconocido';
+        
+        if (errorData.error) {
+            errorMessage = errorData.error;
+            // Resaltar campos con error si es necesario
+        }
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Error en el formulario',
+            html: `<div class="text-danger">${errorMessage}</div>`,
+            confirmButtonColor: '#0d6efd'
+        });
+    }
 
     // Cargar selección previa si existe
     const loadPreviousSelection = () => {

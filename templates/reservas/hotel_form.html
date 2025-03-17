@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+{% load static %}
+<style>
+    .habitacion-form.marked-for-deletion {
+        background-color: #ffe6e6;
+        border-color: #ffcccc;
+        opacity: 0.5;
+    }
+    </style>
+{% block content %}
+<div class="container">
+    <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="bi bi-building me-2"></i>
+                {% if object %}Editar{% else %}Agregar Nuevo{% endif %} Hotel
+            </h3>
+        </div>
+        
+        <div class="card-body">
+            <form method="post" id="hotel-form" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Datos del Hotel -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h4 class="mb-3 text-primary"><i class="bi bi-info-circle me-2"></i>Información del Hotel</h4>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre del Hotel</label>
+                                {{ form.nombre }}
+                                {% for error in form.nombre.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.ubicacion.id_for_label }}" class="form-label">Ubicación</label>
+                                {{ form.ubicacion }}
+                                {% for error in form.ubicacion.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tipos de Habitación -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h4 class="mb-3 text-primary"><i class="bi bi-door-open me-2"></i>Tipos de Habitación</h4>
+                        
+                        {% if formset.non_form_errors %}
+                            <div class="alert alert-danger mb-3">
+                                {% for error in formset.non_form_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div id="habitaciones-formset" class="formset-container">
+                            {{ formset.management_form }}
+                            {% for form in formset %}
+                                <div class="habitacion-form mb-3 p-3 border rounded bg-light position-relative{% if form.errors %} border-danger{% endif %}">
+                                    <button type="button" 
+                                    class="btn btn-danger btn-sm position-absolute top-0 end-0 mt-1 me-1 remove-form" 
+                                    {% if forloop.first and formset.initial_forms|length == 0 %}style="display:none"{% endif %}
+                                    data-bs-toggle="tooltip" 
+                                    title="{% if form.instance.pk %}Eliminar permanentemente{% else %}Quitar del formulario{% endif %}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                                    <div class="row g-3">
+                                        <div class="col-md-12">
+                                            <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre del Tipo</label>
+                                            {{ form.nombre }}
+                                            {% for error in form.nombre.errors %}
+                                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {{ form.id }}
+                                    <div style="display: none;">
+                                        {{ form.DELETE }}
+                                    </div>
+       
+
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-outline-primary mt-2" id="add-more">
+                            <i class="bi bi-plus-circle me-2"></i>Añadir Tipo de Habitación
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-end mt-4">
+                    <a href="{% if object %}{% url 'reservas:hotel_detail' object.pk %}{% else %}{% url 'reservas:reservas_home' %}{% endif %}" 
+                       class="btn btn-secondary btn-lg me-2">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                        <i class="bi bi-save me-2"></i>{% if object %}Actualizar{% else %}Guardar{% endif %} Hotel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formsetContainer = document.getElementById('habitaciones-formset');
+    const totalForms = document.getElementById('id_tipohabitacion_set-TOTAL_FORMS');
+    let formCount = parseInt(totalForms.value);
+    const emptyForm = document.querySelector('.habitacion-form').cloneNode(true);
+    const submitBtn = document.getElementById('submit-btn');
+
+    // Función para actualizar índices y nombres
+    function updateFormIndex(form, index) {
+        form.querySelectorAll('[name]').forEach(element => {
+            const newName = element.name.replace(/-\d+-/g, `-${index}-`);
+            element.name = newName;
+            element.id = element.id.replace(/-\d+-/g, `-${index}-`);
+        });
+    }
+
+    // Añadir nuevo formulario
+    document.getElementById('add-more').addEventListener('click', function() {
+        const newForm = emptyForm.cloneNode(true);
+        formCount++;
+        
+        updateFormIndex(newForm, formCount - 1);
+        
+        newForm.querySelectorAll('input').forEach(input => {
+            input.value = '';
+            input.classList.remove('is-invalid');
+        });
+        
+        // Mostrar botón eliminar y animación
+        newForm.querySelector('.remove-form').style.display = 'block';
+        newForm.style.opacity = '0';
+        formsetContainer.appendChild(newForm);
+        setTimeout(() => {
+            newForm.style.opacity = '1';
+            newForm.querySelector('input').focus();
+        }, 10);
+        
+        totalForms.value = formCount;
+    });
+
+    // Eliminar formulario
+    formsetContainer.addEventListener('click', function(e) {
+        if(e.target.closest('.remove-form')) {
+            const form = e.target.closest('.habitacion-form');
+            const deleteInput = form.querySelector('[name$="-DELETE"]');
+            const idInput = form.querySelector('[name$="-id"]');
+            
+            if (idInput && idInput.value) {  // Registro existente
+                deleteInput.value = 'on';
+                form.classList.add('marked-for-deletion');
+                form.querySelector('.remove-form').style.display = 'none';
+                
+                // Animación
+                form.style.transition = 'all 0.3s ease';
+                form.style.opacity = '0.5';
+                form.style.transform = 'translateX(-20px)';
+            } else {  // Nuevo registro
+                form.style.transition = 'all 0.3s ease';
+                form.style.opacity = '0';
+                form.style.height = '0';
+                form.style.margin = '0';
+                form.style.padding = '0';
+                form.style.overflow = 'hidden';
+                
+                setTimeout(() => {
+                    form.remove();
+                    formCount--;
+                    totalForms.value = formCount;
+                    updateFormNumbers();
+                }, 300);
+            }
+        }
+    });
+
+    // Función para actualizar números de formularios
+function updateFormNumbers() {
+    document.querySelectorAll('.habitacion-form').forEach((form, index) => {
+        form.querySelectorAll('[name]').forEach(element => {
+            element.name = element.name.replace(/-\d+-/g, `-${index}-`);
+            element.id = element.id.replace(/-\d+-/g, `-${index}-`);
+        });
+    });
+}
+    // Manejo de envío del formulario
+    document.getElementById('hotel-form').addEventListener('submit', function(e) {
+        submitBtn.innerHTML = `
+            <span class="spinner-border spinner-border-sm" role="status"></span>
+            {% if object %}Actualizando...{% else %}Guardando...{% endif %}
+        `;
+        submitBtn.disabled = true;
+
+        if (!this.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.add('was-validated');
+            
+            // Restaurar botón
+            submitBtn.innerHTML = `
+                <i class="bi bi-save me-2"></i>
+                {% if object %}Actualizar{% else %}Guardar{% endif %} Hotel
+            `;
+            submitBtn.disabled = false;
+            
+            // Enfocar primer error
+            const firstInvalid = this.querySelector('.is-invalid');
+            if (firstInvalid) firstInvalid.focus();
+            else $('form :input:visible:enabled:first').focus();
+        }
+    });
+
+    // Autofoco inicial
+    $('form :input:visible:enabled:first').focus();
+
+    // Validación en tiempo real
+    document.querySelectorAll('.form-control').forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.checkValidity()) {
+                this.classList.remove('is-invalid');
+            } else {
+                this.classList.add('is-invalid');
+            }
+        });
+    });
+});
+document.getElementById('hotel-form').addEventListener('submit', function(e) {
+    if (!this.checkValidity()) {
+        e.preventDefault();
+        showErrorAlert('Verifica los campos requeridos', {
+            title: 'Formulario incompleto',
+            timer: 5000
+        });
+    }
+});
+// Manejo de mensajes del servidor
+{% if messages %}
+    {% for message in messages %}
+        {% if message.tags == 'success' %}
+            showSuccessAlert('{{ message|escapejs }}');
+        {% else %}
+            showErrorAlert('{{ message|escapejs }}', {
+                title: 'Error',
+                swalOptions: {
+                    scrollbarPadding: false
+                }
+            });
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+function refreshTooltips() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(t => {
+        if (t._tooltip) t._tooltip.dispose();
+        new bootstrap.Tooltip(t);
+    });
+}
+
+// Llamar a refreshTooltips después de cualquier modificación
+document.getElementById('add-more').addEventListener('click', refreshTooltips);
+formsetContainer.addEventListener('click', refreshTooltips);
+</script>
+{% endblock %}
