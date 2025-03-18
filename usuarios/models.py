@@ -2,6 +2,11 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+from django_resized import ResizedImageField
+from django.core.validators import FileExtensionValidator
 
 class UsuarioPersonalizado(AbstractUser):
     class Roles(models.TextChoices):
@@ -122,4 +127,24 @@ class UserActivityLog(models.Model):
         return None
     
     def __str__(self):
-        return f"{self.user.username} - {self.get_activity_type_display()} - {self.timestamp}"  # ti
+        return f"{self.user.username} - {self.get_activity_type_display()} - {self.timestamp}"  
+    
+class CompanySettings(models.Model):
+    logo = ResizedImageField(
+        size=[400, 150],  # Tamaño aumentado
+        quality=90,
+        upload_to='company/',
+        validators=[
+            FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg', 'svg'])
+        ],
+        null=True,
+        blank=True,
+        help_text=_('Preferiblemente PNG con fondo transparente (Recomendado 400x150 px)')
+    )
+    
+    class Meta:
+        verbose_name = _('Configuración de la empresa')
+        verbose_name_plural = verbose_name
+
+    def __str__(self):
+        return "Configuración de la Empresa"

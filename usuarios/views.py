@@ -30,7 +30,11 @@ from django.contrib.sessions.models import Session
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from core.mixins import RoleAccessMixin
-
+from django.urls import reverse_lazy
+from django.contrib import messages
+from .models import CompanySettings
+from .forms import CompanySettingsForm
+from django.views.generic import UpdateView
 
 def online_users_list(request):
     online_users = UsuarioPersonalizado.objects.filter(
@@ -338,3 +342,20 @@ class ActivityLogView(RoleAccessMixin, ListView):
             'search_query': self.request.GET.get('q', '')
         })
         return context
+
+class CompanySettingsView(RoleAccessMixin,UpdateView):
+    model = CompanySettings
+    form_class = CompanySettingsForm
+    template_name = 'usuarios/customization.html'
+    permission_required = 'usuarios.change_companysettings'
+    success_url = reverse_lazy('customization')
+    allowed_roles = ['admin']
+    
+    def get_object(self):
+        # Obtener o crear la instancia única
+        obj, created = CompanySettings.objects.get_or_create(pk=1)
+        return obj
+
+    def form_valid(self, form):
+        messages.success(self.request, _('¡Logo actualizado correctamente!'))
+        return super().form_valid(form)

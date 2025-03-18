@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.password_validation import validate_password
 from .models import UsuarioPersonalizado
+from .models import CompanySettings
 
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
@@ -120,3 +121,20 @@ class AdminPasswordChangeForm(SetPasswordForm):
         
         validate_password(password2, self.user)
         return password2
+    
+class CompanySettingsForm(forms.ModelForm):
+    class Meta:
+        model = CompanySettings
+        fields = ['logo']
+        labels = {
+            'logo': _('Seleccionar nuevo logo')
+        }
+        help_texts = {
+            'logo': _('Formatos aceptados: PNG, JPG, JPEG, SVG. Preferible PNG con fondo transparente (400x150 px)')
+        }
+        widgets = {
+            'logo': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            })
+        }

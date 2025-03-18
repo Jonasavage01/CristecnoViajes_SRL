@@ -1,0 +1,218 @@
+<!-- customization.html (diseño mejorado) -->
+{% extends 'usuarios/config_panel.html' %}
+{% load i18n static %}
+
+{% block title %}{% trans "Personalización" %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <!-- Contenido principal -->
+        <div class="col-xl-9 col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent border-bottom px-4 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="h5 mb-0 text-dark">{% trans "Personalización del Sistema" %}</h1>
+                        <i class="bi bi-palette fs-4 text-primary"></i>
+                    </div>
+                </div>
+                
+                <div class="card-body px-4 py-4">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row g-4">
+                            <!-- Sección de vista previa -->
+                            <div class="col-md-6">
+                                <div class="card border-dashed h-100">
+                                    <div class="card-body text-center d-flex flex-column justify-content-center">
+                                        <div class="mb-3">
+                                            <span class="text-muted mb-2 d-block small">{% trans "Vista previa actual" %}</span>
+                                            {% if object.logo %}
+                                                <img src="{{ object.logo.url }}" 
+                                                     alt="Logo Actual" 
+                                                     class="img-fluid rounded shadow-sm preview-logo"
+                                                     style="max-height: 150px;">
+                                            {% else %}
+                                                <div class="placeholder-logo bg-light rounded p-4">
+                                                    <i class="bi bi-image fs-1 text-muted"></i>
+                                                    <p class="mt-2 mb-0 small text-muted">{% trans "Sin logo configurado" %}</p>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sección de subida -->
+                            <div class="col-md-6">
+                                <div class="upload-section">
+                                    <div class="mb-4">
+                                        <label class="form-label fw-medium">{% trans "Subir nuevo logo" %}</label>
+                                        <div class="file-drop-area rounded-2 border-dashed p-4">
+                                            {{ form.logo }}
+                                            <div class="text-center mt-3">
+                                                <i class="bi bi-upload fs-4 text-muted"></i>
+                                                <p class="small text-muted mb-1 mt-2">{% trans "Arrastra tu archivo aquí o haz clic para seleccionar" %}</p>
+                                                <div class="form-text">{{ form.logo.help_text }}</div>
+                                            </div>
+                                        </div>
+                                        {% if form.logo.errors %}
+                                        <div class="alert alert-danger mt-3 small">
+                                            {{ form.logo.errors|first }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center mt-4">
+                                        <button type="submit" class="btn btn-primary px-4">
+                                            <i class="bi bi-upload me-2"></i>
+                                            {% trans "Guardar Cambios" %}
+                                        </button>
+                                        <a href="#" class="text-muted small" data-bs-toggle="modal" data-bs-target="#formatHelp">
+                                            <i class="bi bi-question-circle me-1"></i>
+                                            {% trans "Recomendaciones" %}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de recomendaciones -->
+<div class="modal fade" id="formatHelp" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans "Recomendaciones para el logo" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body small">
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        {% trans "Formato preferido: PNG con fondo transparente" %}
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-aspect-ratio text-primary me-2"></i>
+                        {% trans "Tamaño recomendado: 400x150 píxeles" %}
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-palette text-info me-2"></i>
+                        {% trans "Colores contrastados con el tema de la aplicación" %}
+                    </li>
+                    <li>
+                        <i class="bi bi-file-image text-warning me-2"></i>
+                        {% trans "Resolución mínima: 72 DPI" %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .border-dashed {
+        border: 2px dashed #dee2e6!important;
+    }
+    
+    .preview-logo {
+        transition: transform 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.1);
+        padding: 0.5rem;
+        background: white;
+    }
+    
+    .preview-logo:hover {
+        transform: scale(1.05);
+        cursor: zoom-in;
+    }
+    
+    .file-drop-area {
+        transition: all 0.3s ease;
+        background: rgba(13,110,253,0.05);
+    }
+    
+    .file-drop-area:hover {
+        background: rgba(13,110,253,0.1);
+        border-color: #0d6efd!important;
+    }
+    
+    .placeholder-logo {
+        transition: all 0.3s ease;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    #id_logo {
+        opacity: 0;
+        position: absolute;
+        z-index: -1;
+    }
+    
+    .upload-section .form-text {
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Preview de imagen antes de subir
+    const logoInput = document.getElementById('id_logo');
+    const previewContainer = document.querySelector('.preview-logo');
+    
+    logoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                if (previewContainer) {
+                    previewContainer.src = e.target.result;
+                } else {
+                    const placeholder = document.querySelector('.placeholder-logo');
+                    if (placeholder) {
+                        placeholder.innerHTML = `<img src="${e.target.result}" 
+                                                      class="img-fluid rounded shadow-sm preview-logo" 
+                                                      style="max-height: 150px;">`;
+                    }
+                }
+            }
+            
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Mejorar interacción del área de drop
+    const dropArea = document.querySelector('.file-drop-area');
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        dropArea.classList.add('highlight');
+    }
+
+    function unhighlight(e) {
+        dropArea.classList.remove('highlight');
+    }
+});
+</script>
+{% endblock %}

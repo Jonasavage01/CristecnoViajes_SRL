@@ -52,6 +52,11 @@
                         <i class="bi bi-clock-history me-3 fs-5 menu-icon"></i>
                         <span class="small">{% trans "Actividad" %}</span>
                     </a>
+                    <a href="{% url 'customization' %}" 
+                    class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 px-4 menu-item {% if request.resolver_match.url_name == 'customization' %}active{% endif %}">
+                     <i class="bi bi-palette me-3 fs-5 menu-icon"></i>
+                     <span class="small">{% trans "Personalización" %}</span>
+                 </a>
                     <div class="list-group-item list-group-item-action border-0 d-flex align-items-center py-3 px-4 menu-item">
                         <i class="bi bi-shield-lock me-3 fs-5 menu-icon"></i>
                         <div class="d-flex justify-content-between w-100 align-items-center">

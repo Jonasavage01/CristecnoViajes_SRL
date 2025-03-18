@@ -28,7 +28,22 @@
     <nav class="sidebar d-none d-md-block">
         <div class="sidebar-sticky">
             <div class="sidebar-header">
-                <h2 class="text-white mb-0">Logo</h2>
+                {% load usuarios_tags %}
+                {% get_company_settings as company_settings %}
+                
+                <div class="logo-container d-flex align-items-center justify-content-center py-3">
+                    {% if company_settings.logo %}
+                        <img src="{{ company_settings.logo.url }}" 
+                             alt="Logo de la empresa" 
+                             class="company-logo img-fluid"
+                             style="max-width: 100%;  eight: auto; max-height: 100px; transition: transform 0.3s ease;">
+                    {% else %}
+                        <div class="text-white text-center">
+                            <h2 class="mb-0 fw-bold" style="letter-spacing: 2px;">LOGO</h2>
+                            <small class="text-muted">{% trans "Personalizable" %}</small>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
             <ul class="nav flex-column">
                 <li class="nav-item">
@@ -207,6 +222,43 @@
 {# Bloque para scripts adicionales en templates hijos #}
 {% block extra_js %}{% endblock %}
 <style>
+
+    .logo-container {
+        min-height: 120px;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.72);
+        border-radius: 8px;
+        margin: 0 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .company-logo:hover {
+        transform: scale(1.05);
+        cursor: pointer;
+    }
+    
+    /* Versión móvil */
+    @media (max-width: 767.98px) {
+        .logo-container {
+            min-height: 80px;
+            margin: 0 0.5rem;
+            padding: 0.5rem;
+        }
+        
+        .company-logo {
+            max-height: 70px !important;
+        }
+        
+        .sidebar-header h2 {
+            font-size: 1.5rem;
+        }
+    }
+    
+    /* Efecto de hover para el contenedor */
+    .logo-container:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
     .notification-icon-container {
         width: 80px;
         height: 80px;
