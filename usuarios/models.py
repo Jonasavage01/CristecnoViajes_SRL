@@ -131,7 +131,7 @@ class UserActivityLog(models.Model):
     
 class CompanySettings(models.Model):
     logo = ResizedImageField(
-        size=[400, 150],  # Tamaño aumentado
+        size=[400, 200],  # Tamaño aumentado
         quality=90,
         upload_to='company/',
         validators=[

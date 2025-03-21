@@ -2,6 +2,8 @@ from django.db import models
 from crm.models import Cliente, Empresa
 from usuarios.models import UsuarioPersonalizado
 from django.core.exceptions import ValidationError
+from django.db.models import Q
+
 
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -22,6 +24,7 @@ class TipoHabitacion(models.Model):
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=50)  # Eliminar unique=True
     creado_en = models.DateTimeField(auto_now_add=True)
+    temporal = models.BooleanField(default=False)
     
     def clean(self):
         if TipoHabitacion.objects.filter(
@@ -33,11 +36,29 @@ class TipoHabitacion(models.Model):
             )
     
     class Meta:
-        unique_together = ('hotel', 'nombre')  # Añadir esta restricción
+        constraints = [
+            models.UniqueConstraint(
+                fields=['hotel', 'nombre'],
+                name='unique_nombre_por_hotel',
+                condition=Q(temporal=False)
+            )
+        ]
     
     def __str__(self):
         return self.nombre
 
+
+class Tarifa(models.Model):
+    habitacion = models.ForeignKey(TipoHabitacion, on_delete=models.CASCADE, related_name='tarifas')
+    adultos = models.DecimalField(max_digits=10, decimal_places=2)
+    adolescentes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ninos = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Tarifa por noche"
+        verbose_name_plural = "Tarifas"
+        
 class Reserva(models.Model):
     TIPO_RESERVA_CHOICES = [
         ('hotel', 'Hotel/Resort'),
@@ -79,6 +100,37 @@ class Reserva(models.Model):
     infantes = models.PositiveIntegerField(default=0)
     paso_actual = models.PositiveIntegerField(default=1)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+    # New fields
+    moneda = models.CharField(
+        max_length=3,
+        choices=[('USD', 'Dólares'), ('DOP', 'Pesos Dominicanos')],
+        default='USD',
+        help_text="Moneda en la que se expresa el total"
+    )
+    comentarios_reserva = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Comentarios adicionales sobre la reserva"
+    )
+    comentarios_proveedor = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Comentarios para el proveedor"
+    )
+    estado = models.CharField(
+        max_length=50,
+        default='pending',
+        help_text="Estado de la reserva (e.g., pendiente, pagada, personalizado)"
+    )
+    
+    plan_type = models.CharField(
+        max_length=20,
+        choices=[('all_inclusive', 'All-Inclusive'), ('half_board', 'Half-Board')],
+        default='all_inclusive',
+        help_text="Tipo de plan del hotel"
+    )
 
     class Meta:
         ordering = ['-fecha_creacion']
@@ -91,7 +143,7 @@ class Reserva(models.Model):
             raise ValidationError({'adultos': 'Se requiere al menos 1 adulto'})
 
     def __str__(self):
-        return f"Reserva #{self.id} - {self.get_tipo_display()}"
+        return f"Reserva #{self.id} - {self.get_tipo_reserva_display()}"
 
 class HabitacionReserva(models.Model):
     reserva = models.ForeignKey(Reserva, on_delete=models.CASCADE, related_name='habitaciones')
@@ -113,3 +165,11 @@ class HabitacionReserva(models.Model):
             
     def __str__(self):
         return f"{self.cantidad}x {self.tipo_habitacion.nombre}"
+
+class DocumentoReserva(models.Model):
+    reserva = models.ForeignKey(Reserva, on_delete=models.CASCADE, related_name='documentos')
+    archivo = models.FileField(upload_to='documentos_reserva/%Y/%m/%d/')
+    subido_en = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Documento para reserva {self.reserva.id} - {self.archivo.name}"

@@ -1,0 +1,660 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<style>
+    .wizard-container {
+        max-width: 1000px;
+        margin: 2rem auto;
+        box-shadow: 0 10px 35px rgba(0,0,0,0.1);
+        border-radius: 16px;
+        overflow: hidden;
+        background: #FFFFFF;
+    }
+
+    .card-header {
+        background: var(--primary-color);
+        color: var(--text-light);
+        padding: 1.75rem;
+        border-bottom: 3px solid var(--secondary-color);
+    }
+
+    .card-header h3 {
+        font-weight: 700;
+        margin: 0;
+        font-size: 1.75rem;
+        letter-spacing: -0.5px;
+        color: var(--text-light); /* Aseguramos texto blanco */
+    }
+
+    .card-header small {
+        opacity: 0.9;
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.9); /* Texto semi-transparente */
+    }
+
+    .card-body {
+        padding: 2.5rem;
+        background: #F9FAFB;
+    }
+
+    .section-title {
+        color: var(--primary-color); /* Cambiamos a color primario */
+        font-weight: 700;
+        margin: 0 0 2rem 0;
+        padding: 0 0 0.5rem 0;
+        border-bottom: 3px solid var(--secondary-color);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .section-title i {
+        font-size: var(--icon-size);
+        color: var(--secondary-color); /* Color de icono consistente */
+    }
+
+    .summary-card {
+        background: #FFFFFF;
+        border: 2px solid #E5E7EB;
+        border-radius: 10px;
+        padding: 2rem;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+
+    .summary-item dt {
+        color: var(--text-dark);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-item dd {
+        color: #4B5563;
+        font-weight: 600;
+        margin-left: 2rem;
+    }
+
+    .room-card {
+        border: 2px solid #E5E7EB;
+        border-radius: 10px;
+        padding: 1.75rem;
+        margin-bottom: 2rem;
+        background: #FFFFFF;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease;
+    }
+
+    .room-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .room-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.75rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #F3F4F6;
+    }
+
+    .room-title {
+        font-weight: 700;
+        color: var(--primary-color);
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .currency-symbol {
+        background: #F3F4F6;
+        border: 2px solid #E5E7EB;
+        border-right: 0;
+        padding: 0.75rem 1rem;
+        color: #4B5563;
+        font-weight: 500;
+    }
+
+    .tarifa-input {
+        border-left: 0 !important;
+        background: #FFFFFF !important;
+        padding: 0.75rem !important;
+        transition: border-color 0.3s ease;
+    }
+
+    .tarifa-input:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 3px rgba(63, 131, 248, 0.15);
+    }
+
+    .subtotal-row {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 2px dashed #E5E7EB;
+    }
+
+    .subtotal-item {
+        font-size: 0.95rem;
+        color: #4B5563;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.25rem 0;
+    }
+
+    .total-card {
+        background: var(--primary-color);
+        color: var(--text-light);
+        padding: 1.75rem;
+        border-radius: 10px;
+        margin: 2.5rem 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .total-card h4 {
+        color: var(--text-light) !important;
+        font-size: 1.5rem;
+    }
+
+    .form-label {
+        color: var(--text-dark);
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2.5rem;
+        padding-top: 2.5rem;
+        border-top: 2px solid #E5E7EB;
+    }
+
+    /* Botones mejorados */
+    .btn-primary {
+        background: var(--primary-color);
+        border: none;
+        padding: 0.875rem 2.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-primary:hover {
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .btn-secondary {
+        background: var(--text-light);
+        border: 2px solid var(--primary-color);
+        color: var(--primary-color);
+        padding: 0.875rem 2.25rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-secondary:hover {
+        background: var(--primary-color);
+        color: var(--text-light);
+        transform: translateY(-2px);
+    }
+
+    /* Iconos mejorados */
+    .bi-calculator { color: var(--text-light); }
+    .bi-file-text { color: var(--primary-color); }
+    .bi-cash-stack { color: var(--success-color); }
+    .bi-gear { color: var(--accent-color); }
+    .bi-arrow-left { color: currentColor; }
+    .bi-check-circle { color: var(--text-light); }
+    
+    .bi-person { color: var(--primary-color); }
+    .bi-person-arms-up { color: var(--secondary-color); }
+    .bi-balloon { color: #EF4444; }
+    .bi-capsule { color: var(--success-color); }
+    .bi-calendar-event { color: var(--accent-color); }
+    .bi-calendar-x { color: #EF4444; }
+    .bi-moon-stars { color: var(--secondary-color); }
+
+    .badge.bg-secondary {
+        background: var(--primary-color) !important;
+        color: white !important;
+        padding: 0.5em 1em;
+        border-radius: 20px;
+    }
+
+    #previewContainer img {
+        max-width: 100px;
+        max-height: 100px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin: 5px;
+    }
+    .preview-item {
+        position: relative;
+        margin: 5px;
+        display: inline-block;
+    }
+    .preview-item img {
+        max-width: 100px;
+        max-height: 100px;
+        object-fit: cover;
+    }
+    .preview-item button {
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 2px 5px;
+        font-size: 12px;
+    }
+    .preview-item span {
+        display: block;
+        font-size: 12px;
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+
+<div class="wizard-container">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="bi bi-calculator me-2"></i>Configuración de Tarifas</h3>
+            <small class="opacity-75">Paso 4 de 4</small>
+        </div>
+        
+        <div class="card-body">
+            <form id="tarifasForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- Resumen -->
+                <div class="summary-card">
+                    <h5 class="section-title"><i class="bi bi-file-text"></i>Resumen de Reserva</h5>
+                    <div class="summary-grid">
+                        <div>
+                            <dl class="row">
+                                <dt class="col-6"><i class="bi bi-person"></i>Adultos:</dt>
+                                <dd class="col-6">{{ reserva.adultos }}</dd>
+                                <dt class="col-6"><i class="bi bi-person-arms-up"></i>Adolescentes:</dt>
+                                <dd class="col-6">{{ reserva.adolescentes }}</dd>
+                                <dt class="col-6"><i class="bi bi-balloon"></i>Niños:</dt>
+                                <dd class="col-6">{{ reserva.ninos }}</dd>
+                                <dt class="col-6"><i class="bi bi-capsule"></i>Infantes:</dt>
+                                <dd class="col-6">{{ reserva.infantes }}</dd>
+                            </dl>
+                        </div>
+                        <div>
+                            <dl class="row">
+                                <dt class="col-6"><i class="bi bi-calendar-event"></i>Entrada:</dt>
+                                <dd class="col-6">{{ reserva.fecha_entrada|date:"d/m/Y" }}</dd>
+                                <dt class="col-6"><i class="bi bi-calendar-x"></i>Salida:</dt>
+                                <dd class="col-6">{{ reserva.fecha_salida|date:"d/m/Y" }}</dd>
+                                <dt class="col-6"><i class="bi bi-moon-stars"></i>Noches:</dt>
+                                <dd class="col-6">{{ noches }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarifas -->
+                <h5 class="section-title"><i class="bi bi-cash-stack"></i>Tarifas por Habitación</h5>
+                {% for habitacion in habitaciones %}
+                <div class="room-card">
+                    <div class="room-header">
+                        <h6 class="room-title">{{ habitacion.tipo_habitacion.nombre }}</h6>
+                        <span class="badge bg-secondary">Cantidad: {{ habitacion.cantidad }}</span>
+                    </div>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label class="form-label">Adultos/noche</label>
+                            <div class="input-group">
+                                <span class="input-group-text currency-symbol">$</span>
+                                <input type="number" step="0.01" min="0" 
+                                       name="tarifa_adultos_{{ habitacion.id }}"
+                                       class="form-control tarifa-input"
+                                       data-habitacion="{{ habitacion.id }}"
+                                       data-cantidad="{{ habitacion.cantidad }}"
+                                       required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Adolescentes/noche</label>
+                            <div class="input-group">
+                                <span class="input-group-text currency-symbol">$</span>
+                                <input type="number" step="0.01" min="0" 
+                                       name="tarifa_adolescentes_{{ habitacion.id }}"
+                                       class="form-control tarifa-input"
+                                       data-habitacion="{{ habitacion.id }}"
+                                       data-cantidad="{{ habitacion.cantidad }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Niños/noche</label>
+                            <div class="input-group">
+                                <span class="input-group-text currency-symbol">$</span>
+                                <input type="number" step="0.01" min="0" 
+                                       name="tarifa_ninos_{{ habitacion.id }}"
+                                       class="form-control tarifa-input"
+                                       data-habitacion="{{ habitacion.id }}"
+                                       data-cantidad="{{ habitacion.cantidad }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="subtotal-row row g-3">
+                        <div class="col-md-4 subtotal-item">
+                            <span>Adultos:</span>
+                            <span class="subtotal-adultos text-success fw-bold" data-habitacion="{{ habitacion.id }}">$0.00</span>
+                        </div>
+                        <div class="col-md-4 subtotal-item">
+                            <span>Adolescentes:</span>
+                            <span class="subtotal-adolescentes text-success fw-bold" data-habitacion="{{ habitacion.id }}">$0.00</span>
+                        </div>
+                        <div class="col-md-4 subtotal-item">
+                            <span>Niños:</span>
+                            <span class="subtotal-ninos text-success fw-bold" data-habitacion="{{ habitacion.id }}">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Detalles Adicionales -->
+                <div class="mt-5">
+                    <h5 class="section-title"><i class="bi bi-gear"></i>Configuración Adicional</h5>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label for="moneda" class="form-label">Moneda</label>
+                            <select name="moneda" id="moneda" class="form-select" required>
+                                <option value="USD">Dólares (USD)</option>
+                                <option value="DOP">Pesos Dominicanos (DOP)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="estado" class="form-label">Estado de la Reserva</label>
+                            <select name="estado" id="estado" class="form-select" required>
+                                <option value="pending">Pendiente</option>
+                                <option value="paid">Pagada</option>
+                                <option value="deposit_made">Depósito Realizado</option>
+                                <option value="other">Otro</option>
+                            </select>
+                            <input type="text" name="estado_custom" id="estado_custom" 
+                                   class="form-control mt-2 d-none" placeholder="Especificar estado">
+                        </div>
+                        <div class="col-12">
+                            <label for="comentarios_reserva" class="form-label">Comentarios de la Reserva</label>
+                            <textarea name="comentarios_reserva" id="comentarios_reserva" 
+                                      class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label for="comentarios_proveedor" class="form-label">Comentarios para el Proveedor</label>
+                            <textarea name="comentarios_proveedor" id="comentarios_proveedor" 
+                                      class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label for="documentos" class="form-label">Subir Documentos (fotos o archivos):</label>
+                            <input type="file" name="documentos" id="documentosInput" class="form-control" multiple accept="image/*,.pdf,.doc,.docx">
+                            <small class="form-text text-muted">Puede seleccionar varios archivos a la vez con Ctrl o agregar más seleccionando nuevamente.</small>
+                            <div id="previewContainer" class="mt-3 d-flex flex-wrap gap-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total -->
+                <div class="total-card text-center">
+                    <h4 class="mb-0 text-white">Total Estimado: <span id="totalReserva" class="fw-bold">$0.00</span></h4>
+                </div>
+                
+
+                <!-- Navegación -->
+                <div class="nav-buttons">
+                    <a href="{% url 'reservas:wizard_paso' tipo=tipo_reserva paso=3 %}" 
+                       class="btn btn-secondary">
+                       <i class="bi bi-arrow-left me-2"></i>Volver
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        Finalizar Reserva <i class="bi bi-check-circle ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('tarifasForm');
+        const totalReserva = document.getElementById('totalReserva');
+        const monedaSelect = document.getElementById('moneda');
+        const noches = {{ noches }};
+        const huespedes = {
+            adultos: {{ reserva.adultos }},
+            adolescentes: {{ reserva.adolescentes }},
+            ninos: {{ reserva.ninos }}
+        };
+        const currencySymbols = {
+            'USD': '$',
+            'DOP': 'RD$'
+        };
+    
+        // Funciones para actualizar símbolos de moneda y calcular total
+        function updateCurrencySymbols() {
+            const symbol = currencySymbols[monedaSelect.value] || '$';
+            document.querySelectorAll('.currency-symbol').forEach(span => {
+                span.textContent = symbol;
+            });
+        }
+    
+        function calcularTotal() {
+            let total = 0;
+            const symbol = currencySymbols[monedaSelect.value] || '$';
+            
+            document.querySelectorAll('.tarifa-input').forEach(input => {
+                const habitacionId = input.dataset.habitacion;
+                const tipo = input.name.split('_')[1];
+                const valor = parseFloat(input.value) || 0;
+                const cantidadHabitaciones = parseInt(input.dataset.cantidad) || 1;
+                
+                let subtotal = 0;
+                switch(tipo) {
+                    case 'adultos':
+                        subtotal = valor * huespedes.adultos * noches * cantidadHabitaciones;
+                        break;
+                    case 'adolescentes':
+                        subtotal = valor * huespedes.adolescentes * noches * cantidadHabitaciones;
+                        break;
+                    case 'ninos':
+                        subtotal = valor * huespedes.ninos * noches * cantidadHabitaciones;
+                        break;
+                }
+                
+                const subtotalElement = document.querySelector(
+                    `.subtotal-${tipo}[data-habitacion="${habitacionId}"]`
+                );
+                if (subtotalElement) {
+                    subtotalElement.textContent = `${symbol}${subtotal.toFixed(2)}`;
+                }
+                
+                total += subtotal;
+            });
+            
+            totalReserva.textContent = `${symbol}${total.toFixed(2)}`;
+        }
+    
+        // Deshabilitar campos si no hay adolescentes o niños
+        if (huespedes.adolescentes === 0) {
+            document.querySelectorAll('input[name^="tarifa_adolescentes_"]').forEach(input => {
+                input.disabled = true;
+                input.value = '';
+            });
+        }
+        if (huespedes.ninos === 0) {
+            document.querySelectorAll('input[name^="tarifa_ninos_"]').forEach(input => {
+                input.disabled = true;
+                input.value = '';
+            });
+        }
+    
+        // Event listeners para inputs de tarifas
+        document.querySelectorAll('.tarifa-input').forEach(input => {
+            input.addEventListener('input', calcularTotal);
+            input.addEventListener('blur', function() {
+                if (this.value < 0) this.value = 0;
+                calcularTotal();
+            });
+        });
+    
+        monedaSelect.addEventListener('change', () => {
+            updateCurrencySymbols();
+            calcularTotal();
+        });
+    
+        // Lógica para el estado personalizado
+        const estadoSelect = document.getElementById('estado');
+        const estadoCustom = document.getElementById('estado_custom');
+        estadoSelect.addEventListener('change', function() {
+            if (this.value === 'other') {
+                estadoCustom.classList.remove('d-none');
+                estadoCustom.setAttribute('required', true);
+            } else {
+                estadoCustom.classList.add('d-none');
+                estadoCustom.removeAttribute('required');
+                estadoCustom.value = '';
+            }
+        });
+    
+        // Validación al enviar el formulario
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            document.querySelectorAll('[name^="tarifa_adultos_"]').forEach(input => {
+                if (parseFloat(input.value) <= 0) {
+                    isValid = false;
+                    input.classList.add('is-invalid');
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+    
+            if (huespedes.adolescentes === 0) {
+                document.querySelectorAll('input[name^="tarifa_adolescentes_"]').forEach(input => {
+                    if (parseFloat(input.value) > 0) {
+                        isValid = false;
+                        input.classList.add('is-invalid');
+                    }
+                });
+            }
+            if (huespedes.ninos === 0) {
+                document.querySelectorAll('input[name^="tarifa_ninos_"]').forEach(input => {
+                    if (parseFloat(input.value) > 0) {
+                        isValid = false;
+                        input.classList.add('is-invalid');
+                    }
+                });
+            }
+    
+            if (estadoSelect.value === 'other' && !estadoCustom.value.trim()) {
+                isValid = false;
+                estadoCustom.classList.add('is-invalid');
+            } else {
+                estadoCustom.classList.remove('is-invalid');
+            }
+    
+            if (!isValid) {
+                e.preventDefault();
+                alert('Por favor, corrija los campos inválidos');
+            }
+        });
+    
+// Lógica para previsualización y eliminación de archivos
+const documentosInput = document.getElementById('documentosInput');
+const previewContainer = document.getElementById('previewContainer');
+let allFiles = [];  // Array para almacenar todos los archivos seleccionados
+let excludedIndices = [];  // Lista de índices de archivos a excluir
+
+documentosInput.addEventListener('change', function(event) {
+    const newFiles = Array.from(event.target.files);  // Nuevos archivos seleccionados
+    allFiles = [...allFiles, ...newFiles];  // Acumular los nuevos archivos
+
+    // Actualizar previsualización sin limpiar todo
+    newFiles.forEach((file, index) => {
+        const globalIndex = allFiles.length - newFiles.length + index;  // Índice global
+        const previewItem = document.createElement('div');
+        previewItem.className = 'preview-item';
+        previewItem.dataset.index = globalIndex;
+
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                previewItem.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-file-earmark';
+            previewItem.appendChild(icon);
+            const name = document.createElement('span');
+            name.textContent = file.name;
+            previewItem.appendChild(name);
+        }
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-danger btn-sm';
+        deleteBtn.textContent = 'Eliminar';
+        deleteBtn.addEventListener('click', function() {
+            const idx = parseInt(previewItem.dataset.index);
+            excludedIndices.push(idx);  // Agregar índice a excluidos
+            previewItem.remove();  // Eliminar previsualización
+        });
+        previewItem.appendChild(deleteBtn);
+
+        previewContainer.appendChild(previewItem);
+    });
+
+    // Actualizar el input con todos los archivos acumulados
+    const dataTransfer = new DataTransfer();
+    allFiles.forEach((file, idx) => {
+        if (!excludedIndices.includes(idx)) {
+            dataTransfer.items.add(file);
+        }
+    });
+    documentosInput.files = dataTransfer.files;
+});
+
+// Agregar campo oculto con índices a excluir al enviar el formulario
+form.addEventListener('submit', function(e) {
+    if (excludedIndices.length > 0) {
+        const excludeInput = document.createElement('input');
+        excludeInput.type = 'hidden';
+        excludeInput.name = 'excluir_documentos';
+        excludeInput.value = excludedIndices.join(',');
+        form.appendChild(excludeInput);
+    }
+});
+    
+        // Configuración inicial
+        updateCurrencySymbols();
+        calcularTotal();
+    });
+</script>
+{% endblock %}

@@ -4,13 +4,13 @@ from django.views.generic import TemplateView, View
 from django.shortcuts import redirect
 from django.db.models import Q
 from django.core.serializers import serialize
-from .models import Reserva
+from .models import Reserva, Tarifa
 from crm.models import Cliente, Empresa
 from django.shortcuts import render
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseBadRequest
 from datetime import date
-from .models import Hotel, TipoHabitacion,HabitacionReserva
+from .models import Hotel, TipoHabitacion,HabitacionReserva, DocumentoReserva
 from django.urls import reverse
 from .forms import HotelForm, TipoHabitacionFormSet
 from django.views.generic import CreateView
@@ -29,6 +29,11 @@ from django.views.generic import (
     FormView,
 )
 
+from decimal import Decimal
+from django.utils import timezone
+
+import logging
+logger = logging.getLogger(__name__)
 
 def reservas_home(request): 
     return render(request, 'reservas/reservas_home.html', {
@@ -62,7 +67,21 @@ class ReservaWizard(TemplateView):
             'paso_actual': paso_actual,
             'total_pasos': 4,
             'tipo_reserva': self.kwargs['tipo']
+            
         })
+        
+        if paso_actual == 4:
+            try:
+                reserva = Reserva.objects.get(id=self.request.session['reserva_id'])
+                noches = (reserva.fecha_salida - reserva.fecha_entrada).days
+                context.update({
+                    'reserva': reserva,
+                    'noches': noches,
+                    'habitaciones': reserva.habitaciones.all().select_related('tipo_habitacion')
+                })
+            except Exception as e:
+                print(f"Error obteniendo contexto paso 4: {str(e)}")
+        
         return context
     
 
@@ -70,27 +89,34 @@ class ReservaWizard(TemplateView):
     def post(self, request, *args, **kwargs):
         paso = self.kwargs.get('paso', 1)
         handler = getattr(self, f'handle_paso{paso}', None)
-        
+
         if not handler:
             return HttpResponseBadRequest("Paso inválido")
-            
+
         try:
             reserva = handler(request)
-            request.session['reserva_id'] = reserva.id
-            next_paso = paso + 1 if paso < 4 else 4
-            
-            return JsonResponse({
-                'redirect': reverse('reservas:wizard_paso', kwargs={
-                    'tipo': self.kwargs['tipo'],
-                    'paso': next_paso
+            request.session['reserva_id'] = reserva.id  # Esto ahora funciona
+            if paso == 4:
+                return JsonResponse({
+                    'redirect': reverse('reservas:confirmacion')
                 })
-            })
-        
+            else:
+                next_paso = paso + 1
+                return JsonResponse({
+                    'redirect': reverse('reservas:wizard_paso', kwargs={
+                        'tipo': self.kwargs['tipo'],
+                        'paso': next_paso
+                    })
+                })
+
+        except Reserva.DoesNotExist:
+            return JsonResponse({'error': 'Reserva no encontrada en la sesión', 'type': 'session'}, status=404)
         except ValidationError as e:
             return JsonResponse({'error': str(e), 'type': 'validation'}, status=400)
         except Exception as e:
-            return JsonResponse({'error': f'Error interno: {str(e)}', 'type': 'server'}, status=500)
-
+            logger.error(f"Error en paso {paso}: {str(e)}", exc_info=True)
+            return JsonResponse({'error': 'Error interno del servidor', 'type': 'server'}, status=500)
+    
     def handle_paso1(self, request):
         try:
             cliente_id = request.POST.get('cliente_id')
@@ -140,39 +166,140 @@ class ReservaWizard(TemplateView):
         try:
             reserva = Reserva.objects.get(id=request.session['reserva_id'])
             reserva.habitaciones.all().delete()
-        
+
             hotel_id = request.POST.get('hotel')
             if not hotel_id:
-                raise ValidationError({'hotel': 'Seleccione un hotel'})
-        
-            hotel = Hotel.objects.get(id=hotel_id, activo=True)  # Solo hoteles activos
-        
-            # Procesar habitaciones usando índices estructurados
-            indexes = {k.split('_')[1] for k in request.POST if k.startswith('habitaciones_') and '_tipo' in k}
-        
-            for index in indexes:
-                tipo_id = request.POST.get(f'habitaciones_{index}_tipo')
-                cantidad = int(request.POST.get(f'habitaciones_{index}_cantidad', 1))
-            
-                if not tipo_id or cantidad < 1:
-                    continue  # Saltar elementos inválidos
-                
-                tipo_hab = TipoHabitacion.objects.get(id=tipo_id, hotel=hotel)
+                raise ValidationError('Debe seleccionar un hotel')
+
+            hotel = Hotel.objects.get(id=hotel_id, activo=True)
+
+            # Guardar el tipo de plan
+            plan_type = request.POST.get('plan_type')
+            if plan_type not in ['all_inclusive', 'half_board']:
+                raise ValidationError('Tipo de plan inválido')
+            reserva.plan_type = plan_type
+
+            # Procesar todas las habitaciones dinámicas
+            habitaciones_data = {}
+            for key, value in request.POST.items():
+                if key.startswith('habitaciones_'):
+                    parts = key.split('_')
+                    index = parts[1]
+                    field = parts[2]
+                    if index not in habitaciones_data:
+                        habitaciones_data[index] = {}
+                    habitaciones_data[index][field] = value
+
+            # Crear habitaciones
+            for index, data in habitaciones_data.items():
+                tipo_id = data.get('tipo')
+                cantidad = int(data.get('cantidad', 1))
+
+                if tipo_id == 'otro':
+                    nombre = data.get('otro_nombre')
+                    if not nombre:
+                        raise ValidationError('Nombre requerido para habitación personalizada')
+                    tipo_hab = TipoHabitacion.objects.create(
+                        hotel=hotel,
+                        nombre=nombre,
+                        temporal=True
+                 )
+                else:
+                    tipo_hab = TipoHabitacion.objects.get(id=tipo_id, hotel=hotel)
+
                 HabitacionReserva.objects.create(
                     reserva=reserva,
                     tipo_habitacion=tipo_hab,
                     cantidad=cantidad
                 )
-        
-            if not reserva.habitaciones.exists():
-                raise ValidationError('Debe agregar al menos una habitación')
-        
+
             reserva.paso_actual = 4
             reserva.save()
+
             return reserva
-        
-        except Hotel.DoesNotExist:
-            raise ValidationError('Hotel no encontrado o inactivo')
+
+        except Exception as e:
+            raise ValidationError(str(e))
+    
+    def handle_paso4(self, request):
+        try:
+            reserva = Reserva.objects.get(id=request.session['reserva_id'])
+            data = request.POST
+
+            # Validate dates
+            if not reserva.fecha_entrada or not reserva.fecha_salida:
+                raise ValidationError("Fechas de reserva no válidas")
+            noches = (reserva.fecha_salida - reserva.fecha_entrada).days
+            if noches <= 0:
+                raise ValidationError("La estadía debe ser de al menos 1 noche")
+
+            total = Decimal('0')
+
+            # Process tariffs for each room
+            for hab_reserva in reserva.habitaciones.all():
+                tarifa_adultos = Decimal(data.get(f'tarifa_adultos_{hab_reserva.id}', '0'))
+                tarifa_adolescentes = Decimal(data.get(f'tarifa_adolescentes_{hab_reserva.id}', '0'))
+                tarifa_ninos = Decimal(data.get(f'tarifa_ninos_{hab_reserva.id}', '0'))
+
+                # Validation
+                if tarifa_adultos <= 0:
+                    raise ValidationError(f"Tarifa para adultos requerida en {hab_reserva.tipo_habitacion.nombre}")
+
+                # Calculate costs
+                costo_adultos = tarifa_adultos * reserva.adultos * noches * hab_reserva.cantidad
+                costo_adolescentes = tarifa_adolescentes * reserva.adolescentes * noches * hab_reserva.cantidad
+                costo_ninos = tarifa_ninos * reserva.ninos * noches * hab_reserva.cantidad
+
+                # Create tariff record
+                Tarifa.objects.create(
+                    habitacion=hab_reserva.tipo_habitacion,
+                    adultos=tarifa_adultos,
+                    adolescentes=tarifa_adolescentes,
+                    ninos=tarifa_ninos
+                )
+
+                total += costo_adultos + costo_adolescentes + costo_ninos
+
+            # Process new fields
+            moneda = data.get('moneda')
+            if moneda not in ['USD', 'DOP']:
+                raise ValidationError("Moneda inválida")
+
+            comentarios_reserva = data.get('comentarios_reserva', '')
+            comentarios_proveedor = data.get('comentarios_proveedor', '')
+
+            estado = data.get('estado')
+            if estado == 'other':
+                estado_custom = data.get('estado_custom', '').strip()
+                if not estado_custom:
+                    raise ValidationError("Debe especificar un estado personalizado")
+                estado = estado_custom
+
+            # Handle file uploads with exclusion
+            documentos = request.FILES.getlist('documentos')
+            excluir_str = request.POST.get('excluir_documentos', '')  # Obtener índices a excluir
+            excluir_indices = [int(idx) for idx in excluir_str.split(',') if idx.isdigit()]  # Convertir a lista de enteros
+
+            for idx, documento in enumerate(documentos):
+                if idx not in excluir_indices:  # Solo guardar si no está excluido
+                    DocumentoReserva.objects.create(
+                        reserva=reserva,
+                        archivo=documento
+                    )
+
+            # Update reservation
+            reserva.total = total
+            reserva.moneda = moneda
+            reserva.comentarios_reserva = comentarios_reserva
+            reserva.comentarios_proveedor = comentarios_proveedor
+            reserva.estado = estado
+            reserva.paso_actual = 5  # Mark as completed
+            reserva.save()
+
+            return reserva
+
+        except Exception as e:
+            raise ValidationError(f"Error procesando paso 4: {str(e)}")
 
 class Paso1SeleccionCliente(RoleAccessMixin,ReservaWizard):
     allowed_roles = ['admin', 'reservas']
@@ -245,6 +372,104 @@ class Paso2DatosHuespedes(RoleAccessMixin,TemplateView):
         except Exception as e:
             return JsonResponse({'error': 'Error interno del servidor', 'type': 'server'}, status=500)
 
+
+class Paso3SeleccionHotel(View):
+    template_name = 'reservas/wizard/paso_3.html'
+    
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        return render(request, self.template_name, context)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            reserva = Reserva.objects.get(id=self.request.session['reserva_id'])
+            context['hotel_seleccionado'] = reserva.habitaciones.first().tipo_habitacion.hotel if reserva.habitaciones.exists() else None
+        except:
+            context['hotel_seleccionado'] = None
+        
+        context.update({
+            'paso_actual': 3,
+            'total_pasos': 4,
+            'tipo_reserva': self.kwargs['tipo'],
+            'hoteles_url': reverse('reservas:hotel_search'),
+            'habitaciones_url': reverse('reservas:hotel_habitaciones', args=[0])
+        })
+        return context
+
+    def post(self, request, *args, **kwargs):
+        try:
+            reserva = Reserva.objects.get(id=request.session['reserva_id'])
+            data = request.POST
+            
+            # Validar y obtener hotel
+            hotel_id = data.get('hotel')
+            if not hotel_id:
+                raise ValidationError({'hotel': ['Seleccione un hotel']})
+            hotel = Hotel.objects.get(id=hotel_id)
+            
+            # Procesar habitaciones
+            habitaciones = []
+            indexes = {k.split('_')[1] for k in data if k.startswith('habitaciones_') and '_tipo' in k}
+            
+            for index in indexes:
+                tipo_key = f'habitaciones_{index}_tipo'
+                cantidad_key = f'habitaciones_{index}_cantidad'
+                tipo_option = data.get(tipo_key)
+                
+                if tipo_option == 'otro':
+                    # Validar habitación personalizada
+                    nombre_habitacion = data.get(f'habitaciones_{index}_otro_nombre', '').strip()  # Cambiado a habitaciones_
+                    if not nombre_habitacion:
+                        raise ValidationError(f'Debe ingresar un nombre para la habitación personalizada en la fila {index}')
+                    
+                    # Crear tipo temporal
+                    tipo_hab = TipoHabitacion.objects.create(
+                        hotel=hotel,
+                        nombre=nombre_habitacion,
+                        temporal=True
+                    )
+                else:
+                    # Validar tipo existente
+                    tipo_hab = TipoHabitacion.objects.get(id=tipo_option, hotel=hotel)
+                
+                cantidad = int(data.get(cantidad_key, 1))
+                if cantidad < 1:
+                    raise ValidationError(f'Cantidad inválida en la fila {index}')
+                
+                habitaciones.append({
+                    'tipo': tipo_hab,
+                    'cantidad': cantidad
+                })
+            
+            # Eliminar anteriores y crear nuevas
+            reserva.habitaciones.all().delete()
+            for hab in habitaciones:
+                HabitacionReserva.objects.create(
+                    reserva=reserva,
+                    tipo_habitacion=hab['tipo'],
+                    cantidad=hab['cantidad']
+                )
+            
+            reserva.paso_actual = 4
+            reserva.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': '¡Hotel y habitaciones guardados exitosamente!',
+                'redirect': reverse('reservas:wizard_paso', kwargs={
+                    'tipo': self.kwargs['tipo'],
+                    'paso': 4
+                })
+            })
+            
+        except ValidationError as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
 class BuscarClientesEmpresasView(RoleAccessMixin,View):
     allowed_roles = ['admin', 'reservas']
     def get(self, request, *args, **kwargs):
@@ -288,79 +513,26 @@ class LimpiarSeleccionView(RoleAccessMixin,View):
             del request.session['reserva_data']
         return JsonResponse({'success': True})
 
-class Paso3SeleccionHotel(TemplateView):
-    template_name = 'reservas/wizard/paso_3.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        try:
-            reserva = Reserva.objects.get(id=self.request.session['reserva_id'])
-            habitaciones_existentes = HabitacionReserva.objects.filter(reserva=reserva)
-        except:
-            habitaciones_existentes = []
-        
-        context.update({
-            'hoteles': Hotel.objects.filter(activo=True),
-            'habitaciones_existentes': habitaciones_existentes,
-            'paso_actual': 3,
-            'total_pasos': 4,
-            'tipo_reserva': self.kwargs['tipo']
-        })
-        return context
-
-    def post(self, request, *args, **kwargs):
-        try:
-            reserva = Reserva.objects.get(id=request.session['reserva_id'])
-            reserva.habitaciones.all().delete()  # Limpiar habitaciones anteriores
-            
-            hotel_id = request.POST.get('hotel')
-            if not hotel_id:
-                raise ValidationError('Debe seleccionar un hotel')
-            
-            hotel = Hotel.objects.get(id=hotel_id)
-            habitaciones = []
-            
-            # Procesar habitaciones
-            for key, value in request.POST.items():
-                if key.startswith('habitaciones'):
-                    parts = key.split('_')
-                    if len(parts) == 3 and parts[2] == 'tipo':
-                        index = parts[1]
-                        tipo_id = value
-                        cantidad = request.POST.get(f'habitaciones_{index}_cantidad', 1)
-                        
-                        if tipo_id and cantidad:
-                            try:
-                                tipo = TipoHabitacion.objects.get(id=tipo_id, hotel=hotel)
-                                HabitacionReserva.objects.create(
-                                    reserva=reserva,
-                                    tipo_habitacion=tipo,
-                                    cantidad=cantidad
-                                )
-                            except TipoHabitacion.DoesNotExist:
-                                raise ValidationError(f'Tipo de habitación inválido para el hotel seleccionado')
-            
-            if reserva.habitaciones.count() == 0:
-                raise ValidationError('Debe agregar al menos una habitación')
-            
-            reserva.paso_actual = 4
-            reserva.save()
-            
-            return redirect('reservas:wizard_paso', tipo=self.kwargs['tipo'], paso=4)
-            
-        except ValidationError as e:
-            return JsonResponse({'error': str(e), 'type': 'validation'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': f'Error: {str(e)}', 'type': 'server'}, status=500)
- 
-class HotelHabitacionesView(RoleAccessMixin,View):
+class HotelHabitacionesView(RoleAccessMixin, View):
     allowed_roles = ['admin', 'reservas']
+    
     def get(self, request, hotel_id):
-        habitaciones = TipoHabitacion.objects.filter(
-            hotel_id=hotel_id,
-            hotel__activo=True
-        ).values('id', 'nombre', 'capacidad')
-        return JsonResponse(list(habitaciones), safe=False)
+        try:
+            hotel = Hotel.objects.get(id=hotel_id, activo=True)
+            habitaciones = hotel.tipohabitacion_set.filter(
+                temporal=False
+            ).values('id', 'nombre')
+            
+            return JsonResponse({
+                'status': 'success',
+                'habitaciones': list(habitaciones)
+            })
+            
+        except Hotel.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Hotel no encontrado'
+            }, status=404)
  
 class HotelSearchView(View):
     allowed_roles = ['admin', 'reservas']
@@ -373,7 +545,7 @@ class HotelSearchView(View):
         
         results = [{
             'id': h.id,
-            'text': f"{h.nombre} ({h.ubicacion}) - {h.estrellas}★"
+            'text': f"{h.nombre} ({h.ubicacion}) "
         } for h in hoteles]
         
         return JsonResponse({'results': results})

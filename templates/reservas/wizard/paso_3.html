@@ -1,162 +1,268 @@
+<!-- paso_3.html (Versión mejorada) -->
 {% extends 'base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="container">
-    <div class="mb-3 text-end">
-        <a href="{% url 'reservas:agregar_hotel' %}?tipo_reserva={{ tipo_reserva }}" 
-        class="btn btn-success">
-        <i class="bi bi-plus-lg me-2"></i>Agregar Nuevo Hotel
-     </a>
-    </div>
-    <div class="card shadow-lg border-0">
+<div class="container wizard-container">
+  
+    
+    <div class="card shadow-lg">
         <div class="card-header bg-primary text-white">
-            <h3 class="mb-0"><i class="bi bi-building me-2"></i>Selección de Hotel y Habitaciones</h3>
-            <small class="d-block mt-2">Paso 3 de 4 - Elige tu alojamiento</small>
+            <h3 class="mb-0"><i class="bi bi-building me-2"></i>Paso 3: Selección de Hotel</h3>
         </div>
         
         <div class="card-body">
-            <form method="post" id="paso3Form" novalidate>
+            <form id="paso3Form" method="post" novalidate>
                 {% csrf_token %}
                 
-                <!-- Selector de Hotel con Search -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="form-floating">
-                            <select class="form-select select2-hotel" id="hotel" name="hotel" required
-                                    data-url="{% url 'reservas:hotel_habitaciones' 0 %}">
-                                <option value=""></option>
-                                {% for hotel in hoteles %}
-                                <option value="{{ hotel.id }}" 
-                                    {% if habitaciones_existentes.0.tipo_habitacion.hotel.id == hotel.id %}selected{% endif %}>
-                                    {{ hotel.nombre }} - {{ hotel.ubicacion }} ({{ hotel.estrellas }}★)
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <label for="hotel">Buscar y seleccionar hotel</label>
-                        </div>
+               <!-- Hotel Search -->
+        <div class="mb-4">
+            <label class="form-label fw-bold">Buscar Hotel:</label>
+            <select id="hotelSearch" class="form-select" 
+                    name="hotel"
+                    data-url="{{ hoteles_url }}"
+                    data-ajax--delay="300"
+                    required>
+                <option value=""></option>
+                {% if hotel_seleccionado %}
+                <option value="{{ hotel_seleccionado.id }}" selected>
+                    {{ hotel_seleccionado.nombre }} - {{ hotel_seleccionado.ubicacion }}
+                </option>
+                {% endif %}
+            </select>
+            <div class="form-text">¿No encuentras tu hotel? 
+                <a href="{% url 'reservas:agregar_hotel' %}?tipo_reserva={{ tipo_reserva }}" 
+                   class="text-decoration-none">
+                   Agregar nuevo hotel
+                </a>
+            </div>
+        </div>
+
+        <!-- Selección del tipo de plan -->
+        <div class="mb-4">
+            <label class="form-label fw-bold">Tipo de Plan:</label>
+            <select name="plan_type" class="form-select" required>
+                <option value="all_inclusive" {% if reserva.plan_type == 'all_inclusive' %}selected{% endif %}>
+                    All-Inclusive
+                </option>
+                <option value="half_board" {% if reserva.plan_type == 'half_board' %}selected{% endif %}>
+                    Half-Board
+                </option>
+            </select>
+        </div>
+                
+              <!-- Habitaciones Section -->
+        <div class="habitaciones-container mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Habitaciones</h5>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="addHabitacion">
+                    <i class="bi bi-plus-lg"></i> Añadir
+                </button>
+            </div>
+                    
+                    <div id="habitacionesList">
+                        <!-- Dynamic content -->
                     </div>
                 </div>
-
-
-                <!-- Resumen y Controles -->
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <button type="button" id="addHabitacion" class="btn btn-outline-primary">
-                            <i class="bi bi-plus-circle me-2"></i>Añadir Habitación
-                        </button>
-                        <div class="mt-3">
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i>
-                                Total estimado: <span id="totalReserva">$0</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6 text-end">
-                        <a href="{% url 'reservas:wizard_paso' tipo=tipo_reserva paso=2 %}" 
-                           class="btn btn-outline-secondary btn-lg me-2">
-                           <i class="bi bi-arrow-left me-2"></i>Anterior
-                        </a>
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            Continuar <i class="bi bi-arrow-right ms-2"></i>
-                        </button>
-                    </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'reservas:wizard_paso' tipo=tipo_reserva paso=2 %}" 
+                       class="btn btn-secondary">
+                       <i class="bi bi-arrow-left me-2"></i>Volver
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        Continuar <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Habitacion Template (Hidden) -->
+<template id="habitacionTemplate">
+    <div class="habitacion-item card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-5">
+                    <select class="form-select tipo-habitacion" name="habitaciones_${index}_tipo" required>
+                        <option value="">Seleccionar tipo</option>
+                        <option value="otro">Otro (Especificar)</option>
+                    </select>
+                    <input type="text" class="form-control mt-2 d-none" 
+                           name="habitaciones_${index}_otro_nombre" 
+                           placeholder="Nombre de la habitación">
+                </div>
+                <div class="col-md-4">
+                    <input type="number" min="1" value="1" 
+                           class="form-control" 
+                           name="habitaciones_${index}_cantidad" required>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button type="button" class="btn btn-danger btn-sm remove-habitacion">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
 {% endblock %}
 
 {% block extra_js %}
+<script>
 document.addEventListener('DOMContentLoaded', function() {
-    let habitacionIndex = {{ habitaciones_existentes.count|default:1 }};
-    const container = document.getElementById('habitacionesContainer');
-    const hotelSelect = document.getElementById('hotel');
-    const totalReserva = document.getElementById('totalReserva');
+    const hotelSearch = $('#hotelSearch');
+    const habitacionesList = $('#habitacionesList');
+    const template = document.getElementById('habitacionTemplate');
+    let habitacionIndex = 0;
+    let currentHotelId = null;
 
-    // Cargar Select2 para hoteles
-    $(hotelSelect).select2({
-        placeholder: "Buscar hotel...",
-        allowClear: true,
-        width: '100%',
-        dropdownParent: $('#paso3Form')
+    // Configuración de Select2 para hoteles
+    hotelSearch.select2({
+        ajax: {
+            url: "{% url 'reservas:buscar_hoteles' %}",
+            dataType: 'json',
+            delay: 300,
+            data: function(params) {
+                return { q: params.term };
+            },
+            processResults: function(data) {
+                return { results: data.results };
+            }
+        },
+        placeholder: 'Buscar hotel...',
+        minimumInputLength: 1,
+        width: '100%'
     });
 
-    // Actualizar números de habitación y total
-    function actualizarUI() {
-        document.querySelectorAll('.habitacion-numero').forEach((num, index) => {
-            num.textContent = index + 1;
-        });
-        calcularTotal();
-    }
-
-    // Calcular total de la reserva
-    function calcularTotal() {
-        let total = 0;
-        document.querySelectorAll('.habitacion-item').forEach(item => {
-            const precio = parseFloat(item.querySelector('.precio-habitacion').textContent.replace('$', '') || 0);
-            const cantidad = parseInt(item.querySelector('input[name$="_cantidad"]').value || 0);
-            total += precio * cantidad;
-        });
-        totalReserva.textContent = `$${total.toFixed(2)}`;
-    }
-
-    // Función mejorada para clonar habitaciones
-function clonarHabitacion() {
-    const newItem = container.lastElementChild.cloneNode(true);
-    const newIndex = habitacionIndex++;
-    
-    // Resetear valores
-    newItem.querySelectorAll('input, select').forEach(el => {
-        el.value = '';
-        el.name = el.name.replace(/\d+/, newIndex);
+    // Cargar habitaciones al cambiar hotel
+    hotelSearch.on('change', function() {
+        currentHotelId = $(this).val();
+        if (!currentHotelId) return;
+        loadHabitaciones(currentHotelId);
     });
-    
-    // Actualizar opciones según hotel seleccionado
-    const hotelId = hotelSelect.value;
-    if(hotelId) {
-        actualizarOpcionesHabitaciones(newItem, hotelId);
-    }
-    
-    container.appendChild(newItem);
-    actualizarUI();
-}
 
-// Función para actualizar opciones de habitaciones
-function actualizarOpcionesHabitaciones(containerElement, hotelId) {
-    const url = `/api/hoteles/${hotelId}/habitaciones/`;
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            containerElement.querySelectorAll('.tipo-habitacion').forEach(select => {
-                select.innerHTML = data.map(hab => `
-                    <option value="${hab.id}">
-                        ${hab.nombre} (Capacidad: ${hab.capacidad})
-                    </option>
-                `).join('');
+    // Función para cargar habitaciones
+    function loadHabitaciones(hotelId) {
+        const url = "{% url 'reservas:hotel_habitaciones' 0 %}".replace('0', hotelId);
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    updateHabitacionSelects(data.habitaciones);
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Error de conexión', 'error');
             });
+    }
+
+    // Actualizar selects de habitaciones
+    function updateHabitacionSelects(habitaciones) {
+        $('.tipo-habitacion').each(function() {
+            const select = $(this);
+            const selectedValue = select.val();
+            select.empty()
+                .append('<option value="">Seleccionar tipo</option>')
+                .append(habitaciones.map(hab => 
+                    $('<option></option>').val(hab.id).text(hab.nombre)
+                ))
+                .append('<option value="otro">Otro (Especificar)</option>')
+                .val(selectedValue);
         });
-}
+    }
 
-    // Eventos dinámicos
-    container.addEventListener('change', e => {
-        if (e.target.matches('.tipo-habitacion')) {
-            const precio = e.target.selectedOptions[0].text.match(/\$([\d.]+)/)?.[1] || '0';
-            e.target.closest('.habitacion-item').querySelector('.precio-habitacion').textContent = `$${precio}`;
-            calcularTotal();
+    // Añadir nueva habitación
+    $('#addHabitacion').click(function() {
+        const newItem = $(template.innerHTML.replace(/\${index}/g, habitacionIndex++));
+        habitacionesList.append(newItem);
+        if (currentHotelId) {
+            loadHabitaciones(currentHotelId);
         }
-        if (e.target.matches('input[name$="_cantidad"]')) {
-            calcularTotal();
+        newItem.find('.tipo-habitacion').change(function() {
+            const isOtro = $(this).val() === 'otro';
+            $(this).siblings('input').toggleClass('d-none', !isOtro);
+            if (isOtro) $(this).siblings('input').val('');
+        });
+    });
+
+    // Eliminar habitación
+    habitacionesList.on('click', '.remove-habitacion', function() {
+        $(this).closest('.habitacion-item').remove();
+        if($('.habitacion-item').length === 0) {
+            $('#addHabitacion').trigger('click');
         }
     });
 
-    document.getElementById('addHabitacion').addEventListener('click', clonarHabitacion);
-    document.querySelectorAll('.remove-habitacion').forEach(btn => {
-        btn.addEventListener('click', () => btn.closest('.habitacion-item').remove());
+    // Validación y envío del formulario
+    $('#paso3Form').submit(function(e) {
+        e.preventDefault();
+
+        // Validación básica
+        if (!currentHotelId) {
+            Swal.fire('Error', 'Debe seleccionar un hotel', 'error');
+            return;
+        }
+
+        if ($('.habitacion-item').length === 0) {
+            Swal.fire('Error', 'Debe agregar al menos una habitación', 'error');
+            return;
+        }
+
+        // Enviar formulario
+        Swal.fire({
+            title: 'Guardando...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        $.ajax({
+            url: '',
+            method: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                if (response.redirect) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Hotel y habitaciones guardados exitosamente!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        window.location.href = response.redirect;
+                    });
+                }
+            },
+            error: function(xhr) {
+                let errorMsg = 'Error desconocido';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                } else if (xhr.status === 403) {
+                    errorMsg = 'Error de permisos o CSRF. Por favor, recarga la página.';
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: errorMsg
+                });
+            }
+        });
     });
 
-    actualizarUI();
+    // Cargar datos existentes si hay reserva
+    {% if habitaciones_existentes %}
+        currentHotelId = "{{ hotel_seleccionado.id }}";
+        hotelSearch.val(currentHotelId).trigger('change');
+        {% for hab in habitaciones_existentes %}
+            const newItem = $(template.innerHTML.replace(/\${index}/g, habitacionIndex++));
+            habitacionesList.append(newItem);
+            newItem.find('[name$="_tipo"]').val("{{ hab.tipo_habitacion.id }}");
+            newItem.find('[name$="_cantidad"]').val("{{ hab.cantidad }}");
+        {% endfor %}
+    {% endif %}
 });
+</script>
 {% endblock %}
